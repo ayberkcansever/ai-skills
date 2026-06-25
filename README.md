@@ -18,15 +18,20 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 | `execute-plan` | Executes the plan task-by-task, running the verification each step defines and committing as it goes. |
 | `thermo-nuclear-code-quality-review` | A strict maintainability review — flags spaghetti growth, oversized files, leaky abstractions, and pushes for structural simplification before the PR merges. |
 
-Typical flow:
+Typical flow — start with **either** `brainstorm` or `interview-plan` (not both required):
 
 ```
-/brainstorm  ->  /interview-plan  ->  /write-plan  ->  /execute-plan  ->  /thermo-nuclear-code-quality-review
+/brainstorm ─┐
+             ├─>  /write-plan  ->  /execute-plan  ->  /thermo-nuclear-code-quality-review
+/interview-plan ─┘
 ```
 
-`brainstorm` and `interview-plan` overlap — `brainstorm` is for shaping a fuzzy
-idea into a design; `interview-plan` is for stress-testing an already-scoped
-change into an ambiguity-free plan. Use whichever the task needs (or both).
+Pick the entry point that fits the task:
+
+- **`brainstorm`** — fuzzy idea, no clear scope yet. Shapes it into an approved design.
+- **`interview-plan`** — scope is roughly known. Stress-tests it into an ambiguity-free plan.
+
+Use one, the other, or both (`brainstorm` to shape, then `interview-plan` to harden). `write-plan` onward is the same regardless of entry point.
 
 ## Layout
 
