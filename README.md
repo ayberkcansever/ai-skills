@@ -12,6 +12,7 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 
 | Skill | What it does |
 |-------|--------------|
+| `brainstorm` | Turns a fuzzy idea into an approved design through one-question-at-a-time dialogue, 2-3 proposed approaches, and a written spec — with an optional browser-based visual companion for mockups/diagrams. Gates on user approval before any implementation. |
 | `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
 | `execute-plan` | Executes the plan task-by-task, running the verification each step defines and committing as it goes. |
@@ -20,8 +21,12 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 Typical flow:
 
 ```
-/interview-plan  ->  /write-plan  ->  /execute-plan  ->  /thermo-nuclear-code-quality-review
+/brainstorm  ->  /interview-plan  ->  /write-plan  ->  /execute-plan  ->  /thermo-nuclear-code-quality-review
 ```
+
+`brainstorm` and `interview-plan` overlap — `brainstorm` is for shaping a fuzzy
+idea into a design; `interview-plan` is for stress-testing an already-scoped
+change into an ambiguity-free plan. Use whichever the task needs (or both).
 
 ## Layout
 
@@ -63,6 +68,17 @@ Then run `/interview-plan` in Claude Code.
   purely as illustration — apply them to whatever stack your repo uses.
 - The Cursor and Claude variants are kept in sync but may differ slightly in
   formatting to match each tool's conventions.
+- `brainstorm` (Cursor variant) ships its **visual companion** — `visual-companion.md`
+  plus a `scripts/` folder with a small local Node server for showing mockups in
+  the browser. It writes session state under `.superpowers/brainstorm/` in your
+  project; add `.superpowers/` to your `.gitignore`. The companion is optional —
+  the skill works text-only without it.
+
+## Credits
+
+The planning/brainstorming skills are adapted from the open-source
+[Superpowers](https://github.com/obra/superpowers) project (MIT). The visual
+companion server scripts under `sdlc/cursor/brainstorm/scripts/` originate there.
 
 ## License
 
