@@ -1,48 +1,48 @@
 ---
 name: write-plan
-description: Use when you have a spec or requirements for a multi-step task, before touching code. Write comprehensive, bite-sized, TDD-oriented implementation plans saved under docs/superpowers/plans/<JIRA-ID>/ (gitignored WIP); promote stable docs to docs/features/<JIRA-ID>/ (tracked).
+description: Use when you have a spec or requirements for a multi-step task, before touching code. Write comprehensive, bite-sized, TDD-oriented implementation plans saved under docs/plans/<TICKET-ID>/ (gitignored WIP); promote stable docs to docs/features/<TICKET-ID>/ (tracked).
 ---
 
 # Write Plan
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for the codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
-Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
+Assume they are a skilled developer, but know almost nothing about the toolset or problem domain. Assume they don't know good test design very well.
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
-**Context:** If working in an isolated worktree, it should have been created via the `superpowers:using-git-worktrees` skill at execution time.
+**Context:** If working in an isolated git worktree, it should already exist before execution starts.
 
 ## Documentation layout (two tiers)
 
 | Tier | Path | Git | Use |
 |------|------|-----|-----|
-| **Durable** | `docs/features/<JIRA-ID>/` | tracked | Design, implementation plans, test checklists — commit when stable |
-| **WIP** | `docs/superpowers/plans/<JIRA-ID>/` | gitignored | Agent scratch during write-plan / execute-plan |
+| **Durable** | `docs/features/<TICKET-ID>/` | tracked | Design, implementation plans, test checklists — commit when stable |
+| **WIP** | `docs/plans/<TICKET-ID>/` | gitignored | Agent scratch during write-plan / execute-plan |
 
-Infer `<JIRA-ID>` from the branch name (`PRTD-8154`, `AS-1234`) or ask once if unclear.
+Infer `<TICKET-ID>` from the branch name (e.g. `PROJ-123`) or ask once if unclear. If your project does not use ticket IDs, use a short kebab-case slug for the feature.
 
 **Save new implementation plans to (WIP):**
 
-`docs/superpowers/plans/<JIRA-ID>/<scope>-implementation-plan.md`
+`docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`
 
 Examples:
 
-- `docs/superpowers/plans/PRTD-8154/backend-implementation-plan.md`
-- `docs/superpowers/plans/PRTD-8154/llm-service-implementation-plan.md`
+- `docs/plans/PROJ-123/backend-implementation-plan.md`
+- `docs/plans/PROJ-123/service-implementation-plan.md`
 
-**Canonical filenames when promoting to `docs/features/<JIRA-ID>/`:**
+**Canonical filenames when promoting to `docs/features/<TICKET-ID>/`:**
 
 - `README.md` — index, status, cross-repo links
 - `design.md` — architecture + decisions
-- `backend-implementation-plan.md` / `llm-service-implementation-plan.md` / `frontend-implementation-plan.md`
-- `sandbox-test-checklist.html` — optional manual QA
+- `backend-implementation-plan.md` / `service-implementation-plan.md` / `frontend-implementation-plan.md`
+- `test-checklist.html` — optional manual QA
 
-**Promote when stable:** copy finalized docs from `docs/superpowers/plans/<JIRA-ID>/` to `docs/features/<JIRA-ID>/` and commit (or ask the user). See your repo's `docs/features/README.md` for the full convention.
+**Promote when stable:** copy finalized docs from `docs/plans/<TICKET-ID>/` to `docs/features/<TICKET-ID>/` and commit (or ask the user). Follow your repo's own docs convention if it has one.
 
-**While executing:** **execute-plan** runs **maintain-feature-docs** after each task — agents update `docs/features/<JIRA-ID>/` in the same commit when code changes decisions, contracts, deploy, or QA (see `.cursor/skills/maintain-feature-docs/SKILL.md`).
+**While executing:** if your repo has a feature-docs sync flow (a skill or script that keeps `docs/features/<TICKET-ID>/` in sync with code), **execute-plan** runs it after each task — update those docs in the same commit when code changes decisions, contracts, deploy, or QA.
 
 (User preferences for plan location override these defaults.)
 
@@ -76,7 +76,7 @@ Two failure modes this prevents (both have shipped silently):
 
 Add an explicit task for the writer hop (repository/publisher) and an explicit task for the non-mocked round-trip test. Never let "use case sets the field" be the last word.
 
-**Activation wiring.** A correct field is still inert if the switch that makes it live is missing — a new env var not wired into the Lambda (see the env-vars-lifecycle rule), an index never created, an SNS/SQS subscription not added, a feature flag never enabled, CDK not applied. If the change needs any such activation to take effect, add a task for it. Code that compiles and tests that pass do not prove the path is reachable in the deployed environment.
+**Activation wiring.** A correct field is still inert if the switch that makes it live is missing — a new env var not wired into the running service, an index never created, a queue/topic subscription not added, a feature flag never enabled, infrastructure (IaC) not applied. If the change needs any such activation to take effect, add a task for it. Code that compiles and tests that pass do not prove the path is reachable in the deployed environment.
 
 ## Bite-Sized Task Granularity
 
@@ -142,11 +142,13 @@ Expected: PASS
 
 - [ ] **Step 5: Commit**
 
-Run: `scripts/committer "feat(scope): add specific feature" tests/path/test.py src/path/file.py`
+Run: `git add tests/path/test.py src/path/file.py && git commit -m "feat(scope): add specific feature"`
 Expected: commit succeeds; pre-commit hooks pass (re-stage and amend if hooks modify files)
 
-Every commit step in a plan MUST use `scripts/committer "<type>(<scope>): <subject>" <paths...>` — explicit paths only, never `git add .` or raw `git commit -m`.
+Every commit step in a plan MUST stage explicit paths (or use your repo's commit helper) — never `git add .` / `git add -A`.
 ````
+
+(The `pytest` / Python snippets above are illustrative; use whatever language and test runner the target repo uses.)
 
 ## No Placeholders
 
@@ -162,7 +164,7 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Exact file paths always
 - Complete code in every step — if a step changes code, show the code
 - Exact commands with expected output
-- Commits via `scripts/committer "<msg>" <paths...>` — never raw `git add` / `git commit`
+- Commits stage explicit paths (or your repo's commit helper) — never `git add .` / `git add -A`
 - DRY, YAGNI, TDD, frequent commits
 
 ## Self-Review
@@ -183,6 +185,6 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 After saving the plan, tell the user:
 
-**"Plan complete and saved to `docs/superpowers/plans/<JIRA-ID>/<scope>-implementation-plan.md`. Run `/execute-plan` (or say "execute") to implement it task-by-task. Promote to `docs/features/<JIRA-ID>/` when ready to commit."**
+**"Plan complete and saved to `docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`. Run `/execute-plan` (or say "execute") to implement it task-by-task. Promote to `docs/features/<TICKET-ID>/` when ready to commit."**
 
 The next step in the workflow is the **execute-plan** skill. Do not start implementing here — writing the plan and executing it are separate phases so the user can review the plan first.

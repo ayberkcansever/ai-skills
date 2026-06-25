@@ -56,9 +56,11 @@ Then run `/interview-plan` in Claude Code.
 
 ## Notes
 
-- These skills reference generic conventions (e.g. `docs/features/<JIRA-ID>/`,
-  a `scripts/committer` helper). Adjust paths and commit tooling to match your
-  own repo.
+- These skills reference generic conventions (e.g. `docs/features/<TICKET-ID>/`,
+  `docs/plans/<TICKET-ID>/`, explicit-path commits). Adjust paths, ticket-key
+  format, and commit tooling to match your own repo.
+- Examples use Python/`pytest` and a `handler → use case → repository` layering
+  purely as illustration — apply them to whatever stack your repo uses.
 - The Cursor and Claude variants are kept in sync but may differ slightly in
   formatting to match each tool's conventions.
 

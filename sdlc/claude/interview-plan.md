@@ -95,7 +95,7 @@ Before producing the plan, every item below must be **Decided**, **Non-goal**, o
 7. Authn / authz — who can call this, required permissions, cross-tenant exposure prevention.
 8. Observability — logs, metrics, traces, alerts; what a support engineer sees when this breaks at 3am.
 9. Testing strategy — unit/integration/functional, coverage bar, must-test scenarios.
-10. Rollout & rollback — feature flag, staged release, kill switch, order of operations across services, revert without data loss. **Activation:** what switch makes this take effect (env var wired to the Lambda, index created, SNS/SQS subscription added, flag enabled, CDK applied) — and what would leave it silently inert despite green tests.
+10. Rollout & rollback — feature flag, staged release, kill switch, order of operations across services, revert without data loss. **Activation:** what switch makes this take effect (env var wired into the running service, index created, a queue/topic subscription added, feature flag enabled, infra (IaC) applied) — and what would leave it silently inert despite green tests.
 11. Performance & scale — volume, latency budget, cost ceiling, burst load.
 12. UX / accessibility / i18n — if user-facing.
 13. Documentation — README, AGENTS.md, runbook, API spec, ADR/DECISIONS.md.
@@ -147,10 +147,10 @@ Anything that fails becomes one more turn, not a buried gap.
 
 When the Stopping Condition is met, write **one** markdown file. Default WIP path (gitignored):
 
-`docs/superpowers/plans/<JIRA-ID>/design.md` — compact interview output, or
+`docs/plans/<TICKET-ID>/design.md` — compact interview output, or
 `<scope>-implementation-plan.md` when the interview produced an execute-ready plan.
 
-Infer `<JIRA-ID>` from branch name (`PRTD-8154`, `AS-1234`) or ask once. Promote stable docs to `docs/features/<JIRA-ID>/` (tracked).
+Infer `<TICKET-ID>` from branch name (e.g. `PROJ-123`) or ask once. Promote stable docs to `docs/features/<TICKET-ID>/` (tracked).
 
 The plan file MUST be:
 
@@ -178,7 +178,7 @@ The plan's structure:
 - **No placeholders** — no `TBD` / "handle as appropriate". Every step names the file(s), the concrete change, and a runnable command with expected output.
 - **TDD where testable** — prefer a failing-test step before implementation when the change has a unit/integration test surface.
 - **Checkbox steps** — every executable action uses `- [ ]` so execute-plan can track and tick them off.
-- **Committer for commits** — commit steps use `scripts/committer "<msg>" <paths...>` (never `git add .`).
+- **Explicit-path commits** — commit steps stage explicit paths (or use the repo's commit helper), never `git add .` / `git add -A`.
 
 After the file is written, run the Audit Pass below before returning the path.
 

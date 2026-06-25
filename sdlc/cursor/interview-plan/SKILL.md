@@ -178,9 +178,9 @@ about it".
    scenarios.
 10. Rollout & rollback — feature flag, staged release, kill switch, order of
     operations across services, revert without data loss. **Activation:** what
-    switch makes this take effect (env var wired to the Lambda, index created,
-    SNS/SQS subscription added, flag enabled, CDK applied) — and what would
-    leave it silently inert despite green tests.
+    switch makes this take effect (env var wired into the running service, index
+    created, a queue/topic subscription added, feature flag enabled, infra (IaC)
+    applied) — and what would leave it silently inert despite green tests.
 11. Performance & scale — volume, latency budget, cost ceiling, burst load.
 12. UX / accessibility / i18n — if user-facing.
 13. Documentation — README, AGENTS.md, runbook, API spec, ADR/DECISIONS.md.
@@ -293,8 +293,8 @@ Do not author anything until the user answers `yes` (or equivalent). If they
 say keep interviewing or want spec edits, return to the interview loop and
 re-run the Self-Critique Gate before asking again.
 
-Once confirmed, read the **write-plan** skill (`write-plan/SKILL.md`, installed
-at `~/.cursor/skills/write-plan/SKILL.md`)
+Once confirmed, read the **write-plan** skill (`write-plan/SKILL.md`, wherever
+your tool installs skills)
 and follow it as the source of truth for authoring the plan, passing the
 assembled spec as its input. Follow its full workflow — scope check, file
 structure, data-path trace, bite-sized tasks, no-placeholders rule, Self-Review.
@@ -304,13 +304,13 @@ sub-step, do **not** emit its "Plan complete… run /execute-plan" message — t
 plan is not done until interview-plan's Audit Pass clears. interview-plan owns
 the single final handoff (Audit Pass "Report and gate" below).
 
-Default WIP path (gitignored), inferred from the branch name (`PRTD-8154`,
-`AS-1234`) or asked once:
+Default WIP path (gitignored), inferred from the branch name (e.g. `PROJ-123`)
+or asked once:
 
-`docs/superpowers/plans/<JIRA-ID>/<scope>-implementation-plan.md`
+`docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`
 
-Promote stable docs to `docs/features/<JIRA-ID>/` (tracked). See **write-plan**
-Documentation layout and your repo's `docs/features/README.md` for the convention.
+Promote stable docs to `docs/features/<TICKET-ID>/` (tracked). See **write-plan**
+Documentation layout and your repo's own docs convention.
 
 ### Step 3 — Run the Audit Pass
 

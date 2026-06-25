@@ -56,11 +56,12 @@ Risk tolerance: **low** — override by typing `Risk Tolerance: critical|high|me
 - **Test coverage** — missing tests for complex or changed logic.
 - **Security & tenant isolation** — no hardcoded credentials or tenant IDs, no PII or tokens in logs.
 
-Stack specifics live in each repo's `AGENTS.md` + rules — apply them, do not duplicate here:
-
-- frontend: React Query (queryKey / enabled / invalidation / rollback), Zustand selector identity, RBAC `routePermissions`, i18n `General.*` reuse.
-- backend: handler → usecase → repository, SNS/SQS contract intact, Lambda name ≤ 64 chars.
-- llm-service: SQS→SNS envelope parsing, `use_case_cache` module-level, Vertex `api_transport="rest"` protected.
+Stack specifics live in each repo's `AGENTS.md` / `CLAUDE.md` + rules — apply
+them, do not duplicate here. Typical examples: frontend data-fetching cache keys
+and invalidation, state-store selector identity, route/RBAC guards, i18n key
+reuse; backend layering (handler → use case → repository), message/queue contract
+integrity, resource-name limits; service-layer envelope parsing, module-level
+caches, and any protected client/transport settings.
 
 Output:
 
@@ -70,12 +71,12 @@ Output:
 
 ## Phase 4 — Feature docs sync (mandatory where present)
 
-Read `.cursor/skills/maintain-feature-docs/SKILL.md` in the active repo and follow it. If absent → report "no feature-docs flow" and stop. It owns the `<JIRA-ID>` resolution, drift detection, in-repo edits, and the backend-owns-`design.md` cross-repo rule. Commit only if the user explicitly asked.
+If the active repo has a feature-docs sync flow (a skill or script that keeps `docs/features/<TICKET-ID>/` in sync with code), follow it. If absent → report "no feature-docs flow" and stop. That flow owns `<TICKET-ID>` resolution, drift detection, in-repo edits, and any cross-repo doc-ownership rule. Commit only if the user explicitly asked.
 
 Always emit:
 
 ```
-Feature docs sync (<JIRA-ID>):
+Feature docs sync (<TICKET-ID>):
 - Doc impact: yes | no
 - Files updated: …
 - Committed: yes | no
@@ -83,4 +84,4 @@ Feature docs sync (<JIRA-ID>):
 
 ## Pre-commit
 
-Backend and llm-service run `scripts/check-feature-docs-staged.sh` — warns when code is staged without `docs/features/<JIRA-ID>/`. `FEATURE_DOCS_STRICT=1` blocks.
+If the repo runs a feature-docs staged-check script, warn when code is staged without corresponding `docs/features/<TICKET-ID>/` updates (and respect any strict-mode flag that blocks the commit).
