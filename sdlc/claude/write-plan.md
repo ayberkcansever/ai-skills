@@ -83,21 +83,36 @@ Add an explicit task for the writer hop (repository/publisher) and an explicit t
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** Use the execute-plan skill to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Use the execute-plan skill to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Plan code was written before implementation — when reality differs (API mismatch, wrong signature), adapt, update the step in place, and add a `> Drift:` note (see execute-plan's Plan Drift Protocol). The plan file is the as-built source of truth.
 
 **Goal:** [One sentence describing what this builds]
+
+**Spec:** [Path to the interview spec file, e.g. `docs/specs/<TICKET-ID>/spec.md` — omit only if no interview preceded this plan]
 
 **Architecture:** [2-3 sentences about approach]
 
 **Tech Stack:** [Key technologies/libraries]
 
+## Architecture constraints (extracted from the repo — subagents see only this file)
+
+- Layering: [e.g. handler → use case → repository; never call repositories from handlers]
+- Error handling: [e.g. custom error classes from `src/errors/`, no bare throw]
+- Naming/conventions: [e.g. project base classes, import conventions]
+- Canonical helpers to reuse: [name them with paths — prevents bespoke duplicates]
+- Test setup: [exact test command form, fixture/factory locations]
+
 ---
 ```
+
+The **Architecture constraints** block is mandatory: parallel or fresh subagents executing tasks see only the plan file, so repo layering, DI style, error-handling patterns, and canonical helpers must live in it, not in the planner's memory. Extract them from the repo (CLAUDE.md / AGENTS.md, existing neighbours of the touched files) while planning.
 
 ## Task Structure
 
 ````markdown
 ### Task N: [Component Name]
+
+**Implements:** D3, D7 (decision numbers from the spec; "—" only for pure plumbing)
+**Depends on:** Task 2 (or "none" — tasks with `none` and disjoint file sets are safe to dispatch in parallel)
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -107,34 +122,36 @@ Add an explicit task for the writer hop (repository/publisher) and an explicit t
 - [ ] **Step 1: Write the failing test**
 
 ```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
+def test_returns_total_of_line_items():
+    result = order_total([LineItem(price=3, qty=2), LineItem(price=4, qty=1)])
+    assert result == 10
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
+Run: `pytest tests/path/test.py::test_returns_total_of_line_items -v`
+Expected: FAIL with "order_total not defined"
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-def function(input):
-    return expected
+def order_total(items):
+    return sum(item.price * item.qty for item in items)
 ```
+
+**Minimal means general — never hardcode the expected value** (`return 10` is a plan failure, not TDD). The implementation must compute the answer from its inputs; if a single hardcoded return would pass the test, the test is too weak — strengthen it (second case, different values) in the same step.
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
+Run: `pytest tests/path/test.py::test_returns_total_of_line_items -v`
+Expected: PASS. Sanity-check the test has teeth: mentally (or actually) break the behavior — would the test fail? If not, fix the test before committing.
 
 - [ ] **Step 5: Commit**
 
-Run: `git add tests/path/test.py src/path/file.py && git commit -m "feat(scope): add specific feature"`
+Run: `git add tests/path/test.py src/path/file.py && git commit -m "feat(scope): add specific feature [T<N>]"`
 Expected: commit succeeds; pre-commit hooks pass (re-stage and amend if hooks modify files)
 
-Every commit step in a plan MUST stage explicit paths (or use your repo's commit helper) — never `git add .` / `git add -A`.
+Every commit step in a plan MUST stage explicit paths (or use your repo's commit helper) — never `git add .` / `git add -A`. The `[T<N>]` suffix ties the commit to its plan task, closing the traceability chain `D<n> → Task <N> → commit [T<N>] → test`.
 ````
 
 (The `pytest` / Python snippets above are illustrative; use whatever language and test runner the target repo uses.)
@@ -149,11 +166,28 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
 
+## Test Matrix (carries the interview's coverage bar into the plan)
+
+Every plan ends with a **Test matrix** section: a table mapping each spec decision and each accepted business edge scenario to the named test that proves it.
+
+```markdown
+## Test matrix
+
+| Decision / scenario | Test name | Task |
+|---|---|---|
+| D3 concurrent update loses neither write | test_concurrent_update_merges_both | T4 |
+| D7 deleted-mid-flow returns 409 | test_delete_mid_flow_conflict | T5 |
+```
+
+- A decision with no test row needs either a test or an explicit "not unit-testable because <reason>, verified by <manual step / functional test>".
+- The plan's final task runs the repo's coverage command (e.g. `make test`, `npm test`) so "maximum coverage" is measured, not asserted.
+- If the spec set a performance budget (interview checklist item 11), add a task that measures it (load script, timing assertion, or profiler run) — a budget nobody measures is decoration; if none downstream, mark it Non-goal in the spec instead.
+
 ## Remember
 - Exact file paths always
 - Complete code in every step — if a step changes code, show the code
 - Exact commands with expected output
-- Commits stage explicit paths (or your repo's commit helper) — never `git add .` / `git add -A`
+- Commits stage explicit paths (or your repo's commit helper), tagged `[T<N>]` — never `git add .` / `git add -A`
 - DRY, YAGNI, TDD, frequent commits
 
 ## Self-Review
@@ -167,6 +201,12 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
 **4. Data-path completeness:** For every new/changed field that must reach a sink, can you point to (a) the task that adds it to the actual writer (repository insert / `build` / publish payload), and (b) a task with a test that reaches the sink WITHOUT mocking the writer? If either is missing, add it.
+
+**5. Test-matrix completeness:** Every spec decision and accepted edge scenario has a row in the Test matrix pointing at a named test in a task (or an explicit justified exception). Every test in the matrix exists in some task's code block.
+
+**6. Dependency sanity:** Every task declares `Depends on:`; no cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration.
+
+**7. Fake-green scan:** No implementation step's code block returns a hardcoded test-expected value or branches on test-specific input. If one does, generalize it and strengthen the test.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 

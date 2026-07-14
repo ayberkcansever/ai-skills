@@ -63,10 +63,16 @@ left that would bite us at code-review or in production".
    `[product]`, `[compat]`, or `[scope]` so the user knows whether they're
    being asked an engineering tradeoff, a business call, a backward-compat
    call, or a boundary call.
-6. **Maintain an internal decision log.** Track each agreed answer, explicit
-   non-goal, and open risk so the final plan is complete and does not rely on
-   memory alone. Also track the **consumer list** from Discovery so the
-   backward-compat lens can be closed item by item.
+6. **Write the decision log to disk as you go.** Append each agreed answer,
+   explicit non-goal, and open risk to `docs/specs/<TICKET-ID>/spec.md` **at the
+   moment it is decided** (create the file from the **Spec File Template** below
+   on the first decision). Long interviews degrade chat recall; the file cannot
+   forget. The end-of-interview spec assembly (Output Step 1) organizes this
+   file — it does not reconstruct decisions from memory. Also track the
+   **consumer list** from Discovery in the same file so the backward-compat lens
+   can be closed item by item. **On every append, check the new decision against
+   the existing decisions and non-goals** — if it contradicts one, surface both
+   immediately and ask which wins; do not record two conflicting decisions.
 7. **Push back with code-grounded findings, not just questions.** When you
    spot a simpler design, a non-obvious risk, a broken consumer, or a more
    idiomatic approach for *this* codebase — surface it on your own turn.
@@ -91,17 +97,35 @@ Recommendation: <your suggested answer>
 Why: <one sentence>
 ```
 
+## Resume Protocol (check before anything else)
+
+If `docs/specs/<TICKET-ID>/spec.md` already exists for this branch, this is a
+**resumed interview**, not a fresh one:
+
+1. Read the spec file. Post a two-line status: `<d> decisions, <n> non-goals,
+   <o> open items` and the list of open items.
+2. Do **not** re-ask decided items. Resume from the first open item
+   (open risks, unresolved checklist entries, unhandled consumers).
+3. Re-run Discovery only for areas the spec marks unexplored or that the code
+   has changed since (check `git log` since the spec's last entry).
+4. If the user's new framing contradicts a recorded decision, surface the
+   conflict (Rule 6) instead of silently overwriting.
+
+Only when no spec file exists do you start at Calibration below.
+
 ## First Turn (always) — Calibration
 
-Before anything, ask exactly one calibration question:
+**First, read the project quirks doc if one exists** (e.g. `docs/quirks.md` —
+hard-learned domain gotchas). List the entries relevant to this feature so the
+user sees what is already covered. Then ask exactly one calibration question:
 
-> "Before I start: are there domain quirks in this codebase or product
-> that a generic reviewer would miss but matter here? (Examples: hidden
-> idempotency contracts, filters that the UI applies but the backend
-> doesn't, account/location/tenant scoping rules, timezone gotchas,
-> protected code sections, in-flight migrations.)"
+> "I loaded the quirks doc — entries […] look relevant here. Beyond those (or
+> if there is no quirks doc): are there domain quirks for *this* change that a
+> generic reviewer would miss? (Examples: hidden idempotency contracts, filters
+> one layer applies and another doesn't, account/location/tenant scoping rules,
+> timezone gotchas, protected code sections, in-flight migrations.)"
 
-Treat the answer as permanent context for the rest of the interview —
+Treat quirks doc + answer as permanent context for the rest of the interview —
 every subsequent question, finding, and alternative is filtered through it.
 
 ## Discovery Phase (always — before Q1)
@@ -112,12 +136,34 @@ anything answerable from the repo. Read, then report. Produce a short
 
 1. **Touched code & patterns** — read the files the change will modify and
    the existing patterns there (naming, layering, error handling).
-2. **Consumers** — grep the repo for every caller of any function, field,
-   route, event, or contract the change touches. List them with `file:line`.
-   This list *is* the backward-compat surface.
+2. **Consumers** — grep for every caller of any function, field, route, event,
+   or contract the change touches. List them with `file:line`. This list *is*
+   the backward-compat surface. **For API/event/contract changes, the grep MUST
+   span every repo/package that consumes the contract** — prefix each entry with
+   the repo/package name.
 3. **Stored / in-flight data** — records written under the old contract,
    queued messages, deployed clients that will outlive the deploy.
 4. **Existing tests** — tests that pin current behaviour and would break.
+5. **Product context** — read the repo README, `docs/features/` entries for
+   adjacent tickets, and any product docs touching this domain. Business
+   rules often live in docs, not code — a discovery that reads only code
+   misses them.
+6. **Business scenario hunt (generative, not confirmatory).** From the facts
+   gathered above, **generate 5–10 candidate edge scenarios** the user has
+   not mentioned, then present them as one batch for accept/reject (each is
+   binary — this is not a Rule 1 violation). Mine these axes:
+   - **actor × state × timing** — two users mutating the same entity; the
+     entity deleted/archived mid-flow; a retry landing after success.
+   - **abuse / misuse** — quota exhaustion, oversized input, repeated calls,
+     a caller from the wrong tenant/role.
+   - **money / counting** — rounding, currency, off-by-one on limits,
+     double-counting on replay.
+   - **lifecycle** — feature toggled off mid-operation, account downgraded,
+     entity re-created with the same natural key.
+   Each accepted scenario becomes a Decision (how it must behave) and later a
+   test in the plan's test matrix; each rejected one is recorded as a
+   Non-goal. Presenting zero generated scenarios = under-investigation, same
+   failure as finishing with zero code-grounded findings.
 
 Output the Findings as a compact list, then drive questions from it. Each
 finding is either:
@@ -201,11 +247,15 @@ about it".
     paged, manual recovery path.
 19. Compliance / data handling — PII, retention, audit trail, cross-tenant
     exposure, regulatory scope.
+20. Scope & phasing — which parts are must-have vs nice-to-have; can the work
+    split into phases or separate plans, and what ships first. Ask this
+    **once, explicitly** — write-plan's Scope Check can only react; the split
+    decision belongs in the interview.
 
 ## Using the Checklist Efficiently
 
 The checklist is the **coverage bar**, not a literal question list. Asking
-all 19 mechanically is a failure mode. For each item:
+all 20 mechanically is a failure mode. For each item:
 
 - **Obvious from code/context → silent log.** Record it silently and move
   on. Don't burn a turn confirming the obvious.
@@ -253,6 +303,11 @@ Anything that fails becomes one more turn, not a buried gap.
    scratch? Surfaced as an Observation/Alternative? If not, surface it now.
 5. **Untouched consumer** — is any consumer from the Discovery list still
    unhandled? If so, that's an open backward-compat gap — ask.
+6. **Decision conflicts** — walk the decision log pairwise (and against the
+   non-goals): does any later decision contradict, narrow, or silently
+   supersede an earlier one? A late decision that reverses an early one must
+   be marked `supersedes D<n>` in the spec, with the loser struck — never
+   leave both standing.
 
 ## Output: Hand off to write-plan (the plan author)
 
@@ -267,19 +322,52 @@ The division of labour:
   (file structure, bite-sized tasks, full-code steps, its own Self-Review,
   execution handoff).
 
-### Step 1 — Assemble the spec (in chat, before invoking write-plan)
+### Step 1 — Assemble the spec (organize the spec file, before invoking write-plan)
 
-Compile everything resolved during the interview into a single spec block so
-write-plan has zero ambiguity and needs no chat history:
+Organize `docs/specs/<TICKET-ID>/spec.md` (built incrementally per Rule 6) into
+the **Spec File Template** below, and post a summary in chat. write-plan reads
+the spec **file** — zero ambiguity, no chat history needed.
 
-- **Goal & business intent** — problem, measurable success, target user/role.
-- **Decisions** — every resolved answer from the decision log, numbered.
-- **Discovery findings** — touched code & patterns, the **consumer list**
-  (`file:line`), stored/in-flight data, existing tests that pin behaviour.
-- **Coverage Checklist status** — each item Decided / Non-goal / Open-accepted.
-- **Non-goals, open risks (accepted), alternatives rejected.**
-- **`Verify first:` items** — anything not actually inspected, with the
-  verification command.
+#### Spec File Template (deterministic layout — write-plan depends on it)
+
+```markdown
+# <TICKET-ID> — <one-line goal>
+
+## Goal & business intent
+Problem, measurable success, target user/role.
+
+## Decisions
+D1. <one line>          (mark `supersedes D<n>` when a decision replaces one)
+D2. ...
+
+## Non-goals
+NG1. <one line — includes rejected business scenarios from the scenario hunt>
+
+## Consumers (from Discovery — the backward-compat surface)
+| # | repo:file:line | contract touched | status (Decided Dn / Non-goal / Open-accepted) |
+
+## Discovery findings
+Touched code & patterns, stored/in-flight data, tests that pin behaviour,
+product-doc facts.
+
+## Business edge scenarios
+Accepted (each → a D-number) and rejected (each → an NG-number).
+
+## Coverage Checklist status
+1–20, each: Decided D<n> / Non-goal / Open-accepted.
+
+## Open risks (accepted) / Alternatives rejected
+
+## Verify first
+Anything not actually inspected, with the verification command.
+```
+
+**Spec lifecycle:** the spec is the contract between the three skills — the
+plan (write-plan) links to it in its header, and the review
+(thermo-nuclear-code-quality-review) checks the diff against its numbered
+decisions. When the plan is promoted to `docs/features/<TICKET-ID>/`, promote
+the spec with it (as `design.md`, or merge into an existing `design.md`) so
+the decision record survives the gitignored WIP directory.
 
 ### Step 2 — Confirm, then invoke write-plan
 
@@ -340,8 +428,12 @@ the write-plan-authored file:
 - Every **Coverage Checklist item** is Decided / Non-goal / Open-accepted.
 - Every **consumer** from the Discovery list is handled by a task or
   explicitly marked unaffected.
+- **No two Decisions conflict**, and no Task implements a Non-goal — the
+  pairwise check from Self-Critique Gate item 6, re-run against the written
+  file.
 
-Any orphan or unhandled consumer → surface as an open gap.
+Any orphan, unhandled consumer, or unresolved conflict → surface as an open
+gap.
 
 ### Pass 2 — Fresh-eyes review
 

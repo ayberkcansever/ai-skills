@@ -21,7 +21,7 @@ The goal is not "minimum questions to start coding". It is "no ambiguity left th
 3. **Walk the decision tree depth-first.** Resolve a decision's dependencies before moving to the next sibling. Don't jump branches until the current one is settled.
 4. **Always recommend an answer.** For every question, propose your recommended answer with a one-sentence reason. The user can accept, override, or refine — this prevents stall.
 5. **Tag the type of decision.** Mark each question as `[technical]`, `[product]`, `[compat]`, or `[scope]` so the user knows whether they're being asked an engineering tradeoff, a business call, a backward-compat call, or a boundary call.
-6. **Maintain an internal decision log.** Track each agreed answer, explicit non-goal, and open risk so the final plan is complete and does not rely on memory alone. Also track the **consumer list** from Discovery so the backward-compat lens can be closed item by item.
+6. **Write the decision log to disk as you go.** Append each agreed answer, explicit non-goal, and open risk to `docs/specs/<TICKET-ID>/spec.md` **at the moment it is decided** (create the file on the first decision). Long interviews degrade chat recall; the file cannot forget — the final plan is assembled from this file, not from memory. Also track the **consumer list** from Discovery in the same file so the backward-compat lens can be closed item by item. **On every append, check the new decision against the existing decisions and non-goals** — if it contradicts one, surface both immediately and ask which wins; do not record two conflicting decisions. A decision that replaces an earlier one is marked `supersedes D<n>`, with the loser struck.
 7. **Push back with code-grounded findings, not just questions.** When you spot a simpler design, a non-obvious risk, a broken consumer, or a more idiomatic approach for *this* codebase — surface it on your own turn. Ground it in something you actually read. Use this format:
 
    ```
@@ -41,22 +41,35 @@ Recommendation: <your suggested answer>
 Why: <one sentence>
 ```
 
+## Resume Protocol (check before anything else)
+
+If `docs/specs/<TICKET-ID>/spec.md` already exists for this branch, this is a **resumed interview**, not a fresh one:
+
+1. Read the spec file. Post a two-line status: `<d> decisions, <n> non-goals, <o> open items` and the list of open items.
+2. Do **not** re-ask decided items. Resume from the first open item (open risks, unresolved checklist entries, unhandled consumers).
+3. Re-run Discovery only for areas the spec marks unexplored or that the code has changed since (check `git log` since the spec's last entry).
+4. If the user's new framing contradicts a recorded decision, surface the conflict (Rule 6) instead of silently overwriting.
+
+Only when no spec file exists do you start at Calibration below.
+
 ## First Turn (always) — Calibration
 
-Before anything, ask exactly one calibration question:
+**First, read the project quirks doc if one exists** (e.g. `docs/quirks.md` — hard-learned domain gotchas). List the entries relevant to this feature so the user sees what is already covered. Then ask exactly one calibration question:
 
-> "Before I start: are there domain quirks in this codebase or product that a generic reviewer would miss but matter here? (Examples: hidden idempotency contracts, filters that the UI applies but the backend doesn't, account/location/tenant scoping rules, timezone gotchas, protected code sections, in-flight migrations.)"
+> "I loaded the quirks doc — entries […] look relevant here. Beyond those (or if there is no quirks doc): are there domain quirks for *this* change that a generic reviewer would miss? (Examples: hidden idempotency contracts, filters one layer applies and another doesn't, account/location/tenant scoping rules, timezone gotchas, protected code sections, in-flight migrations.)"
 
-Treat the answer as permanent context for the rest of the interview — every subsequent question, finding, and alternative is filtered through it.
+Treat quirks doc + answer as permanent context for the rest of the interview — every subsequent question, finding, and alternative is filtered through it.
 
 ## Discovery Phase (always — before Q1)
 
 After calibration, **investigate before questioning**. Do not ask the user anything answerable from the repo. Read, then report. Produce a short **Findings** block in chat (not a wall of text):
 
 1. **Touched code & patterns** — read the files the change will modify and the existing patterns there (naming, layering, error handling).
-2. **Consumers** — grep the repo for every caller of any function, field, route, event, or contract the change touches. List them with `file:line`. This list *is* the backward-compat surface.
+2. **Consumers** — grep for every caller of any function, field, route, event, or contract the change touches. List them with `file:line`. This list *is* the backward-compat surface. **For API/event/contract changes, the grep MUST span every repo/package that consumes the contract** — prefix each entry with the repo/package name.
 3. **Stored / in-flight data** — records written under the old contract, queued messages, deployed clients that will outlive the deploy.
 4. **Existing tests** — tests that pin current behaviour and would break.
+5. **Product context** — read the repo README, `docs/features/` entries for adjacent tickets, and any product docs touching this domain. Business rules often live in docs, not code — a discovery that reads only code misses them.
+6. **Business scenario hunt (generative, not confirmatory).** From the facts gathered above, **generate 5–10 candidate edge scenarios** the user has not mentioned, then present them as one batch for accept/reject (each is binary — this is not a Rule 1 violation). Mine these axes: **actor × state × timing** (two users mutating the same entity; the entity deleted/archived mid-flow; a retry landing after success), **abuse / misuse** (quota exhaustion, oversized input, repeated calls, a caller from the wrong tenant/role), **money / counting** (rounding, currency, off-by-one on limits, double-counting on replay), **lifecycle** (feature toggled off mid-operation, account downgraded, entity re-created with the same natural key). Each accepted scenario becomes a Decision (how it must behave) and later a test in the plan's test matrix; each rejected one is recorded as a Non-goal. Presenting zero generated scenarios = under-investigation, same failure as finishing with zero code-grounded findings.
 
 Output the Findings as a compact list, then drive questions from it. Each finding is either:
 
@@ -108,10 +121,11 @@ Before producing the plan, every item below must be **Decided**, **Non-goal**, o
 17. User personas / roles — does behaviour differ by role, tier, app, or feature flag.
 18. Operational impact — what support sees, runbook/alert needed, who's paged, manual recovery path.
 19. Compliance / data handling — PII, retention, audit trail, cross-tenant exposure, regulatory scope.
+20. Scope & phasing — which parts are must-have vs nice-to-have; can the work split into phases or separate plans, and what ships first. Ask this **once, explicitly** — the plan's Scope Check can only react; the split decision belongs in the interview.
 
 ## Using the Checklist Efficiently
 
-The checklist is the **coverage bar**, not a literal question list. Asking all 19 mechanically is a failure mode. For each item:
+The checklist is the **coverage bar**, not a literal question list. Asking all 20 mechanically is a failure mode. For each item:
 
 - **Obvious from code/context → silent log.** Record it silently and move on. Don't burn a turn confirming the obvious.
 - **Clearly out of scope → batch-confirm.** Combine adjacent N/A items into one confirmation turn: *"Assuming internal-only — no UX, no i18n, no public API surface, no PII. Confirm?"* Not a Rule 1 violation; each item is binary.
@@ -142,6 +156,7 @@ Anything that fails becomes one more turn, not a buried gap.
 3. **Soft answers** — was I answered with "yeah, sure" / "we'll see" / "probably"? Not decisions. Re-ask with a sharper recommendation, force a yes/no.
 4. **Silent disagreement** — what would I have designed differently from scratch? Surfaced as an Observation/Alternative? If not, surface it now.
 5. **Untouched consumer** — is any consumer from the Discovery list still unhandled? If so, that's an open backward-compat gap — ask.
+6. **Decision conflicts** — walk the decision log pairwise (and against the non-goals): does any later decision contradict, narrow, or silently supersede an earlier one? A late decision that reverses an early one must be marked `supersedes D<n>` in the spec, with the loser struck — never leave both standing.
 
 ## Output: Compact Plan (always written to disk)
 
@@ -169,12 +184,14 @@ The plan's structure:
 3. Coverage matrix — table: every checklist item + every consumer →
                      Decided / Non-goal / Open-accepted + which task/step
 4. Steps          — checkbox tasks (`- [ ]`); File(s) | terse change | runnable acceptance check
-5. Non-goals / Open risks / Alternatives rejected — one-liners
+5. Test matrix    — table: each decision / accepted edge scenario → named test → task
+6. Non-goals / Open risks / Alternatives rejected — one-liners
 ```
 
 ### Steps section shape (borrow from write-plan)
 
 - **Bite-sized granularity** — each `- [ ]` item is one 2-5 minute action, not a paragraph of intent.
+- **Traceable tasks** — each task declares `Implements: D<n>` and `Depends on: Task <n> | none`; tasks with `none` and disjoint file sets are safe for parallel dispatch by execute-plan. Commit messages carry the `[T<N>]` tag.
 - **No placeholders** — no `TBD` / "handle as appropriate". Every step names the file(s), the concrete change, and a runnable command with expected output.
 - **TDD where testable** — prefer a failing-test step before implementation when the change has a unit/integration test surface.
 - **Checkbox steps** — every executable action uses `- [ ]` so execute-plan can track and tick them off.
@@ -192,8 +209,9 @@ Run all passes against the **written file** (re-read it; do not trust memory).
 - Every **Task** maps back to a Decision. A task with no decision = scope creep — flag it.
 - Every **Coverage Checklist item** is Decided / Non-goal / Open-accepted.
 - Every **consumer** from the Discovery list is handled by a task or explicitly marked unaffected.
+- **No two Decisions conflict**, and no Task implements a Non-goal — the pairwise check from Self-Critique Gate item 6, re-run against the written file.
 
-Any orphan or unhandled consumer → surface as an open gap.
+Any orphan, unhandled consumer, or unresolved conflict → surface as an open gap.
 
 ### Pass 2 — Fresh-eyes review
 

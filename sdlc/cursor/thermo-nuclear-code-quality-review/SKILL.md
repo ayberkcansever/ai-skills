@@ -1,19 +1,28 @@
 ---
 name: thermo-nuclear-code-quality-review
 description: >-
-  Branch-diff review in four lenses — simplify (YAGNI / over-engineering),
-  maintainability, merge safety, then mandatory feature-docs sync. Use
-  /thermo-nuclear-code-quality-review after a dev session, before a PR. Repo-agnostic.
+  Branch-diff review in five lenses — spec conformance, simplify (YAGNI /
+  over-engineering), maintainability, merge safety, then mandatory
+  feature-docs sync. Use /thermo-nuclear-code-quality-review after a dev
+  session, before a PR. Repo-agnostic.
 disable-model-invocation: true
 ---
 
 # Thermo-Nuclear Code Quality Review
 
-Review **current branch changes** through four lenses, in order.
-Phases 1–3 are **review-first**: report findings, change code only if the user says "fix".
+Review **current branch changes** through five lenses, in order.
+Phases 0–3 are **review-first**: report findings, change code only if the user says "fix".
 Phase 4 (docs) is **always applied** where a feature-docs flow exists.
 
-**Step 0 — get the diff.** Resolve the base (`git symbolic-ref refs/remotes/origin/HEAD` or `main`/`master`), then review `git diff <base>...HEAD`. Lenses below reconcile cleanly: **Phase 1 removes what should not exist; Phase 2 restructures what remains.**
+**Maker/checker is unconditional for agent-authored diffs:** if any part of
+the diff was written by an agent in the current session (execute-plan or
+otherwise), run the review as a **read-only subagent** — the reviewer must not
+share the implementer's context or be able to edit. Manual invocation on a
+human-authored diff may run inline. Number every finding
+`N | file:line | severity | problem | fix` so accepted findings can be appended
+to the plan file as new task checkboxes.
+
+**Step 0 — get the diff.** Resolve the base (`git symbolic-ref refs/remotes/origin/HEAD` or `main`/`master`), then review `git diff <base>...HEAD`. Lenses below reconcile cleanly: **Phase 0 checks the diff does what was decided; Phase 1 removes what should not exist; Phase 2 restructures what remains.**
 
 **Start the report with a 3-line rollup:**
 
@@ -22,6 +31,38 @@ Verdict: ship | fix-first | block
 Top issue: <one line, or "none">
 Net: -N lines possible | Lean already
 ```
+
+**Review loop (when verdict is not `ship`):** findings the user accepts are
+appended to the plan file as new task checkboxes; the executor fixes them
+(execute-plan Step 3 loop); then **re-review only the changed areas** —
+re-run Phase 0 for touched decisions plus the phases that produced the
+findings, not the full battery. Repeat until `ship`. Each cycle re-states the
+rollup so drift across cycles is visible.
+
+## Phase 0 — Spec conformance (does the code do what was decided?)
+
+Locate the ticket docs for this branch's `<TICKET-ID>`:
+`docs/specs/<TICKET-ID>/spec.md` (or promoted
+`docs/features/<TICKET-ID>/design.md`) and the implementation plan
+(`docs/features/<TICKET-ID>/` or `docs/plans/<TICKET-ID>/`). If
+neither exists → report "no spec/plan — conformance not checkable" and move
+to Phase 1.
+
+- **Decision sweep** — for each numbered decision (`D<n>`) in the spec: point
+  to the diff hunk(s) implementing it, or flag `not implemented`. Flag
+  **semantic drift** — code that does something subtly different from the
+  decision (wrong default, wrong scope, filter applied in one layer but not
+  the other) — this is the highest-value finding this phase produces.
+- **Edge-scenario sweep** — each accepted business edge scenario in the spec
+  has its behavior implemented and its Test-matrix test present in the diff.
+- **Non-goal sweep** — nothing in the diff implements a declared non-goal
+  (scope creep caught at review, not in prod).
+- **Drift-note sweep** — every `> Drift:` note in the plan is behavior-neutral
+  with respect to the spec decisions; a drift that changed a decision without
+  a spec update is a finding.
+
+Output: one line per decision — `D<n> | implemented @ file:line | conforms /
+drift: <one line> / missing`.
 
 ## Phase 1 — Simplify (YAGNI / over-engineering)
 
@@ -44,6 +85,14 @@ End with `net: -N lines possible` — or `Lean already. Ship.` if there is nothi
 - Direct code over magic wrappers, casts, and pass-through abstractions.
 - Reuse canonical helpers; keep logic in the right layer.
 - Bias toward cleaner structure when behavior is unchanged.
+- **Architecture conformance** — dependency direction respected (e.g. handler →
+  use case → repository; domain never imports infrastructure); new code
+  follows the established pattern of its neighbours, not a parallel bespoke
+  one; check against the plan's **Architecture constraints** section when a
+  plan exists. SOLID violations that hurt here: a class taking on a second
+  responsibility, a new case bolted into a conditional where the codebase
+  dispatches polymorphically, a concrete dependency instantiated where
+  siblings inject it.
 
 ## Phase 3 — Merge safety
 
@@ -65,7 +114,7 @@ caches, and any protected client/transport settings.
 
 Output:
 
-- **CRITICAL RISKS** (0–3) — would block merge, or "No critical risks found."
+- **CRITICAL RISKS** (uncapped — report every one; if 7 exist, list 7) — would block merge, or "No critical risks found."
 - **SUGGESTIONS** (0–3) — high-ROI, low-effort; no speculative items.
 - **PRAISE** (0–3).
 

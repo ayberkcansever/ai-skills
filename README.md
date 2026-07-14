@@ -16,7 +16,7 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 | `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
 | `execute-plan` | Executes the plan task-by-task, running the verification each step defines and committing as it goes. |
-| `thermo-nuclear-code-quality-review` | A strict maintainability review — flags spaghetti growth, oversized files, leaky abstractions, and pushes for structural simplification before the PR merges. |
+| `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
 
 Typical flow — start with **either** `brainstorm` or `interview-plan` (not both required):
 
