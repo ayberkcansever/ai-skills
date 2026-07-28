@@ -58,20 +58,28 @@ left that would bite us at code-review or in production".
    one is settled.
 4. **Always recommend an answer.** For every question, propose your
    recommended answer with a one-sentence reason. The user can accept,
-   override, or refine — this prevents stall.
+   override, or refine — this prevents stall. When the user overrides a
+   recommendation, record the decision as
+   `D<n>. <decision> (overrides recommendation: <user's reason>)`. Pushback
+   with no reason → ask once for the reason before recording; never silently
+   flip. Code-grounded findings remain facts regardless of the user's framing.
 5. **Tag the type of decision.** Mark each question as `[technical]`,
    `[product]`, `[compat]`, or `[scope]` so the user knows whether they're
    being asked an engineering tradeoff, a business call, a backward-compat
    call, or a boundary call.
 6. **Write the decision log to disk as you go.** Append each agreed answer,
-   explicit non-goal, and open risk to `docs/specs/<TICKET-ID>/spec.md` **at the
-   moment it is decided** (create the file from the **Spec File Template** below
-   on the first decision). Long interviews degrade chat recall; the file cannot
-   forget. The end-of-interview spec assembly (Output Step 1) organizes this
-   file — it does not reconstruct decisions from memory. Also track the
-   **consumer list** from Discovery in the same file so the backward-compat lens
-   can be closed item by item. **On every append, check the new decision against
-   the existing decisions and non-goals** — if it contradicts one, surface both
+   explicit non-goal, and open risk to
+   `docs/specs/<TICKET-ID>/spec.md` **at the moment it is decided**
+   (create the file from the **Spec File Template** below on the first
+   decision). Every behavioral decision carries a `Check:` line — a runnable
+   command or named test that proves it (or `manual QA: <step>`). Cannot
+   write one = decision too vague; sharpen it in the same turn before
+   recording. Long interviews degrade chat recall; the file cannot forget. The
+   end-of-interview spec assembly (Output Step 1) organizes this file — it
+   does not reconstruct decisions from memory. Also track the **consumer
+   list** from Discovery in the same file so the backward-compat lens can be
+   closed item by item. **On every append, check the new decision against the
+   existing decisions and non-goals** — if it contradicts one, surface both
    immediately and ask which wins; do not record two conflicting decisions.
 7. **Push back with code-grounded findings, not just questions.** When you
    spot a simpler design, a non-obvious risk, a broken consumer, or a more
@@ -99,23 +107,36 @@ Why: <one sentence>
 
 ## Resume Protocol (check before anything else)
 
-If `docs/specs/<TICKET-ID>/spec.md` already exists for this branch, this is a
-**resumed interview**, not a fresh one:
+If `docs/specs/<TICKET-ID>/spec.md` already exists for this branch,
+this is a **resumed interview**, not a fresh one:
 
 1. Read the spec file. Post a two-line status: `<d> decisions, <n> non-goals,
    <o> open items` and the list of open items.
 2. Do **not** re-ask decided items. Resume from the first open item
    (open risks, unresolved checklist entries, unhandled consumers).
 3. Re-run Discovery only for areas the spec marks unexplored or that the code
-   has changed since (check `git log` since the spec's last entry).
+   has changed since (check `git log` from the spec's recorded Discovery
+   baseline SHA).
 4. If the user's new framing contradicts a recorded decision, surface the
    conflict (Rule 6) instead of silently overwriting.
+5. If an implementation plan for this `<TICKET-ID>` also exists (WIP or
+   promoted), the interview likely already completed — confirm intent before
+   re-opening. New decisions then flow into the spec **and** a plan
+   amendment; never leave the two contradicting.
 
 Only when no spec file exists do you start at Calibration below.
 
 ## First Turn (always) — Calibration
 
-**First, read the project quirks doc if one exists** (e.g. `docs/quirks.md` —
+**Resolve `<TICKET-ID>` first:**
+`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'` (adjust the pattern to
+your tracker's key format). No match → ask for the ticket ID as part of the
+calibration turn (administrative, not a decision — not a Rule 1 violation).
+Rule 6 writes the spec to `docs/specs/<TICKET-ID>/spec.md` at the first
+decision, so the ID must exist before Q1. If the project does not use ticket
+IDs, use a short kebab-case slug for the feature.
+
+**Then read the project quirks doc if one exists** (e.g. `docs/quirks.md` —
 hard-learned domain gotchas). List the entries relevant to this feature so the
 user sees what is already covered. Then ask exactly one calibration question:
 
@@ -139,8 +160,8 @@ anything answerable from the repo. Read, then report. Produce a short
 2. **Consumers** — grep for every caller of any function, field, route, event,
    or contract the change touches. List them with `file:line`. This list *is*
    the backward-compat surface. **For API/event/contract changes, the grep MUST
-   span every repo/package that consumes the contract** — prefix each entry with
-   the repo/package name.
+   span every repo/package that consumes the contract** — prefix each entry
+   with the repo/package name.
 3. **Stored / in-flight data** — records written under the old contract,
    queued messages, deployed clients that will outlive the deploy.
 4. **Existing tests** — tests that pin current behaviour and would break.
@@ -160,10 +181,13 @@ anything answerable from the repo. Read, then report. Produce a short
      double-counting on replay.
    - **lifecycle** — feature toggled off mid-operation, account downgraded,
      entity re-created with the same natural key.
-   Each accepted scenario becomes a Decision (how it must behave) and later a
-   test in the plan's test matrix; each rejected one is recorded as a
-   Non-goal. Presenting zero generated scenarios = under-investigation, same
-   failure as finishing with zero code-grounded findings.
+   Each accepted scenario becomes a Decision (how it must behave) — propose
+   the expected outcome with the batch and confirm it before recording the
+   D-number; acceptance without defined behavior is not a decision. Each
+   accepted scenario later becomes a test in the plan's test matrix; each
+   rejected one is recorded as a Non-goal. Presenting zero generated
+   scenarios = under-investigation, same failure as finishing with zero
+   code-grounded findings.
 
 Output the Findings as a compact list, then drive questions from it. Each
 finding is either:
@@ -224,9 +248,10 @@ about it".
    scenarios.
 10. Rollout & rollback — feature flag, staged release, kill switch, order of
     operations across services, revert without data loss. **Activation:** what
-    switch makes this take effect (env var wired into the running service, index
-    created, a queue/topic subscription added, feature flag enabled, infra (IaC)
-    applied) — and what would leave it silently inert despite green tests.
+    switch makes this take effect (env var wired into the running service,
+    index created, a queue/topic subscription added, feature flag enabled,
+    infra (IaC) applied) — and what would leave it silently inert despite
+    green tests.
 11. Performance & scale — volume, latency budget, cost ceiling, burst load.
 12. UX / accessibility / i18n — if user-facing.
 13. Documentation — README, AGENTS.md, runbook, API spec, ADR/DECISIONS.md.
@@ -279,7 +304,9 @@ Stop only when **all** are true:
   the plan.
 - You can produce the plan without the phrase "to be decided".
 
-Or: the user says "enough" / "stop" / "good" / "let's go" / equivalent.
+Or: the user signals completion — "enough" / "good" / "let's go" /
+equivalent. "stop" / "pause" is cancellation, not completion: save the spec
+state and exit without the Self-Critique Gate or the write-plan confirmation.
 
 When stopping, run the Self-Critique Gate. Do **not** ask "are we done?" — judge
 that yourself. But **before authoring anything**, ask the user one explicit
@@ -308,6 +335,9 @@ Anything that fails becomes one more turn, not a buried gap.
    supersede an earlier one? A late decision that reverses an early one must
    be marked `supersedes D<n>` in the spec, with the loser struck — never
    leave both standing.
+7. **Deferred material check** — does `## Verify first` hold anything a plan
+   task would be written around (API shape, field name, signature, path)?
+   Verify it now; Verify-first is for environment-only checks.
 
 ## Output: Hand off to write-plan (the plan author)
 
@@ -324,9 +354,9 @@ The division of labour:
 
 ### Step 1 — Assemble the spec (organize the spec file, before invoking write-plan)
 
-Organize `docs/specs/<TICKET-ID>/spec.md` (built incrementally per Rule 6) into
-the **Spec File Template** below, and post a summary in chat. write-plan reads
-the spec **file** — zero ambiguity, no chat history needed.
+Organize `docs/specs/<TICKET-ID>/spec.md` (built incrementally per
+Rule 6) into the **Spec File Template** below, and post a summary in chat.
+write-plan reads the spec **file** — zero ambiguity, no chat history needed.
 
 #### Spec File Template (deterministic layout — write-plan depends on it)
 
@@ -337,7 +367,10 @@ the spec **file** — zero ambiguity, no chat history needed.
 Problem, measurable success, target user/role.
 
 ## Decisions
-D1. <one line>          (mark `supersedes D<n>` when a decision replaces one)
+D1. <one line>          (mark `supersedes D<n>` when a decision replaces one;
+                         mark `(overrides recommendation: <reason>)` when the
+                         user overrode the recommended answer)
+    Check: <runnable command / named test / `manual QA: <step>`>
 D2. ...
 
 ## Non-goals
@@ -347,6 +380,7 @@ NG1. <one line — includes rejected business scenarios from the scenario hunt>
 | # | repo:file:line | contract touched | status (Decided Dn / Non-goal / Open-accepted) |
 
 ## Discovery findings
+Baseline: <repo> @ <short SHA> (per repo — resume diffs `git log` from here).
 Touched code & patterns, stored/in-flight data, tests that pin behaviour,
 product-doc facts.
 
@@ -359,7 +393,10 @@ Accepted (each → a D-number) and rejected (each → an NG-number).
 ## Open risks (accepted) / Alternatives rejected
 
 ## Verify first
-Anything not actually inspected, with the verification command.
+Environment-only checks that cannot run from here (deployed config, external
+service state), each with its command. Material unknowns a plan task would be
+written around — API shapes, field names, signatures, paths — must be
+verified during the interview, never deferred here.
 ```
 
 **Spec lifecycle:** the spec is the contract between the three skills — the
@@ -424,7 +461,9 @@ the write-plan-authored file:
   **Task** (`### Task N`). A decision with no task = an unimplemented decision
   = gap.
 - Every **Task** maps back to a Decision. A task with no decision = scope
-  creep — flag it.
+  creep — flag it. **Exception:** tasks marked `Implements: —` (pure
+  plumbing, the coverage run, and the mandatory final Review gate task from
+  write-plan) — verify the justification in parentheses instead of flagging.
 - Every **Coverage Checklist item** is Decided / Non-goal / Open-accepted.
 - Every **consumer** from the Discovery list is handled by a task or
   explicitly marked unaffected.
@@ -480,7 +519,8 @@ Audit pass on <path>:
 the user to resolve. Do not return the path yet. Fold answers in (one rewrite
 pass), re-run Passes 1–4. Repeat until every open count is 0.
 
-**If all open counts are 0**, return:
+**If all open counts are 0**: record `**Audit:** clean @ <date>` in the plan
+file directly under its header, then return:
 
 > Plan ready at `<absolute path>`
 > Audit: clean.

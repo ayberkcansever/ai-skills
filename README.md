@@ -15,7 +15,7 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 | `brainstorm` | Turns a fuzzy idea into an approved design through one-question-at-a-time dialogue, 2-3 proposed approaches, and a written spec — with an optional browser-based visual companion for mockups/diagrams. Gates on user approval before any implementation. |
 | `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
-| `execute-plan` | Executes the plan task-by-task, running the verification each step defines and committing as it goes. |
+| `execute-plan` | Executes the plan task-by-task (subagent-per-task by default), re-running each task's gate itself before ticking it, committing as it goes, then running the review gate until the verdict is `ship`. |
 | `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
 
 Typical flow — start with **either** `brainstorm` or `interview-plan` (not both required):
@@ -67,8 +67,12 @@ Then run `/interview-plan` in Claude Code.
 ## Notes
 
 - These skills reference generic conventions (e.g. `docs/features/<TICKET-ID>/`,
-  `docs/plans/<TICKET-ID>/`, explicit-path commits). Adjust paths, ticket-key
-  format, and commit tooling to match your own repo.
+  `docs/plans/<TICKET-ID>/`, `docs/specs/<TICKET-ID>/`, explicit-path commits).
+  Adjust paths, ticket-key format, and commit tooling to match your own repo.
+- `thermo-nuclear-code-quality-review` pins a dedicated **review model** so the
+  reviewer never inherits the implementer session's model — fill in your chosen
+  model slug in its "Pinned review model" section (write-plan and execute-plan
+  reference that section instead of hardcoding a slug).
 - Examples use Python/`pytest` and a `handler → use case → repository` layering
   purely as illustration — apply them to whatever stack your repo uses.
 - The Cursor and Claude variants are kept in sync but may differ slightly in

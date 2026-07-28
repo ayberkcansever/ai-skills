@@ -17,12 +17,28 @@ verifications the plan specifies, report when complete.
    - `docs/plans/<TICKET-ID>/` (gitignored WIP)
    - Legacy flat `docs/plans/*.md` or `docs/PLAN_*.md`
    Infer `<TICKET-ID>` from branch name or ask once.
+   If both tiers contain a copy of the plan, diff them; if they diverge, ask
+   which is active — never silently prefer the promoted copy over newer WIP.
 2. **Resume check:** if the plan already has ticked checkboxes (`- [x]`), resume
-   from the first unticked task — cross-check `git log` to confirm completed tasks
-   were actually committed. The plan file's checkboxes are the source of truth for
+   from the first unticked task — first reconcile the plan against `git log`:
+   a ticked task with no `[T<N>]` commit → untick and redo; a `[T<N>]` commit
+   with its task unticked → re-run the task's gate and tick without redoing.
+   If `## Blockers` holds an unresolved entry with a stash OID, restore it
+   (`git stash apply <OID>`) and mark the entry resolved before any task runs.
+   The plan file's checkboxes are the source of truth for
    progress; TodoWrite is an optional in-session mirror only.
+   **A plan with every task ticked but no `## Review` section containing
+   `Verdict: ship` is NOT complete** — jump straight to Step 4 and run the
+   review gate. Same when the ship entry is **stale**: its `reviewed @ <SHA>`
+   must match current HEAD (docs-only commits that leave spec decisions
+   unchanged excepted) — commits after the reviewed SHA are unreviewed
+   changes, so re-run Step 4.
+   Never declare a plan done on task checkboxes alone.
 3. Review it critically — identify any questions, gaps, or concerns before
-   touching code.
+   touching code. A plan whose header links a spec but carries no
+   `**Audit:** clean` line may be un-audited interview output (generation
+   interrupted before the Audit Pass) — confirm with the user before
+   executing.
 4. If concerns: raise them with the user before starting.
 5. If no concerns: create a TodoWrite list (one todo per plan task) and proceed.
 
@@ -32,12 +48,17 @@ verifications the plan specifies, report when complete.
 - If on a protected branch, ask the user for the feature branch to use (or to
   confirm creating one). Reference the ticket key from the branch-naming rules
   when relevant.
+- **Clean tree required** (`git status --porcelain` empty) before the first
+  task — uncommitted user work would mix with task edits and later fail the
+  review gate's own clean-tree check. Dirty → ask the user to commit, stash,
+  or approve an isolated worktree; never start over it.
 
 ### Step 3: Execute Tasks
 
-**Plans with more than 3 tasks: run each task in a fresh subagent (default).**
-This session acts as orchestrator. Inline execution (this session does the
-tasks) only for plans with 3 or fewer tasks.
+**Default: run each task in a fresh subagent when tasks are independent
+(disjoint files) or context-heavy; this session acts as orchestrator.**
+Inline execution is fine for small or tightly coupled plans where one
+context comfortably holds the work — task count alone is not the trigger.
 
 **Subagent contract — the prompt MUST contain all of:**
 
@@ -51,11 +72,22 @@ tasks) only for plans with 3 or fewer tasks.
 - the 5-attempt cap and the instruction to report a blocker instead of
   grinding;
 - the Plan Drift Protocol below (adapt, amend the step in place, add
-  `> Drift:` note).
+  `> Drift:` note);
+- **edit and test only — never commit, never write the plan file** (git index
+  and plan md are orchestrator-owned state, sequential or parallel): skip the
+  task's commit step and return changed paths, drift notes, and gate output
+  instead — the orchestrator commits after its own checks (substeps 5–7).
 
 **Trust but verify:** subagents overclaim. Before ticking a task's checkbox,
 the orchestrator **re-runs the task's gate command itself** and confirms the
 expected output. A subagent "done" summary is a claim, not evidence.
+
+**Exception — the Review gate task:** the plan's final Review gate task is
+NEVER dispatched to a task subagent (a task subagent cannot spawn the
+read-only reviewer, and an implementer must not review its own diff). The
+orchestrator executes it itself as Step 4.4 — after the data-path trace,
+full-suite run, and spec promotion — and ticks its checkboxes when the
+`## Review` entry records `Verdict: ship`. Skip over it in the Step 3 loop.
 
 For each task, in order:
 
@@ -66,9 +98,9 @@ For each task, in order:
    stop for trivial mismatches.
 3. Run the verifications the step specifies. Do not skip them. Do not invent your
    own success criteria when the plan gave one.
-4. When the plan step says "commit", stage explicit paths (or use the repo's
-   commit helper) and commit — never `git add .` / `git add -A`. Keep the
-   plan's `[T<N>]` task tag in the message.
+4. **Before the task's commit step, run substeps 5–6 first** — the commit
+   must be able to include synced doc paths, and gate findings are cheaper to
+   fix pre-commit than post-commit.
 5. **Per-task check (orchestrator, cheap):** re-run the gate command (see
    above), then skim the task's diff against the plan's Architecture
    constraints — layering respected, canonical helpers used, no hardcoded
@@ -76,15 +108,28 @@ For each task, in order:
    data** (API/event shape, schema, migration), have a fresh read-only
    subagent do this skim instead — the implementer must not check its own
    contract change. Findings → fix now, before the next task builds on it.
-6. **Tick the task's checkboxes (`- [x]`) in the plan file** after the
+6. **Feature-docs sync:** if your repo has a feature-docs sync flow and
+   `docs/features/<TICKET-ID>/` exists, run it when the task changed
+   decisions, contracts, deploy, or QA; skip for behavior-preserving fixes.
+   The edited doc paths join the task's commit below.
+7. When the plan step says "commit", commit code + synced doc paths together —
+   stage explicit paths (or use the repo's commit helper); never `git add .`.
+   Keep the plan's `[T<N>]` task tag in the message.
+8. **Tick the task's checkboxes (`- [x]`) in the plan file** after the
    orchestrator's own gate run passes — the plan file tracks progress, not the
-   session. Then mark the todo `completed`.
+   session. If the plan file is tracked (`docs/features/` tier), tick before
+   the step-7 commit and include the plan path in it — uncommitted checkbox
+   edits dirty the tree and block the review gate. Then mark the todo
+   `completed`.
 
 **Parallel dispatch (optional):** tasks whose `Depends on:` is satisfied AND
 whose `Files:` sets are mutually disjoint may run as parallel subagents.
 Anything else runs sequentially — same-file edits and commit races are not
 worth the speedup. If the plan lacks `Depends on:` metadata, execute
 sequentially.
+Subagents never commit or write the plan file regardless of mode (see the
+contract); the orchestrator applies drift notes to the plan, runs each task's
+gate, and commits each task's paths **serially**.
 
 ### Plan Drift Protocol (plan meets reality)
 
@@ -99,7 +144,10 @@ different signature, moved file, API mismatch):
    that lies about what was built is worse than no plan.
 3. **Escalate instead** when the drift changes a spec **decision**, a
    contract, or invalidates a later task — that is a plan gap, not drift.
-   Stop and ask (see below).
+   Stop and ask (see below). If the user approves the change, update the spec
+   **immediately** — record the new decision with `supersedes D<n>` and strike
+   the old one — before continuing. The review gate reads the spec and must
+   not judge the diff against a stale decision.
 
 ### Step 4: Complete
 
@@ -115,19 +163,53 @@ After all tasks are done and verified:
    on a domain object but missing from the writer ships schema defaults (`0`/`null`)
    to production — a silent failure that looks deployed.
 2. Run the full relevant test/lint suite for the touched code.
-3. **Run the review gate:** invoke **thermo-nuclear-code-quality-review** as a
-   read-only subagent on the branch diff (it reads the spec + plan for
-   conformance). Accepted findings append to the plan file as new task
-   checkboxes; fix them via the same Step 3 loop, then have the reviewer
-   re-check the changed areas. Repeat until the verdict is `ship`.
-4. **As-built reconciliation:** re-read the plan file end to end — every
-   checkbox ticked or explained, every `> Drift:` note in place, `## Blockers`
-   entries resolved or still-open-and-flagged; mark superseded spec decisions
-   (`supersedes D<n>`) in the spec file. Then promote spec + plan to
-   `docs/features/<TICKET-ID>/` (spec → `design.md`) and commit, or ask the
-   user if promotion is premature.
-5. Report what was implemented, which verifications passed, and anything skipped.
-6. Hand back to the user for manual testing. Do not open a PR or merge unless the
+3. **Promote the spec before the review:** copy
+   `docs/specs/<TICKET-ID>/spec.md` to
+   `docs/features/<TICKET-ID>/design.md` (or merge into an existing one) and
+   commit — in a multi-repo setup where another repo owns the shared
+   `design.md`, merge there instead and record that path. The read-only
+   reviewer may run from a context that cannot see gitignored WIP paths, and
+   a missing spec caps its verdict at `fix-first`.
+   Then confirm the tree is clean (`git status --porcelain` empty): the
+   review's Step 0 refuses a dirty tree because uncommitted changes silently
+   escape the diff.
+4. **Run the review gate:** invoke **thermo-nuclear-code-quality-review** as a
+   read-only subagent on the branch diff, passing the spec and plan absolute
+   paths in the prompt — a fresh-context reviewer cannot find gitignored WIP
+   paths on its own. This step IS the plan's final Review gate task (write-plan
+   appends one to every plan) — tick that task's checkboxes here; never run
+   the review once in the Step 3 loop and again here.
+   - **Pinned review model:** launch the reviewer subagent with the model
+     named in thermo-nuclear-code-quality-review's "Pinned review model"
+     section — that skill is the single source of truth for the slug; do not
+     hardcode it here. Never the session's own model (auto included). If the
+     slug is unavailable, stop and ask the user — never silently substitute.
+   - **Record evidence:** append the reviewer's 3-line rollup (Verdict / Top
+     issue / Net), the model used, the full-suite command + result at that
+     SHA, `reviewed @ <HEAD SHA>` and `base @ <base SHA>`, and the subagent
+     link to the plan file under a `## Review` section — one entry per review
+     cycle. This is what the Step 1 resume check looks for; a review that
+     leaves no `## Review` entry did not happen.
+   - Accepted findings are inserted into the plan as structured remediation
+     tasks **before the review gate task** (write-plan's remediation
+     template); fix them via the same Step 3 loop, then have the reviewer
+     re-check the changed areas. **Before
+     accepting a `ship` verdict after any fix cycle, re-run the full test
+     suite at the final HEAD** — targeted gate commands alone do not qualify.
+     Repeat until the verdict is `ship` (the review skill caps cycles at 3,
+     then escalates).
+5. **As-built reconciliation:** re-read the plan file end to end — every
+   checkbox ticked or explained, every `> Drift:` note in place, the
+   `## Review` section's last entry reads `Verdict: ship` at the current HEAD,
+   `## Blockers` entries resolved or still-open-and-flagged (`## Deferred
+   suggestions` stays for the user — it does not block); confirm
+   superseded spec decisions were marked at escalation time (Drift Protocol
+   step 3). Then promote the plan to `docs/features/<TICKET-ID>/` (the spec
+   was already promoted in substep 3) and commit, or ask the user if
+   promotion is premature. Docs-only commits after the reviewed SHA that
+   leave spec decisions unchanged do not invalidate the ship verdict.
+6. Report what was implemented, which verifications passed, and anything skipped.
+7. Hand back to the user for manual testing. Do not open a PR or merge unless the
    user asks.
 
 ## When to Stop and Ask for Help
@@ -143,9 +225,13 @@ After all tasks are done and verified:
   what fails, what was tried), and escalate to the user. Never grind past the cap.
 
 **Leave a clean tree when blocked.** Before escalating, park the partial work so
-resume doesn't inherit a dirty workspace: `git stash push -m "T<N>-blocked"`
-(default), or a wip commit on the feature branch if the user prefers history.
-Record which was done in the `## Blockers` entry.
+resume doesn't inherit a dirty workspace:
+`git stash push -u -m "T<N>-blocked" -- <task's changed paths>` (default) —
+scoped to the task's paths so the user's unrelated work is never swept up,
+`-u` so untracked new files are not left behind. Record the stash OID
+(`git rev-parse stash@{0}`) in the `## Blockers` entry. Alternative: a wip
+commit on the feature branch if the user prefers history — record which was
+done.
 
 Ask for clarification rather than guessing.
 
@@ -158,16 +244,17 @@ Return to Step 1 (review) when:
 
 Don't force through blockers — stop and ask.
 
-## Subagent-driven execution (default for >3 tasks)
+## Subagent-driven execution
 
-Subagent-per-task is the **default** for plans with more than 3 tasks (see
-Step 3). Each task gets a fresh context, which prevents context rot on long
-plans; the plan file (checkboxes + `## Blockers`) carries all state between
-tasks, so any session — or a replacement session — can resume from it.
+Subagent-per-task is the **default** for independent or context-heavy tasks
+(see Step 3). Each task gets a fresh context, which prevents context rot on
+long plans; the plan file (checkboxes + `## Blockers`) carries all state
+between tasks, so any session — or a replacement session — can resume from it.
 
 A subagent that hits the 5-attempt cap reports the blocker back; the
 orchestrator writes it to the plan file and stops. Inline execution remains
-fine for small plans (≤3 tasks) where one context comfortably holds the work.
+fine for small or tightly coupled plans where one context comfortably holds
+the work.
 
 ## Remember
 

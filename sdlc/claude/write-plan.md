@@ -8,6 +8,8 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
+**Context:** If working in an isolated git worktree, it should already exist before execution starts.
+
 ## Documentation layout (two tiers)
 
 | Tier | Path | Git | Use |
@@ -21,6 +23,11 @@ Infer `<TICKET-ID>` from the branch name (e.g. `PROJ-123`) or ask once if unclea
 
 `docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`
 
+**Overwrite guard:** if the target plan file already exists, do not rewrite it
+silently — it may already be audited (interview-plan) or partially executed
+(ticked checkboxes). Confirm with the user before replacing; prefer amending
+the existing plan.
+
 Examples:
 
 - `docs/plans/PROJ-123/backend-implementation-plan.md`
@@ -33,7 +40,11 @@ Examples:
 - `backend-implementation-plan.md` / `service-implementation-plan.md` / `frontend-implementation-plan.md`
 - `test-checklist.html` — optional manual QA
 
-**Promote when stable:** copy finalized docs from `docs/plans/<TICKET-ID>/` to `docs/features/<TICKET-ID>/` and commit (or ask the user).
+**Promote when stable:** copy finalized docs from `docs/plans/<TICKET-ID>/` to `docs/features/<TICKET-ID>/` and commit (or ask the user). Follow your repo's own docs convention if it has one.
+
+**While executing:** if your repo has a feature-docs sync flow (a skill or script that keeps `docs/features/<TICKET-ID>/` in sync with code), **execute-plan** runs it after each task — update those docs in the same commit when code changes decisions, contracts, deploy, or QA.
+
+(User preferences for plan location override these defaults.)
 
 ## Scope Check
 
@@ -65,16 +76,23 @@ Two failure modes this prevents (both have shipped silently):
 
 Add an explicit task for the writer hop (repository/publisher) and an explicit task for the non-mocked round-trip test. Never let "use case sets the field" be the last word.
 
-**Activation wiring.** A correct field is still inert if the switch that makes it live is missing — a new env var not wired into the running service, an index never created, a queue/topic subscription not added, a feature flag never enabled, infrastructure (IaC) not applied. If the change needs any such activation to take effect, add a task for it.
+**Activation wiring.** A correct field is still inert if the switch that makes it live is missing — a new env var not wired into the running service, an index never created, a queue/topic subscription not added, a feature flag never enabled, infrastructure (IaC) not applied. If the change needs any such activation to take effect, add a task for it. Code that compiles and tests that pass do not prove the path is reachable in the deployed environment.
 
 ## Bite-Sized Task Granularity
 
-**Each step is one action (2-5 minutes):**
+**Each step is one verifiable action** — sized by its verification point
+(test run, gate command, commit), not by wall-clock minutes:
 - "Write the failing test" - step
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
 - "Run the tests and make sure they pass" - step
 - "Commit" - step
+
+**Detail budget:** test code, contract/DTO shapes, commands, and expected
+results are exact and complete — they encode the requirements. Routine
+implementation steps may use a focused diff sketch (anchor + changed lines)
+instead of full file content; the Plan Drift Protocol absorbs mechanical
+mismatch at execution time.
 
 ## Plan Document Header
 
@@ -87,7 +105,7 @@ Add an explicit task for the writer hop (repository/publisher) and an explicit t
 
 **Goal:** [One sentence describing what this builds]
 
-**Spec:** [Path to the interview spec file, e.g. `docs/specs/<TICKET-ID>/spec.md` — omit only if no interview preceded this plan]
+**Spec:** [Path to the interview spec file, e.g. `docs/specs/<TICKET-ID>/spec.md`. No interview? Synthesize a minimal numbered spec (D1., D2., … from the given requirements, each with a `Check:` line) at that path first — tasks' `Implements:` and the Test matrix need stable decision IDs, and the review gate needs a spec to check conformance against.]
 
 **Architecture:** [2-3 sentences about approach]
 
@@ -101,10 +119,9 @@ Add an explicit task for the writer hop (repository/publisher) and an explicit t
 - Canonical helpers to reuse: [name them with paths — prevents bespoke duplicates]
 - Test setup: [exact test command form, fixture/factory locations]
 
----
 ```
 
-The **Architecture constraints** block is mandatory: parallel or fresh subagents executing tasks see only the plan file, so repo layering, DI style, error-handling patterns, and canonical helpers must live in it, not in the planner's memory. Extract them from the repo (CLAUDE.md / AGENTS.md, existing neighbours of the touched files) while planning.
+The **Architecture constraints** block is mandatory: parallel or fresh subagents executing tasks see only the plan file, so repo layering, DI style, error-handling patterns, and canonical helpers must live in it, not in the planner's memory. Extract them from the repo (AGENTS.md, existing neighbours of the touched files) while planning.
 
 ## Task Structure
 
@@ -151,7 +168,11 @@ Expected: PASS. Sanity-check the test has teeth: mentally (or actually) break th
 Run: `git add tests/path/test.py src/path/file.py && git commit -m "feat(scope): add specific feature [T<N>]"`
 Expected: commit succeeds; pre-commit hooks pass (re-stage and amend if hooks modify files)
 
-Every commit step in a plan MUST stage explicit paths (or use your repo's commit helper) — never `git add .` / `git add -A`. The `[T<N>]` suffix ties the commit to its plan task, closing the traceability chain `D<n> → Task <N> → commit [T<N>] → test`.
+Every commit step in a plan MUST stage explicit paths (or use your repo's commit helper) — never `git add .` / `git add -A`. The `[T<N>]` suffix ties the commit to its plan task, closing the traceability chain `D<n> → Task <N> → commit [T<N>] → test`. When execute-plan dispatches the task to a subagent, the **orchestrator** runs this commit step after its own gate check — task subagents never commit.
+
+A task's **gate** is the command in its final run-and-verify step (Step 4
+above) plus that step's expected result — execute-plan re-runs exactly this
+before ticking the task.
 ````
 
 (The `pytest` / Python snippets above are illustrative; use whatever language and test runner the target repo uses.)
@@ -180,12 +201,63 @@ Every plan ends with a **Test matrix** section: a table mapping each spec decisi
 ```
 
 - A decision with no test row needs either a test or an explicit "not unit-testable because <reason>, verified by <manual step / functional test>".
-- The plan's final task runs the repo's coverage command (e.g. `make test`, `npm test`) so "maximum coverage" is measured, not asserted.
+- The plan's coverage task runs the repo's coverage command (e.g. `make test`, `npm test`) so "maximum coverage" is measured, not asserted.
 - If the spec set a performance budget (interview checklist item 11), add a task that measures it (load script, timing assertion, or profiler run) — a budget nobody measures is decoration; if none downstream, mark it Non-goal in the spec instead.
+
+## Final Task — Review Gate (mandatory)
+
+Every plan's **last task** is the review gate. As a checkboxed task it survives
+session resume, context summarization, and blocker exits — execute-plan's Step 4
+prose alone does not. **execute-plan runs this task itself in its Step 4**
+(after the data-path trace and full test suite) — it is never dispatched to a
+task subagent. Append it after the coverage task, verbatim structure:
+
+````markdown
+### Task N: Review gate
+
+**Implements:** — (quality gate)
+**Depends on:** all previous tasks
+
+- [ ] **Step 1: Spawn the reviewer** — read-only subagent running the
+  **thermo-nuclear-code-quality-review** skill on the branch diff, model
+  pinned per that skill's "Pinned review model" section (the single source of
+  truth for the slug — never the session model, even when the session runs
+  on auto).
+- [ ] **Step 2: Record the verdict** — append the reviewer's 3-line rollup,
+  the model used, the full-suite command + result, `reviewed @ <HEAD SHA>`
+  and `base @ <base SHA>`, and the subagent link to this plan's `## Review`
+  section.
+- [ ] **Step 3: Loop until `Verdict: ship`** — accepted findings become
+  remediation tasks inserted before this gate (template below); fix via
+  execute-plan's Step 3 loop, re-run the full test suite, untick this gate's
+  Steps 2–3 and re-run the reviewer on changed areas, add one `## Review`
+  entry per cycle (max 3 cycles, then escalate).
+````
+
+**Remediation task template** — accepted review findings enter the plan as
+full tasks, never bare checkboxes (bare checkboxes lose files, gates, and the
+commit trace). **Insert them immediately before the review gate task**,
+numbered `N.1`, `N.2`, … so the gate keeps its number and stays the last
+task — the gate depends on the fixes, never the reverse (a fix that depends
+on the gate deadlocks the plan):
+
+````markdown
+### Task N.k: Fix review finding <n>
+
+**Implements:** review finding <n>, cycle <c> (from `## Review`)
+**Depends on:** <the task that introduced the finding, or the previous remediation task>
+
+**Files:**
+- Modify: `<path from the finding>`
+
+- [ ] **Step 1: Fix** — <the finding's fix, restated concretely>
+- [ ] **Step 2: Verify** — re-run the owning task's gate command; expected PASS
+- [ ] **Step 3: Commit** — `git add <paths> && git commit -m "fix(<scope>): <finding summary> [T<N.k>]"` (or your repo's commit helper)
+````
 
 ## Remember
 - Exact file paths always
-- Complete code in every step — if a step changes code, show the code
+- Every code step shows code — tests/contracts complete, routine implementation full or focused diff sketch
 - Exact commands with expected output
 - Commits stage explicit paths (or your repo's commit helper), tagged `[T<N>]` — never `git add .` / `git add -A`
 - DRY, YAGNI, TDD, frequent commits
@@ -200,13 +272,15 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
-**4. Data-path completeness:** For every new/changed field that must reach a sink, can you point to (a) the task that adds it to the actual writer (repository insert / `build` / publish payload), and (b) a task with a test that reaches the sink WITHOUT mocking the writer? If either is missing, add it.
+**4. Data-path completeness:** For every new/changed field that must reach a sink, can you point to (a) the task that adds it to the actual writer (repository insert / `build` / publish payload), and (b) a task with a test that reaches the sink WITHOUT mocking the writer? If either is missing, add it. A field present in the schema and use case but absent from the writer ships zeros/nulls to production.
 
 **5. Test-matrix completeness:** Every spec decision and accepted edge scenario has a row in the Test matrix pointing at a named test in a task (or an explicit justified exception). Every test in the matrix exists in some task's code block.
 
 **6. Dependency sanity:** Every task declares `Depends on:`; no cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration.
 
 **7. Fake-green scan:** No implementation step's code block returns a hardcoded test-expected value or branches on test-specific input. If one does, generalize it and strengthen the test.
+
+**8. Review-gate presence:** The plan's last task is the Review gate task (see "Final Task — Review Gate"). A plan without it is incomplete — add it.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
