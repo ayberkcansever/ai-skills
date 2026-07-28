@@ -1,8 +1,50 @@
 # ai-skills
 
+![ai-skills — agent skills for Cursor & Claude Code](assets/banner.png)
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Made for Cursor](https://img.shields.io/badge/made%20for-Cursor-4b8bf5.svg)](https://cursor.com)
+[![Made for Claude Code](https://img.shields.io/badge/made%20for-Claude%20Code-d97757.svg)](https://claude.com/product/claude-code)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ayberkcansever/ai-skills/pulls)
+
 Reusable AI agent skills/commands I use day-to-day, organized by category.
 Each category folder holds the same skill in both **Cursor** and **Claude Code**
 formats so you can drop them into whichever tool you use.
+
+## Why
+
+Agentic coding fails the same three ways over and over. Each skill in the SDLC
+chain is built around a counter:
+
+- **Agents transcribe instead of discovering.** `interview-plan` reads the
+  codebase *before* asking anything, then asks one code-grounded question at a
+  time — a plan built only from the user's words is the exact failure mode it
+  exists to prevent.
+- **Agents overclaim.** `execute-plan`'s orchestrator re-runs every task's
+  gate command itself before ticking a checkbox — a subagent's "done" is a
+  claim, not evidence.
+- **Reviews go stale.** `thermo-nuclear-code-quality-review` pins its verdict
+  to the reviewed commit SHA; any later code commit re-opens the gate until
+  the verdict is `ship` again at the new HEAD.
+
+## Quick start
+
+**Cursor** — copy the skills into your skills directory:
+
+```bash
+git clone https://github.com/ayberkcansever/ai-skills.git
+cp -r ai-skills/sdlc/cursor/* ~/.cursor/skills/
+```
+
+**Claude Code** — copy the commands:
+
+```bash
+git clone https://github.com/ayberkcansever/ai-skills.git
+cp ai-skills/sdlc/claude/*.md ~/.claude/commands/
+```
+
+Then invoke in chat: `/brainstorm`, `/interview-plan`, `/write-plan`,
+`/execute-plan`, `/thermo-nuclear-code-quality-review`.
 
 ## Categories
 
@@ -20,10 +62,14 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 
 Typical flow — start with **either** `brainstorm` or `interview-plan` (not both required):
 
-```
-/brainstorm ─┐
-             ├─>  /write-plan  ->  /execute-plan  ->  /thermo-nuclear-code-quality-review
-/interview-plan ─┘
+```mermaid
+flowchart LR
+    B["/brainstorm<br/><i>fuzzy idea</i>"] --> W["/write-plan"]
+    I["/interview-plan<br/><i>known scope</i>"] --> W
+    W --> E["/execute-plan"]
+    E --> R["/thermo-nuclear-<br/>code-quality-review"]
+    R -->|"verdict: ship"| PR(["PR ready"])
+    R -->|"findings → remediation tasks"| E
 ```
 
 Pick the entry point that fits the task:
@@ -32,6 +78,23 @@ Pick the entry point that fits the task:
 - **`interview-plan`** — scope is roughly known. Stress-tests it into an ambiguity-free plan.
 
 Use one, the other, or both (`brainstorm` to shape, then `interview-plan` to harden). `write-plan` onward is the same regardless of entry point.
+
+## A taste
+
+`interview-plan` doesn't ask generic questions — every question is grounded in
+something it actually read in your codebase, always with a recommendation:
+
+```
+Q3 [compat]: Break sales, migrate it, or dual-write `legacyTarget` for one release?
+Found: `tagLookup` read in `sales/.../x.ts:42` and `workflow/.../y.ts:88`;
+       sales reads `legacyTarget`, which your change removes.
+Recommendation: dual-write one release, then drop — zero-downtime.
+Why: sales deploys on a different cadence; a hard break strands it.
+```
+
+Every decision lands in a spec file with a `Check:` line (a runnable command or
+named test that proves it), every spec decision maps to a plan task, every task
+commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 
 ## Layout
 
