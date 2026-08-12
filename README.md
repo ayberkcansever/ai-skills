@@ -62,6 +62,7 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 | `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
 | `execute-plan` | Executes the plan task-by-task (subagent-per-task by default), re-running each task's gate itself before ticking it, committing as it goes, then running the review gate until the verdict is `ship`. |
+| `git-worktrees` | Sets up an isolated git worktree (detect → consent → create `.worktrees/<branch>` → baseline check) so plan execution never disturbs the user's checkout. Referenced by `write-plan` and `execute-plan`. |
 | `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
 | `graph-retro` | Post-deploy retrospective on the skill chain itself — extracts every drift note, blocker, and review finding from a shipped ticket's plan, attributes each to the skill that should have prevented it, and proposes human-gated amendments so the chain improves with every ticket. |
 
@@ -72,6 +73,7 @@ flowchart LR
     B["/brainstorm<br/><i>fuzzy idea</i>"] --> W["/write-plan"]
     I["/interview-plan<br/><i>known scope</i>"] --> W
     W --> E["/execute-plan"]
+    WT["git-worktrees<br/><i>isolated workspace</i>"] -.-> E
     E --> R["/thermo-nuclear-<br/>code-quality-review"]
     R -->|"verdict: ship"| PR(["PR ready"])
     R -->|"findings → remediation tasks"| E

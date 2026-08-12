@@ -56,7 +56,7 @@ verifications the plan specifies, report when complete.
 - **Clean tree required** (`git status --porcelain` empty) before the first
   task — uncommitted user work would mix with task edits and later fail the
   review gate's own clean-tree check. Dirty → ask the user to commit, stash,
-  or approve an isolated worktree; never start over it.
+  or approve an isolated worktree (git-worktrees skill); never start over it.
 
 ### Step 3: Execute Tasks
 

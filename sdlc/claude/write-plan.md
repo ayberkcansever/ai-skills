@@ -8,7 +8,7 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
-**Context:** If working in an isolated git worktree, it should already exist before execution starts.
+**Context:** If working in an isolated git worktree, it should already exist before execution starts (created via the `git-worktrees` skill).
 
 ## Documentation layout (two tiers)
 
