@@ -25,7 +25,9 @@ commit whose history answers "why does this rule exist".
 ## When to run
 
 After the ticket is merged and the deploy is verified, or whenever the user
-says "retro this ticket" / invokes `/graph-retro`.
+says "retro this ticket" / invokes `/graph-retro`. Also re-run on an old
+ticket when an escaped defect traces back to it — the defect is an additional
+signal, attributed to the **review** skill (a review lens gap).
 
 ## Step 1 — Locate artifacts
 
@@ -51,6 +53,7 @@ Scan the artifacts for exactly these, quoting each verbatim with its location:
 | Review findings from cycles > 1 | plan `## Review` section |
 | Audit pass open counts > 0 at first report | plan header / audit record |
 | `(overrides recommendation: ...)` | spec `## Decisions` |
+| `supersedes D<n>` markers | spec `## Decisions` |
 | 5-attempt-cap hits | plan `## Blockers` |
 
 Zero signals → report "clean run, no retro output" and stop. That is a valid
@@ -71,6 +74,11 @@ Classify with this rubric (quote the evidence, name the node):
   dependency) → **execute-plan** (workspace/preflight gap)
 - Overridden recommendation → **interview-plan** (recommendation heuristic
   wrong for this domain — capture the user's stated reason)
+- Decision superseded because the chosen *approach* was wrong →
+  **brainstorm** (alternatives explored too narrowly, or the approval gate
+  passed too easily)
+- Decision superseded because a *constraint* surfaced late →
+  **interview-plan** (discovery or questioning gap)
 - Recurring domain fact (filter semantics, scoping, timezone, idempotency
   quirk) → **quirks doc** (e.g. `docs/quirks.md`), not a skill
 
@@ -80,7 +88,7 @@ For each attributed signal, one proposal:
 
 ```
 Signal: <verbatim quote + location>
-Node: <interview-plan | write-plan | execute-plan | review | quirks>
+Node: <brainstorm | interview-plan | write-plan | execute-plan | review | quirks>
 Amendment: <one sentence, with the target file and section it would land in>
 Generalizes: <the class of future failure it prevents — not just this incident>
 ```
