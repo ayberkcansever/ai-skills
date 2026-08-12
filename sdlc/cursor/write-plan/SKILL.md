@@ -183,6 +183,11 @@ before ticking the task.
 
 (The `pytest` / Python snippets above are illustrative; use whatever language and test runner the target repo uses.)
 
+**Shared test fixtures: quote before you edit.** Show a fixture's current
+contents, read from the file, in any step that changes one. "Remove X, leaving Y
+intact" without evidence Y exists silently drops coverage for whatever else
+reads that fixture.
+
 ## No Placeholders
 
 Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:

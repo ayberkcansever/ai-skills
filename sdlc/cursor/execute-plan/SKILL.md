@@ -148,7 +148,10 @@ different signature, moved file, API mismatch):
    under the step. The plan file stays the as-built source of truth; a plan
    that lies about what was built is worse than no plan.
 3. **Escalate instead** when the drift changes a spec **decision**, a
-   contract, or invalidates a later task — that is a plan gap, not drift.
+   contract, invalidates a later task, or would make you delete, narrow, or
+   invert an assertion covering behavior the plan never set out to change —
+   that is a plan gap or a regression, not drift. Flipping such an assertion
+   makes the test match the bug.
    Stop and ask (see below). If the user approves the change, update the spec
    **immediately** — record the new decision with `supersedes D<n>` and strike
    the old one — before continuing. The review gate reads the spec and must
@@ -228,6 +231,11 @@ After all tasks are done and verified:
 - **A verification fails 5 times (hard cap).** On the 5th failure: STOP, append
   the blocker to a `## Blockers` section at the end of the plan file (task number,
   what fails, what was tried), and escalate to the user. Never grind past the cap.
+- **A verification cannot be run as written** — it hangs, it is already red for
+  unrelated reasons, or it needs access you cannot obtain. Append a `## Blockers`
+  entry and ask what counts as ship evidence. Never tick the step, and never
+  silently substitute a narrower command — a gate downgraded inside a `> Drift:`
+  note is invisible to the reviewer.
 
 **Leave a clean tree when blocked.** Before escalating, park the partial work so
 resume doesn't inherit a dirty workspace:
