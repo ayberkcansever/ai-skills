@@ -26,6 +26,10 @@ chain is built around a counter:
 - **Reviews go stale.** `thermo-nuclear-code-quality-review` pins its verdict
   to the reviewed commit SHA; any later code commit re-opens the gate until
   the verdict is `ship` again at the new HEAD.
+- **Agents never learn.** `graph-retro` mines each shipped ticket's plan for
+  drift notes, blockers, and review findings, attributes each to the skill
+  that should have prevented it, and proposes one-line amendments — applied
+  only after human approval, committed to your skills repo with the evidence.
 
 ## Quick start
 
@@ -44,7 +48,7 @@ cp ai-skills/sdlc/claude/*.md ~/.claude/commands/
 ```
 
 Then invoke in chat: `/brainstorm`, `/interview-plan`, `/write-plan`,
-`/execute-plan`, `/thermo-nuclear-code-quality-review`.
+`/execute-plan`, `/thermo-nuclear-code-quality-review`, `/graph-retro`.
 
 ## Categories
 
@@ -59,6 +63,7 @@ A chained workflow that takes a task from fuzzy idea to merged, maintainable cod
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
 | `execute-plan` | Executes the plan task-by-task (subagent-per-task by default), re-running each task's gate itself before ticking it, committing as it goes, then running the review gate until the verdict is `ship`. |
 | `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
+| `graph-retro` | Post-deploy retrospective on the skill chain itself — extracts every drift note, blocker, and review finding from a shipped ticket's plan, attributes each to the skill that should have prevented it, and proposes human-gated amendments so the chain improves with every ticket. |
 
 Typical flow — start with **either** `brainstorm` or `interview-plan` (not both required):
 
@@ -70,6 +75,8 @@ flowchart LR
     E --> R["/thermo-nuclear-<br/>code-quality-review"]
     R -->|"verdict: ship"| PR(["PR ready"])
     R -->|"findings → remediation tasks"| E
+    PR -.->|"merged + deployed"| G["/graph-retro"]
+    G -.->|"approved amendments"| S[("skills repo")]
 ```
 
 Pick the entry point that fits the task:
@@ -78,6 +85,10 @@ Pick the entry point that fits the task:
 - **`interview-plan`** — scope is roughly known. Stress-tests it into an ambiguity-free plan.
 
 Use one, the other, or both (`brainstorm` to shape, then `interview-plan` to harden). `write-plan` onward is the same regardless of entry point.
+
+After merge and deploy, `graph-retro` closes the loop: the chain's own
+artifacts (drift notes, blockers, review findings) become proposals to improve
+the skills themselves — the chain gets better with every ticket it ships.
 
 ## A taste
 
@@ -138,6 +149,9 @@ Then run `/interview-plan` in Claude Code.
   reference that section instead of hardcoding a slug).
 - Examples use Python/`pytest` and a `handler → use case → repository` layering
   purely as illustration — apply them to whatever stack your repo uses.
+- `graph-retro` commits approved amendments to your skills directory — keep
+  that directory a git repo (e.g. `git init ~/.cursor/skills`) so every skill
+  change is a reviewed, revertible commit with its evidence in the message.
 - The Cursor and Claude variants are kept in sync but may differ slightly in
   formatting to match each tool's conventions.
 - `brainstorm` (Cursor variant) ships its **visual companion** — `visual-companion.md`
