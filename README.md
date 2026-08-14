@@ -55,6 +55,8 @@ Then invoke in chat: `/brainstorm`, `/interview-plan`, `/write-plan`,
 
 ### `sdlc/` — software development lifecycle
 
+![sdlc — from fuzzy idea to merged, maintainable code](assets/banner-sdlc.png)
+
 A chained workflow that takes a task from fuzzy idea to merged, maintainable code:
 
 | Skill | What it does |
@@ -94,6 +96,8 @@ artifacts (drift notes, blockers, review findings) become proposals to improve
 the skills themselves — the chain gets better with every ticket it ships.
 
 ### `learning/` — continuous learning loop
+
+![learning — continuous learning loop](assets/banner-learning.png)
 
 A second chain, aimed at the engineer rather than the ticket: decide **what**
 to learn next, then actually learn it — with the output of one skill feeding
