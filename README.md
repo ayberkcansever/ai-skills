@@ -37,18 +37,19 @@ chain is built around a counter:
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp -r ai-skills/sdlc/cursor/* ~/.cursor/skills/
+cp -r ai-skills/sdlc/cursor/* ai-skills/learning/cursor/* ~/.cursor/skills/
 ```
 
 **Claude Code** — copy the commands:
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp ai-skills/sdlc/claude/*.md ~/.claude/commands/
+cp ai-skills/sdlc/claude/*.md ai-skills/learning/claude/*.md ~/.claude/commands/
 ```
 
 Then invoke in chat: `/brainstorm`, `/interview-plan`, `/write-plan`,
-`/execute-plan`, `/thermo-nuclear-code-quality-review`, `/graph-retro`.
+`/execute-plan`, `/thermo-nuclear-code-quality-review`, `/graph-retro`,
+`/learning-radar`, `/tech-radar-brief`.
 
 ## Categories
 
@@ -92,6 +93,30 @@ After merge and deploy, `graph-retro` closes the loop: the chain's own
 artifacts (drift notes, blockers, review findings) become proposals to improve
 the skills themselves — the chain gets better with every ticket it ships.
 
+### `learning/` — continuous learning loop
+
+A second chain, aimed at the engineer rather than the ticket: decide **what**
+to learn next, then actually learn it — with the output of one skill feeding
+the other in both directions.
+
+| Skill | What it does |
+|-------|--------------|
+| `learning-radar` | Answers "what should I learn next?" for a principal software + AI engineer. Sweeps a two-tier venue map (pinned primary change-feeds, conference calendars, discussion gravity, curated radars, security feeds + a rotated wide net of engineering blogs, surveys, newsletters), builds a 15-25 candidate pool with dated evidence, dedupes against your brief library, and outputs a ranked top-5 saved as a dated HTML scan. |
+| `tech-radar-brief` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, hands-on lab, and quiz. |
+
+The two share one library (`~/Documents/tech-briefs/`): briefs produced by
+`tech-radar-brief` are the radar's dedupe memory, and each scan's ranked picks
+are the brief skill's input queue. Radar scans also rotate their extended
+venues based on the previous scan's coverage, so successive scans cover
+different ground.
+
+```mermaid
+flowchart LR
+    R["/learning-radar<br/><i>what to learn?</i>"] -->|"ranked top-5"| B["/tech-radar-brief<br/><i>learn one topic</i>"]
+    B -->|"brief + lab + quiz"| L[("brief library<br/>~/Documents/tech-briefs/")]
+    L -.->|"dedupe memory +<br/>venue rotation"| R
+```
+
 ## A taste
 
 `interview-plan` doesn't ask generic questions — every question is grounded in
@@ -112,8 +137,8 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 ## Layout
 
 ```
-sdlc/
-  cursor/<skill>/SKILL.md   # Cursor skill format
+<category>/                 # sdlc/, learning/
+  cursor/<skill>/SKILL.md   # Cursor skill format (+ templates/scripts)
   claude/<skill>.md         # Claude Code command format
 ```
 
@@ -156,6 +181,13 @@ Then run `/interview-plan` in Claude Code.
   change is a reviewed, revertible commit with its evidence in the message.
 - The Cursor and Claude variants are kept in sync but may differ slightly in
   formatting to match each tool's conventions.
+- The `learning/` skills write their output to `~/Documents/tech-briefs/`
+  (briefs, radar scans, and a self-rebuilding `index.html`). The Claude
+  variants are text ports — their supporting files (`template.html`,
+  `scripts/build_index.py`) ship in the matching `learning/cursor/<skill>/`
+  folder; install the Cursor variant alongside or adjust the paths.
+- `learning-radar` expects `tech-radar-brief` installed as a sibling
+  (`~/.cursor/skills/tech-radar-brief/`) — install both together.
 - `brainstorm` (Cursor variant) ships its **visual companion** — `visual-companion.md`
   plus a `scripts/` folder with a small local Node server for showing mockups in
   the browser. It writes session state under `.superpowers/brainstorm/` in your
