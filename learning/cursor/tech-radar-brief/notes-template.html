@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="lab-slug" content="{{SLUG}}" />
+<title>Notes — {{TOPIC}}</title>
+<style>
+  :root {
+    --ink: #131a24;
+    --muted: #5f6b7a;
+    --accent: #1f6feb;
+    --accent-soft: #e8f0fe;
+    --line: #e3e8ef;
+    --bg: #f6f8fa;
+    --card: #ffffff;
+    --adopt: #1a7f4b;
+    --hold: #b3730a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.62 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 44px 20px;
+  }
+  .page {
+    max-width: 800px; margin: 0 auto; background: var(--card);
+    border: 1px solid var(--line); border-radius: 14px; padding: 52px 56px;
+    box-shadow: 0 8px 40px rgba(19,26,36,0.06);
+  }
+  .eyebrow { font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font-size: 30px; line-height: 1.22; margin: 0 0 8px; letter-spacing: -0.015em; }
+  .meta { color: var(--muted); font-size: 13.5px; margin: 0 0 24px; }
+  .meta a { color: var(--accent); }
+  code { background: #eef1f5; border-radius: 4px; padding: 1px 6px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .prompt { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 20px; margin: 0 0 22px; font-size: 15px; }
+  .storage { border: 1px solid #ffd9a8; background: #fffaf1; border-radius: 12px; padding: 12px 16px; margin: 0 0 24px; font-size: 13.5px; color: var(--muted); }
+  .storage strong { color: var(--hold); }
+
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 26px; }
+  button {
+    font: 600 13px/1 ui-sans-serif, system-ui, sans-serif; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 14px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.danger:hover { border-color: #c0392b; color: #c0392b; }
+  #status { font: 12.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+
+  section.note-block { border-top: 1px solid var(--line); padding: 18px 0 4px; }
+  section.note-block h2 {
+    font: 700 12.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 4px;
+  }
+  section.note-block .concept { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+  textarea {
+    width: 100%; min-height: 110px; resize: vertical;
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink); background: #fbfcfd;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .filled { color: var(--adopt); }
+  footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+  footer a { color: var(--accent); }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { border: none; box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+    .toolbar, .storage { display: none; }
+    textarea { background: #fff; min-height: 0; }
+  }
+</style>
+</head>
+<body>
+  <article class="page">
+    <p class="eyebrow">Lab Notes</p>
+    <h1>{{TOPIC}}</h1>
+    <p class="meta">
+      Lab: <a href="LAB.html">LAB.html</a> ·
+      Brief: <a href="../../{{CATEGORY}}/{{SLUG}}.html">{{SLUG}}</a>
+    </p>
+
+    <p class="prompt">After each step, write 2-3 sentences <strong>in your own words</strong>: what did the output demonstrate, and why did it come out that way? If your prediction missed, write what you expected and what corrected it — a recorded miss is worth more than a correct note. Explaining it back is the test; watching output with a fuzzy explanation is the failure this lab exists to prevent.</p>
+
+    <div class="storage">
+      <strong>Where this is stored:</strong> your browser's local storage for this page, saved as you type. It does not sync between browsers and an agent cannot read it. Before asking for a lab review, hit <em>Copy as Markdown</em> and paste into the chat, or <em>Download .md</em> for a file on disk.
+    </div>
+
+    <div class="toolbar">
+      <button id="copy">Copy as Markdown</button>
+      <button id="download">Download .md</button>
+      <button id="clear" class="danger">Clear all</button>
+      <span id="status">not saved yet</span>
+    </div>
+
+    <!-- Repeat one section per step; data-key must be unique and stable (renaming it orphans saved notes).
+         The concept line mirrors the step's takeaway in LAB.html, plus its counterfactual. -->
+    <section class="note-block">
+      <h2>{{STEP_HEADING}}</h2>
+      <p class="concept">Concept: {{STEP_TAKEAWAY}} Counterfactual: {{STEP_COUNTERFACTUAL_SHORT}}</p>
+      <textarea data-key="{{STEP_KEY}}" placeholder="Your words…"></textarea>
+    </section>
+
+    <footer>
+      Lab notes · <a href="../../index.html">brief library</a> · ask for a review when a block reads back cleanly.
+    </footer>
+  </article>
+
+<script>
+(function () {
+  var SLUG = document.querySelector('meta[name="lab-slug"]').content;
+  var PREFIX = 'lab-notes:' + SLUG + ':';
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('textarea[data-key]'));
+  var statusEl = document.getElementById('status');
+  var timer = null;
+
+  function setStatus(text, filled) {
+    statusEl.textContent = text;
+    statusEl.className = filled ? 'filled' : '';
+  }
+
+  function written() {
+    return boxes.filter(function (box) { return box.value.trim(); }).length;
+  }
+
+  function save() {
+    boxes.forEach(function (box) {
+      localStorage.setItem(PREFIX + box.dataset.key, box.value);
+    });
+    var done = written();
+    setStatus('saved ' + new Date().toLocaleTimeString() + ' · ' + done + '/' + boxes.length + ' blocks written', done === boxes.length);
+  }
+
+  function load() {
+    boxes.forEach(function (box) {
+      var stored = localStorage.getItem(PREFIX + box.dataset.key);
+      if (stored) { box.value = stored; }
+    });
+    var done = written();
+    setStatus(done ? 'loaded · ' + done + '/' + boxes.length + ' blocks written' : 'not saved yet', done === boxes.length);
+  }
+
+  function toMarkdown() {
+    var lines = ['# Lab notes — ' + SLUG, ''];
+    boxes.forEach(function (box) {
+      lines.push('## ' + box.parentNode.querySelector('h2').textContent, '', box.value.trim() || '_(not written yet)_', '');
+    });
+    return lines.join('\n');
+  }
+
+  boxes.forEach(function (box) {
+    box.addEventListener('input', function () {
+      clearTimeout(timer);
+      setStatus('typing…');
+      timer = setTimeout(save, 400);
+    });
+  });
+
+  document.getElementById('copy').addEventListener('click', function () {
+    var text = toMarkdown();
+    // Clipboard API is denied on file:// in some browsers; fall back to a scratch selection.
+    function fallback() {
+      var scratch = document.createElement('textarea');
+      scratch.value = text;
+      document.body.appendChild(scratch);
+      scratch.select();
+      try { document.execCommand('copy'); setStatus('copied as Markdown'); }
+      catch (err) { setStatus('copy blocked — use Download .md'); }
+      document.body.removeChild(scratch);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { setStatus('copied as Markdown'); }, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  document.getElementById('download').addEventListener('click', function () {
+    var blob = new Blob([toMarkdown()], { type: 'text/markdown' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = SLUG + '-notes.md';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setStatus('downloaded ' + link.download);
+  });
+
+  document.getElementById('clear').addEventListener('click', function () {
+    if (!confirm('Erase every note on this page? This cannot be undone.')) return;
+    boxes.forEach(function (box) {
+      box.value = '';
+      localStorage.removeItem(PREFIX + box.dataset.key);
+    });
+    setStatus('cleared');
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="lab-slug" content="{{SLUG}}" />
+<meta name="lab-brief" content="../../{{CATEGORY}}/{{SLUG}}.html" />
+<meta name="lab-budget" content="{{BUDGET}}" />
+<title>Lab — {{TOPIC}}</title>
+<style>
+  :root {
+    --ink: #131a24;
+    --muted: #5f6b7a;
+    --accent: #1f6feb;
+    --accent-soft: #e8f0fe;
+    --line: #e3e8ef;
+    --bg: #f6f8fa;
+    --card: #ffffff;
+    --adopt: #1a7f4b;
+    --hold: #b3730a;
+    --avoid: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.62 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 44px 20px;
+  }
+  .page {
+    max-width: 820px; margin: 0 auto; background: var(--card);
+    border: 1px solid var(--line); border-radius: 14px; padding: 52px 56px;
+    box-shadow: 0 8px 40px rgba(19,26,36,0.06);
+  }
+  .eyebrow { font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font-size: 30px; line-height: 1.22; margin: 0 0 8px; letter-spacing: -0.015em; }
+  .meta { color: var(--muted); font-size: 13.5px; margin: 0 0 28px; }
+  .meta a { color: var(--accent); }
+  code { background: #eef1f5; border-radius: 4px; padding: 1px 6px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre { background: #0f1620; color: #e6edf3; border-radius: 10px; padding: 14px 16px; overflow-x: auto; font: 12.5px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 6px 0 10px; }
+  pre code { background: none; padding: 0; color: inherit; font-size: 12.5px; }
+  pre.src { background: #f7f9fb; color: var(--ink); border: 1px solid var(--line); }
+  pre.out { background: #101a12; color: #d7f2df; }
+  .srcpath { font: 600 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); display: block; margin-top: 2px; }
+  h2 { font: 700 12.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 38px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  ul, ol { padding-left: 20px; margin: 0 0 12px; }
+  li { margin: 7px 0; }
+
+  .goal { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 20px 16px; margin: 0 0 20px; }
+  .goal strong { font: 700 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px; }
+  .goal p { margin: 0 0 10px; }
+  .goal p:last-child { margin-bottom: 0; }
+
+  .setup { border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; background: #fbfcfd; }
+  .setup p { margin: 0 0 10px; }
+  .setup p:last-child { margin-bottom: 0; }
+
+  .progress { font: 12.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); margin: 0 0 18px; }
+  .progress button { font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; margin-left: 10px; }
+  .progress button:hover { border-color: var(--avoid); color: var(--avoid); }
+
+  ol.steps { counter-reset: ex; list-style: none; padding: 0; margin: 0; }
+  ol.steps > li { counter-increment: ex; position: relative; padding: 18px 0 22px 46px; border-bottom: 1px dashed var(--line); }
+  ol.steps > li:last-child { border-bottom: none; }
+  ol.steps > li::before {
+    content: counter(ex); position: absolute; left: 0; top: 20px;
+    width: 28px; height: 28px; background: var(--ink); color: #fff;
+    border-radius: 50%; font: 700 13px/28px ui-sans-serif, system-ui, sans-serif; text-align: center;
+  }
+  ol.steps > li.done::before { background: var(--adopt); }
+  .step-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .ex-title { font-weight: 700; font-size: 17px; }
+  .budget { font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 8px; }
+  .stepdone { margin-left: auto; font: 600 12px/1.6 ui-sans-serif, system-ui, sans-serif; color: var(--muted); cursor: pointer; user-select: none; }
+  .stepdone input { margin-right: 5px; vertical-align: middle; }
+  .question { font-size: 15.5px; font-style: italic; color: var(--ink); margin: 8px 0 4px; }
+  .step-label { font: 700 11.5px/1.7 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 14px; }
+  .step-label.watch { color: var(--adopt); }
+  .step-label.against { color: var(--avoid); }
+  .step-body { font-size: 14.5px; margin: 2px 0 0; }
+  .step-body.concept { color: var(--muted); }
+
+  .predict-q { font-size: 14.5px; margin: 4px 0 6px; }
+
+  .lanes { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 22px; }
+  .lane { display: flex; align-items: center; gap: 12px; }
+  .lane-trigger { flex: 0 0 104px; text-align: right; font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); position: relative; padding-right: 16px; }
+  .lane-trigger::after { content: "▸"; position: absolute; right: 0; color: var(--muted); }
+  .lane-card { flex: 1; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; background: #fbfcfd; padding: 10px 16px; }
+  .lane-card.blocks { border-left-color: var(--avoid); }
+  .lane-card.reports { border-left-color: var(--hold); }
+  .lane-card.informs { border-left-color: var(--accent); }
+  .lane-text { display: flex; flex-direction: column; min-width: 240px; }
+  .lane-name { font-weight: 700; font-size: 14.5px; }
+  .lane-q { color: var(--muted); font-size: 13px; font-style: italic; }
+  .lane-meta { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .lane-time { font: 600 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef1f5; border-radius: 6px; padding: 2px 8px; }
+  .lane-badge { font: 700 10.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; border-radius: 999px; padding: 5px 10px; color: #fff; white-space: nowrap; }
+  .lane-badge.blocks { background: var(--avoid); }
+  .lane-badge.reports { background: var(--hold); }
+  .lane-badge.informs { background: var(--accent); }
+  .lanes.small .lane-card { padding: 7px 12px; }
+  .lanes.small .lane-name { font-size: 13.5px; }
+  .lanes.small .lane-q { font-size: 12.5px; }
+
+  ol.arc { list-style: none; counter-reset: arc; padding: 0; margin: 0 0 14px; }
+  ol.arc li { counter-increment: arc; position: relative; padding: 7px 0 7px 38px; font-size: 14.5px; margin: 0; }
+  ol.arc li::before { content: counter(arc); position: absolute; left: 0; top: 7px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 700 12px/24px ui-sans-serif, system-ui, sans-serif; text-align: center; }
+
+  ul.chain { list-style: none; padding: 0; margin: 4px 0 0; }
+  ul.chain li { position: relative; padding: 5px 0 5px 24px; font-size: 14.5px; margin: 0; }
+  ul.chain li::before { content: "→"; position: absolute; left: 2px; color: var(--accent); font-weight: 700; }
+
+  details.predict, details.recall, details.takeaway-d { border: 1px solid var(--line); border-radius: 0 10px 10px 0; padding: 10px 14px; margin-top: 4px; }
+  details.predict { border-left: 3px solid var(--hold); background: #fffdf8; }
+  details.recall { border-left: 3px solid var(--accent); background: #f7faff; margin: 6px 0 4px; }
+  details.takeaway-d { border-left: 3px solid var(--adopt); background: #f2faf5; margin-top: 14px; }
+  details.predict > summary, details.recall > summary, details.takeaway-d > summary { cursor: pointer; font-size: 14.5px; list-style: none; }
+  details.predict > summary::-webkit-details-marker,
+  details.recall > summary::-webkit-details-marker,
+  details.takeaway-d > summary::-webkit-details-marker { display: none; }
+  details.predict > summary::after, details.recall > summary::after, details.takeaway-d > summary::after {
+    content: " ▸ reveal"; font: 600 11.5px ui-sans-serif, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase;
+  }
+  details.predict > summary::after { color: var(--hold); }
+  details.recall > summary::after { color: var(--accent); }
+  details.takeaway-d > summary::after { color: var(--adopt); }
+  details.predict[open] > summary::after, details.recall[open] > summary::after, details.takeaway-d[open] > summary::after { content: " ▾ answer"; }
+  details.predict .answer, details.recall .answer, details.takeaway-d .answer { font-size: 14.5px; margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed var(--line); }
+  details.takeaway-d > summary { font-weight: 600; color: var(--adopt); }
+
+  .recap { border: 2px solid var(--ink); border-radius: 12px; padding: 20px 24px; background: #fff; }
+  .recap h3 { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 20px 0 8px; }
+  .recap h3:first-of-type { margin-top: 6px; }
+  .recap ol, .recap ul { margin: 0; }
+  .recap table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  .recap th { text-align: left; font: 700 11.5px/1.8 ui-sans-serif, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding: 4px 8px 4px 0; }
+  .recap td { padding: 6px 8px 6px 0; border-bottom: 1px dashed var(--line); vertical-align: top; }
+  .recap td:first-child { white-space: nowrap; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .recap dl { margin: 0; font-size: 14px; }
+  .recap dt { font-weight: 700; float: left; clear: left; margin-right: 8px; }
+  .recap dd { margin: 0 0 5px; color: var(--muted); }
+
+  .stretch { border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; background: #fbfcfd; font-size: 14.5px; margin-top: 14px; }
+  .stretch .label { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; }
+  .takeaway { border-left: 3px solid var(--adopt); background: #f2faf5; border-radius: 0 8px 8px 0; padding: 8px 14px; margin-top: 14px; font-size: 14.5px; }
+  .takeaway strong { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--adopt); display: block; margin-bottom: 4px; }
+
+  ol.selfcheck { counter-reset: sc; list-style: none; padding: 0; margin: 0; }
+  ol.selfcheck li { counter-increment: sc; position: relative; padding: 9px 0 9px 40px; border-bottom: 1px dashed var(--line); }
+  ol.selfcheck li:last-child { border-bottom: none; }
+  ol.selfcheck li::before {
+    content: counter(sc); position: absolute; left: 0; top: 8px;
+    width: 26px; height: 26px; background: var(--accent); color: #fff;
+    border-radius: 50%; font: 700 13px/26px ui-sans-serif, system-ui, sans-serif; text-align: center;
+  }
+  .note { font-size: 13.5px; color: var(--muted); }
+  footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+  footer a { color: var(--accent); }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { border: none; box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+    pre { background: #f4f6f8; color: #131a24; }
+    details.predict { break-inside: avoid; }
+    details.predict[open] { display: block; }
+    .progress { display: none; }
+  }
+</style>
+</head>
+<body>
+  <article class="page">
+    <p class="eyebrow">Hands-on Lab · run &amp; observe</p>
+    <h1>{{TOPIC}}</h1>
+    <p class="meta">
+      Budget <code>{{BUDGET}}</code> ·
+      Brief: <a href="../../{{CATEGORY}}/{{SLUG}}.html">{{SLUG}}</a> ·
+      Notes: <a href="NOTES.html">NOTES.html</a>
+    </p>
+
+    <!-- Keep this to 2-3 sentences. No manifesto: how to use the lab, nothing else. -->
+    <div class="goal"><strong>How to use this lab</strong>
+      <p>You write no code — run each command and watch. Answer every prediction and takeaway <em>before</em> revealing it; the gap between your guess and the real output is where memory forms. After each step, write 2-3 sentences in <a href="NOTES.html">NOTES.html</a> — what the output demonstrated and why, plus any prediction you missed. The <a href="#recap">recap card</a> at the end is the one screen worth keeping. {{GOAL}}</p>
+    </div>
+
+    <!-- Orientation. Required — without it the reader meets file names in step 1 with no map.
+         Four parts: what the system under test is and why it is deliberately small; the one
+         question the whole lab answers; the lane diagram (styled HTML rows below — never ASCII
+         art in a <pre>); the arc as a formatted list, one line per step. -->
+    <h2>The big picture</h2>
+    <p>{{BIG_PICTURE_SCENARIO}}</p>
+    <p>{{BIG_PICTURE_QUESTION}}</p>
+
+    <div class="lanes">
+      <!-- One .lane per stage of the pipeline. Badge class + card class: blocks | reports | informs. -->
+      <div class="lane">
+        <span class="lane-trigger">{{LANE_TRIGGER}}</span>
+        <div class="lane-card blocks">
+          <div class="lane-text">
+            <span class="lane-name">{{LANE_NAME}}</span>
+            <span class="lane-q">{{LANE_QUESTION}}</span>
+          </div>
+          <div class="lane-meta"><span class="lane-time">{{LANE_TIME}}</span><span class="lane-badge blocks">{{LANE_AUTHORITY}}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p>{{BIG_PICTURE_ARC_INTRO}}</p>
+    <ol class="arc">
+      {{BIG_PICTURE_ARC_ITEMS}}<!-- <li><strong>Step title</strong> — what it establishes and what it earns for the next step.</li> -->
+    </ol>
+    <p class="note">{{BIG_PICTURE_ONELINER}}</p><!-- "if you read only one thing before starting: …" -->
+
+    <div class="setup">
+      <p><strong>The pieces, and where each belongs</strong></p>
+      <ul>{{PIECES}}</ul><!-- <li><code>file.py</code> — role in the system, in one clause</li> -->
+    </div>
+
+    <h2>Setup ({{SETUP_BUDGET}})</h2>
+    <div class="setup">
+<pre><code>{{SETUP_COMMANDS}}</code></pre>
+      <p class="note"><strong>Watch for:</strong> {{SETUP_WATCH_FOR}}</p>
+      <p class="note">{{SETUP_PROVIDER_NOTE}}</p><!-- credentials/stub fallback + "switches are introduced by the steps that use them; the recap card lists all of them". No standalone callout section. -->
+    </div>
+
+    <h2>Steps</h2>
+    <p class="progress"><span id="progress-text">0 / 0 steps done</span><button id="reset-progress" type="button">reset progress</button></p>
+    <ol class="steps">
+      <!-- Repeat one <li> per step, incrementing data-step / data-done. Keep all seven slots
+           in this order — the uniform shape is what makes the lab skimmable.
+           Every number in Observe and in a revealed prediction must come from a run the
+           agent actually made. Where output is stochastic, print something invariant
+           (a spread, a flap window, a measured rate) so the lesson never depends on luck. -->
+      <li data-step="1">
+        <div class="step-head">
+          <span class="ex-title">{{STEP_TITLE}}</span><span class="budget">{{STEP_BUDGET}}</span>
+          <label class="stepdone"><input type="checkbox" data-done="1" />done</label>
+        </div>
+        <p class="question">{{STEP_QUESTION}}</p>
+
+        <!-- Interleaved recall. Add to roughly every other step from step 3 on, never step 1:
+             one question about an EARLIER step, answered from memory before this one starts.
+        <details class="recall">
+          <summary><strong>First, from memory:</strong> {{RECALL_QUESTION}}</summary>
+          <p class="answer">{{RECALL_ANSWER}}</p>
+        </details>
+        -->
+
+        <span class="step-label">Code that matters</span>
+        <p class="step-body">{{STEP_CODE_FRAMING}}</p>
+<pre class="src"><code>{{STEP_CODE_SNIPPET}}</code></pre>
+        <span class="srcpath">{{STEP_CODE_PATH}}</span>
+
+        <span class="step-label">Predict</span>
+        <p class="predict-q">{{STEP_PREDICT_QUESTION}}</p>
+        <details class="predict">
+          <summary>Compare with the verified answer</summary>
+          <p class="answer">{{STEP_PREDICT_ANSWER}}</p>
+        </details>
+
+        <span class="step-label">Run</span>
+<pre><code>{{STEP_COMMANDS}}</code></pre>
+
+        <span class="step-label watch">Observe</span>
+<pre class="out"><code>{{STEP_OBSERVED_OUTPUT}}</code></pre>
+
+        <span class="step-label">Why it happened</span>
+        <ul class="chain">
+          {{STEP_WHY_CHAIN}}<!-- 3-5 <li>, each one causal link: a code/design fact and the output fact it produces. Bold the load-bearing phrase. Never a prose paragraph. -->
+        </ul>
+
+        <span class="step-label against">What breaks otherwise</span>
+        <p class="step-body">{{STEP_COUNTERFACTUAL}}</p>
+
+        <details class="takeaway-d">
+          <summary>Takeaway — say yours in one sentence first, then compare</summary>
+          <p class="answer">{{STEP_TAKEAWAY}}</p>
+        </details>
+      </li>
+    </ol>
+
+    <div class="stretch">
+      <span class="label">Stretch — optional, outside the budget</span>
+      {{STRETCH}}
+    </div>
+
+    <!-- Recap card. Required — the one screen the reader returns to months later, so it must
+         stand alone without the steps: the diagram again, every takeaway, the contrasts the
+         topic is made of, what each switch proves, and the vocabulary. -->
+    <h2 id="recap">Recap card</h2>
+    <p class="note">One screen holding everything worth keeping. This is what you re-read in three months, not the steps above.</p>
+    <div class="recap">
+      <div class="lanes small">
+        {{RECAP_LANES}}<!-- same .lane rows as the big picture, one-line compact versions -->
+      </div>
+
+      <h3>The takeaways</h3>
+      <ol>{{RECAP_TAKEAWAYS}}</ol><!-- one <li> per step, same sentence as the step's takeaway -->
+
+      <h3>The contrasts this topic is made of</h3>
+      <table>
+        <tr><th>Instead of</th><th>Use</th><th>Because</th></tr>
+        {{RECAP_CONTRASTS}}<!-- <tr><td>…</td><td>…</td><td>… with the verified number</td></tr> -->
+      </table>
+
+      <h3>The switches, and what each proves</h3>
+      <table>
+        <tr><th>Switch</th><th>Proves</th></tr>
+        {{RECAP_SWITCHES}}
+      </table>
+
+      <h3>Vocabulary you now own</h3>
+      <dl>{{RECAP_GLOSSARY}}</dl><!-- <dt>term</dt><dd>half-line definition</dd> — the terms needed to read the docs -->
+    </div>
+
+    <h2>Self-check</h2>
+    <ol class="selfcheck">
+      <!-- 5-6 <li> questions, answerable from memory, targeting the mental model.
+           The last one must be a TRANSFER question: same concepts, a domain the lab never
+           touched. Prefix it with <strong>Transfer:</strong>.
+           Each question carries a brief (2-3 sentence) verified answer behind a reveal:
+           <li>Question…
+             <details class="recall"><summary>Reveal a brief answer</summary>
+               <p class="answer">…</p>
+             </details>
+           </li> -->
+      {{SELF_CHECK}}
+    </ol>
+    <p class="note">Say your answer aloud before revealing. For a deeper interrogation, ask me to quiz you.</p>
+
+    <footer>
+      Lab scaffold · <a href="../../index.html">brief library</a> · answer from memory before checking the brief.
+    </footer>
+  </article>
+
+<script>
+(function () {
+  var SLUG = document.querySelector('meta[name="lab-slug"]').content;
+  var PREFIX = 'lab-progress:' + SLUG + ':';
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[data-done]'));
+  var text = document.getElementById('progress-text');
+
+  function paint() {
+    var done = 0;
+    boxes.forEach(function (box) {
+      box.closest('li').classList.toggle('done', box.checked);
+      if (box.checked) { done += 1; }
+    });
+    text.textContent = done + ' / ' + boxes.length + ' steps done';
+  }
+
+  boxes.forEach(function (box) {
+    box.checked = localStorage.getItem(PREFIX + box.dataset.done) === '1';
+    box.addEventListener('change', function () {
+      localStorage.setItem(PREFIX + box.dataset.done, box.checked ? '1' : '0');
+      paint();
+    });
+  });
+
+  document.getElementById('reset-progress').addEventListener('click', function () {
+    boxes.forEach(function (box) {
+      box.checked = false;
+      localStorage.removeItem(PREFIX + box.dataset.done);
+    });
+    paint();
+  });
+
+  paint();
+})();
+</script>
+</body>
+</html>

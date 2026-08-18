@@ -146,6 +146,19 @@
   .poc-label.notpractical { background: #aab3bf; }
   .poc-path { font-size: 14px; }
   .poc-path code { background: #eef1f5; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+  .poc code { background: #eef1f5; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+  .poc-sub { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; margin: 16px 0 8px; }
+  ul.poc-setup { margin: 0 0 4px; padding-left: 18px; }
+  ol.poc-steps { counter-reset: ps; list-style: none; padding: 0; margin: 0; }
+  ol.poc-steps li { counter-increment: ps; position: relative; padding: 10px 0 10px 40px; border-bottom: 1px dashed var(--line); }
+  ol.poc-steps li:last-child { border-bottom: none; }
+  ol.poc-steps li::before {
+    content: counter(ps); position: absolute; left: 0; top: 10px;
+    width: 26px; height: 26px; background: var(--ink); color: #fff;
+    border-radius: 50%; font: 700 13px/26px ui-sans-serif, system-ui, sans-serif; text-align: center;
+  }
+  .donewhen { display: block; font-size: 13.5px; color: var(--muted); margin-top: 3px; }
+  .donewhen strong { color: var(--adopt); }
 
   .update { border: 1px solid #ffd9a8; background: #fffaf1; border-radius: 12px; padding: 18px 22px; margin: 0 0 30px; }
   .update > h3 { margin: 0 0 10px; font: 700 12.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hold); }
@@ -222,9 +235,18 @@
     <div class="poc">
       <p><span class="poc-label {{POC_SUITABILITY_CLASS}}">{{POC_SUITABILITY}}</span> {{POC_SUITABILITY_WHY}}</p><!-- POC_SUITABILITY_CLASS: goodfit | partial | notpractical -->
 
-      <p><strong>Proposed lab (~1h):</strong> {{POC_PROPOSAL}}</p>
-      <!-- Once scaffolded, add:
-      <p class="poc-path">Lab: <code>~/Documents/tech-briefs/poc/{{TOPIC_SLUG}}/</code> — start with LAB.md</p>
+      <p><strong>What you walk through ({{POC_BUDGET}}):</strong> {{POC_PROPOSAL}}</p><!-- run-and-observe: the lab ships working; name the env switches that drive its failure demos -->
+      <p><strong>Concepts it makes physical:</strong> {{POC_CONCEPTS}}</p>
+
+      <span class="poc-sub">Setup (~10 min)</span>
+      <ul class="poc-setup">{{POC_SETUP}}</ul><!-- <li><strong>Prereqs</strong> …</li><li><strong>Install</strong> <code>…</code></li><li><strong>Smoke check</strong> <code>…</code> → expect … </li> -->
+
+      <span class="poc-sub">Steps</span>
+      <ol class="poc-steps">{{POC_STEPS}}</ol><!-- <li><strong>~12 min · Step name</strong><br />Run: <code>…</code> <span class="donewhen"><strong>Watch for:</strong> the exact verified output and what it proves. Counterfactual — <code>…</code> shows what breaks if built the other way, with its number.</span></li> -->
+
+      <p class="note">{{POC_STRETCH}}</p><!-- Stretch (optional, outside the budget): … -->
+      <!-- Once scaffolded, add (and flip the brief-poc meta tag to "scaffolded"):
+      <p class="poc-path">Lab: <code>~/Documents/tech-briefs/poc/{{TOPIC_SLUG}}/</code> — open <a href="../poc/{{TOPIC_SLUG}}/LAB.html">LAB.html</a></p>
       -->
     </div>
 

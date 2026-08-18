@@ -155,7 +155,7 @@ in both directions.
 | Skill | What it does |
 |-------|--------------|
 | `learning-radar` | Answers "what should I learn next?" for a principal software + AI engineer. Sweeps a two-tier venue map (pinned primary change-feeds, conference calendars, discussion gravity, curated radars, security feeds + a rotated wide net of engineering blogs, surveys, newsletters), builds a 15-25 candidate pool with dated evidence, dedupes against your brief library, and outputs a ranked top-5 saved as a dated HTML scan. |
-| `tech-radar-brief` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, hands-on lab, and quiz. |
+| `tech-radar-brief` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
 
 ### Flow
 
@@ -177,7 +177,8 @@ flowchart LR
 - Output goes to `~/Documents/tech-briefs/` (briefs, radar scans, and a
   self-rebuilding `index.html`) — never into the current repo.
 - The Claude variants are text ports — their supporting files
-  (`template.html`, `scripts/build_index.py`) ship in the matching
+  (`template.html`, `lab-template.html`, `notes-template.html`,
+  `scripts/build_index.py`) ship in the matching
   `learning/cursor/<skill>/` folder; install the Cursor variant alongside or
   adjust the paths.
 - `learning-radar` expects `tech-radar-brief` installed as a sibling

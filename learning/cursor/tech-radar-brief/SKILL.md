@@ -1,6 +1,6 @@
 ---
 name: tech-radar-brief
-description: Learn a tech topic to a correct 101 level in minimal time. Researches open sources (official docs/releases, engineering blogs, YouTube talks, HN/Reddit, news, papers) restricted to recent material, then produces a brief with a 101 mental model, what changed, tradeoffs, an adopt/trial/hold/avoid verdict, a time-budgeted learn-it-fast resource path, adjacent topics, and a proposed ~1h hands-on PoC lab (scaffolded on request; the user implements the core parts, then gets quizzed for retention). Use when the user asks to research, learn, get up to speed on, "give me a brief/report on", or wants a hands-on PoC/lab/quiz for a technology, tool, framework, protocol, model, or engineering trend.
+description: Learn a tech topic to a correct 101 level in minimal time. Researches open sources (official docs/releases, engineering blogs, YouTube talks, HN/Reddit, news, papers) restricted to recent material, then produces a brief with a 101 mental model, what changed, tradeoffs, an adopt/trial/hold/avoid verdict, a time-budgeted learn-it-fast resource path, adjacent topics, and a proposed hands-on PoC lab (scaffolded on request; code ships complete, the user predicts, runs, observes and explains back, then gets quizzed for retention). Use when the user asks to research, learn, get up to speed on, "give me a brief/report on", or wants a hands-on PoC/lab/quiz for a technology, tool, framework, protocol, model, or engineering trend.
 ---
 
 # Tech Radar Brief
@@ -16,7 +16,7 @@ The skill delivers learning in escalating, optional stages — each stage is ski
 ```
 1. Brief          ~10 min read   → mental model + state of play + verdict
 2. Learn-it-fast  ≤ half day     → 3-5 curated resources, time-budgeted, in order
-3. Lab            ~1 hour        → user implements core parts, agent removes friction
+3. Lab            ~1-1.5 hours   → agent ships working code; user predicts, runs, explains
 4. Quiz           ~10 min        → retrieval practice; wrong answers corrected with sources
 ```
 
@@ -33,6 +33,8 @@ Every brief is **saved to disk automatically** as a self-contained HTML file, ne
 ~/Documents/tech-briefs/index.html          # auto-generated landing page
 ~/Documents/tech-briefs/poc/<topic-slug>/   # guided PoC lab, only when the user says go
 ```
+
+`poc/<topic-slug>/` is a **code workspace**, not a document — it holds dependency manifests, virtualenvs, and scratch output. Two consequences: every scaffold ships a `.gitignore` covering the environment dirs and any local secrets file (`.venv/`, `node_modules/`, `__pycache__/`, `.env`) so credentials and binaries never land in the briefs tree, and the index builder ignores `poc/` — labs are surfaced through their brief's `brief-poc` chip, never as index entries of their own.
 
 - **Category** — exactly one, best fit from this fixed list: `AI-ML`, `Infrastructure`, `Data`, `Security`, `Languages-Frameworks`, `DevTools`, `Web`, `Other`. Folder name verbatim.
 - **Tags** — 2-5 free-form topic tags (`agents, langgraph, orchestration`). One category folder, but the index surfaces the brief under every tag.
@@ -65,7 +67,7 @@ Before researching, check whether a brief already exists (search **all** categor
 - [ ] Step 3: Synthesize — dedupe, date-check, separate signal from vendor marketing
 - [ ] Step 4: Output brief in template + save HTML + rebuild index
 - [ ] Step 5: Recommend 3-5 adjacent topics, offer to run one
-- [ ] Step 6: Assess PoC suitability + propose a ~1h lab; scaffold on go, review, quiz, mark completed
+- [ ] Step 6: Assess PoC suitability + propose a ~1-1.5h lab; scaffold on go, review, quiz, mark completed
 ```
 
 ### Step 1: Scope
@@ -164,8 +166,32 @@ thing this skill exists to save.]
 
 ## Hands-on PoC
 **Suitability:** [good fit | partial | not practical] — [why, 1 line]
-**Proposed lab (~1h):** [what you would build and which 2-3 core concepts the exercises force you to touch]
-[If a lab is already scaffolded: `Lab: ~/Documents/tech-briefs/poc/<topic-slug>/ — start with LAB.md`]
+**What you walk through (~[N] min):** [one sentence — the working thing the lab demonstrates,
+then the env switches that drive its failure demos, e.g. `BREAK_AGENT=1` plants a routing bug]
+**Concepts it makes physical:** [2-3 named concepts from the Mental model section]
+
+**Setup (~10 min)**
+- Prereqs: [runtimes, accounts, keys — name the exact versions/tiers]
+- Install: [the literal command(s)]
+- Smoke check: [one command + the output that proves setup worked]
+
+**Steps**
+1. **[~12 min] [Step name]** — [the literal command]. Watch for: [the exact output that appears
+   and what it proves]. Counterfactual: [the second command showing what breaks if built the
+   other way, and the number it produces].
+[4-6 steps, escalating from "make it respond" to one genuinely non-trivial concept. Every step
+carries an honest minute budget, one command to run, and a checkable watch-for. Write them so a
+reader could follow them without the agent — plain imperative sentences, no framework jargon left
+undefined, no step that silently contains three.]
+
+**Stretch (optional, outside the budget):** [one harder extension]
+
+[Rules for this section: every step is *run and observe* — the scaffold ships all the code
+working, so a step names a command and the output worth watching, never code for the reader to
+write. These brief steps are the summary; `LAB.html` expands each into the full seven-slot
+anatomy (Step 6). Prefer one tool the reader installs once over a menu of options. If suitability
+is *not practical*, replace Setup/Steps with one line naming the closest runnable neighbour.]
+[If a lab is already scaffolded: `Lab: ~/Documents/tech-briefs/poc/<topic-slug>/ — open LAB.html`]
 
 ## Sources
 - [YYYY-MM-DD] [Source name / title] — [URL] *(tier 1-4)*
@@ -188,63 +214,123 @@ End the chat response with the 3-5 adjacent topics and offer to run one immediat
 
 Pick adjacent topics that a tech lead evaluating this one would plausibly need next — competing approaches, the layer above/below in the stack, the operational concern it creates (cost, security, observability). Not generic "related buzzwords".
 
-### Step 6: Hands-on PoC (guided lab)
+### Step 6: Hands-on PoC (guided walkthrough lab)
 
-The point: the user learns by implementing, so **the user writes the core code, not the agent**. The agent removes the boring friction (setup, boilerplate, verification) and leaves the learning in.
+The point: the user learns by **predicting, running, observing, and explaining back — not by writing code**. The agent ships the lab fully implemented and verified end to end; the user's job per step is to commit to a prediction, run one command, compare, and say in their own words why the output came out that way. The learning pressure lives in the predictions, `NOTES.html`, and the quiz — never in typing code.
 
 **Suitability check (goes in every brief).** A topic is:
-- **good fit** — runnable locally or on a free tier within ~1h: libraries, frameworks, protocols, CLIs, databases, file formats, most cloud services with local emulators.
+- **good fit** — runnable locally or on a free tier inside the time-box: libraries, frameworks, protocols, CLIs, databases, file formats, most cloud services with local emulators.
 - **partial** — hands-on possible but only for a slice (e.g. paid API with a free trial, hardware topic with a simulator). Say which slice.
 - **not practical** — hardware-gated, enterprise-license-only, org/process topics (team topologies, pricing trends), pure research with no runnable artifact. Say why; recommend the closest runnable neighbor instead.
 
-**Trigger.** The brief always contains the suitability verdict and a one-line proposed lab. **Do not scaffold during the brief run.** End the chat response with: *"Say 'scaffold the lab' to get hands dirty."* Scaffold only on explicit go (or when the user opens with `--poc` / "PoC on X").
+**Trigger.** The brief always contains the suitability verdict, the setup block, and the numbered steps — enough that a reader can follow the walkthrough by hand without ever scaffolding. **Do not scaffold during the brief run.** End the chat response with: *"Say 'scaffold the lab' to get the runnable walkthrough."* Scaffold only on explicit go (or when the user opens with `--poc` / "PoC on X").
 
-**Prereq check — before scaffolding anything.** Verify the user's machine can run the lab: check required runtimes/tools and versions (`node --version`, `python3 --version`, `docker info`, whatever the lab needs). Missing prereq → either adapt the lab to what is installed, or tell the user the one install command needed and wait. A lab that dies on setup teaches only frustration.
+**Prereq check — before scaffolding anything.** Verify the user's machine can run the lab: check required runtimes/tools and versions (`node --version`, `python3 --version`, `docker info`, whatever the lab needs). Never print the value of an environment variable to test for a credential — check presence only. Missing prereq → either adapt the lab to what is installed, or tell the user the one install command needed and wait. A lab that dies on setup teaches only frustration.
+
+**Credentials are a prereq like any other.** If the lab needs a paid API key the user does not have, prefer a scaffold that runs offline by default — a local stub standing in for the paid call — with a documented one-line switch to the real provider. Say plainly in `LAB.html` which parts the stub does and does not faithfully reproduce. Never make the first run of a lab depend on the user going to find a key.
+
+**Default LLM provider for labs: Google AI Studio** (`GOOGLE_API_KEY`, generativelanguage endpoint or `ChatGoogleGenerativeAI`) — the user has a key for it and it is the first provider a scaffold should try. Write the key into the lab's gitignored `.env` only; never into `LAB.html`, the brief, a committed config, or this skill. Keep the stub fallback anyway so the lab still runs if the key is revoked.
 
 **Scaffold — on go, create:**
 
 ```
 ~/Documents/tech-briefs/poc/<topic-slug>/
-  LAB.md            # the lab itself — goal, prereqs, exercises, checkpoints, self-check
-  NOTES.md          # user's own-words notes, one block per exercise (retrieval practice)
-  README.md         # 3 lines: what this is, link to the brief, how to start
-  ...project files  # deps manifest, config, boilerplate, skeleton code
+  LAB.html          # the walkthrough — orientation, setup, run-and-observe steps, recap card, self-check
+  NOTES.html        # user's own-words notes, one block per step (retrieval practice)
+  README.html       # what this is, link to the brief, how to start
+  ...project files  # complete, working, verified code — nothing left as an exercise
 ```
 
+**Lab docs are HTML, not Markdown** — same reading experience as the brief, opened in the browser next to it. Build them from [lab-template.html](lab-template.html) and [notes-template.html](notes-template.html); both are self-contained (inline CSS matching the brief palette, no build step, no CDN). Every lab doc links back to its brief with a relative path (`../../<Category>/<topic-slug>.html`) and across to its siblings. Code files, `.env`, and dependency manifests stay plain — this rule is about the docs only.
+
+**Build order — do not write `LAB.html` first.** The doc quotes verified output and reveals verified prediction answers, so it can only be written *after* the runs exist. Work in this order:
+
+```
+1. Code       → all project files complete, including the counterfactual switches/anti-pattern files
+2. Verify     → run every step command AND every counterfactual, with the exact strings the lab will print;
+                capture the real output and the true answer to each prediction question
+3. Calibrate  → if a payoff depended on luck (a flap that did not flap, two estimates disagreeing by noise),
+                fix the demo — better sample, more rounds, or an invariant derived from the samples — and re-run
+4. Write      → LAB.html from lab-template.html, NOTES.html from notes-template.html, README.html
+5. Clean      → delete state the verification created (baselines, caches); leave first-run moments to the user
+6. Publish    → brief's POC steps + brief-poc meta → scaffolded, rebuild the index
+```
+
+Step 3 is the one agents skip. A demo that teaches only when the sampling cooperates will fail for the user on the run that matters — see the *deterministic payoff* rule below.
+
 Scaffolding rules:
-- **Time-box ~1 hour total**: setup ≤10 min (verify with a smoke command before handing over), then 3-6 exercises escalating from "make it respond" to one genuinely non-trivial concept. 101 level — one topic pillar done properly beats five skimmed.
-- **Every exercise carries a minute budget** (`Exercise 2 (~15 min)`). Budgets honest, not aspirational; if an exercise realistically needs 30 min, it is two exercises.
-- **Exercises map to the mental model.** Each exercise exists to make one concept from the brief's Mental model section physical. A fun exercise that teaches nothing from the model is scope creep — cut it.
-- Optional **stretch exercise** at the end, clearly marked, outside the 1h budget, for when appetite exceeds the time-box.
-- Agent writes: dependency manifest, project config, entry-point boilerplate, test harness / verification scripts, sample data.
-- User writes: the core logic. Mark every gap with a `TODO(you): ...` comment stating *what* to implement and *which exercise* it belongs to — never how.
-- Each exercise in `LAB.md` has: **Goal** (1 line), **Where** (file + TODO marker), **Done when** (a concrete command to run and the exact observable output/behavior), and **Concept** (which mental-model concept this makes physical).
-- `NOTES.md` is pre-seeded with one heading per exercise and the prompt: *"After the exercise passes, write 2-3 sentences in your own words: what did the code you wrote actually do, and why does it work?"* This is the retrieval practice that turns doing into knowing — the skill's whole point. The review loop reads it.
-- `LAB.md` ends with a **Self-check** block: 5 questions the user should answer from memory after finishing. Questions target the mental model and the exercises, not trivia. **No answers in the file** — closing line: *"Ask me to quiz you."*
+- **`LAB.html` opens with orientation, before setup.** Without a map, step 1 lands as an unexplained file name. A required **The big picture** section carries four things: what the system under test is and why it is deliberately small (so the reader stops evaluating it and starts evaluating the machinery around it); the single question the whole lab answers, in bold; the pipeline diagram; and the arc as an `ol.arc` — one line per step, title in bold, then what it establishes and earns for the next ("step 3 shows why the judge cannot block; step 4 fixes it"). Never present the arc as a prose paragraph — five steps woven into running text is unscannable. Follow with a short file map, one clause per file, saying which part of the diagram each belongs to. A reader who stops after this section should still be able to describe the design.
+- **Diagrams are styled HTML, never ASCII art in a `<pre>`.** ASCII overflows into a horizontal scrollbar, breaks on narrow windows, and looks like a placeholder. Use the `.lanes` component from the template: one row per pipeline stage — trigger chip, name, its question in italics, a timing chip, and a colour-coded authority badge (`blocks` red / `reports` amber / `informs` blue). The recap card reuses the same rows with `.lanes.small`.
+- **No meta-sections that do not teach.** The opening block is *How to use this lab*, 2-3 sentences, not a manifesto about the step anatomy — the anatomy shows itself. Provider/credential notes and the stub fallback are one `p.note` inside Setup, not a standalone callout. Env switches are introduced by the steps that use them and listed once in the recap card; never enumerate them up front, before the reader knows what any of them would break.
+- **The brief's numbered steps are the walkthrough, 1:1** — same order, same budgets, same watch-fors and counterfactuals. The brief carries the one-line summary of each step; `LAB.html` carries the full seven slots. Deviate only when the prereq check forces it, and say so.
+- **All code ships complete and verified.** Before handing over, the agent runs every step's command and confirms the documented output actually appears — including the failure demos and every counterfactual. Any number in an Observe block or a revealed prediction comes from a run the agent actually made; an unverified prediction answer is fabrication of the worst kind, because the reader commits to a guess before seeing it.
+- **Verify with the exact command string the lab prints, not an equivalent.** `python -m pytest` puts the cwd on `sys.path`; bare `pytest` does not — an equivalent-looking command can pass for the agent and fail for the user (fix: `pythonpath = .` in `pytest.ini`). Same trap: activated venv vs `./.venv/bin/...`, exported env vars vs inline ones.
+- **Every gate needs a controlled failure.** A lab that only shows green teaches nothing — build in env-flag switches (e.g. `BREAK_AGENT=1`, `AGENT_FLAKE=0.2`) that plant a bug or inject unreliability so the user watches the gate go red without editing any file. Off by default; each switch is introduced by the step that uses it and listed once in the recap card.
+- **Time-box ~1-1.5 hours total**: setup ≤10 min (verify with a smoke command before handing over), then 3-6 steps escalating from "make it respond" to one genuinely non-trivial concept. The seven-slot anatomy costs ~12 min per step — budget honestly and cut steps rather than thinning slots. 101 level — one topic pillar done properly beats five skimmed.
+- **Every step carries a minute budget.** Budgets honest, not aspirational; if a step realistically needs 30 min, it is two steps.
+- **Steps map to the mental model.** Each step exists to make one concept from the brief's Mental model section physical. A fun step that teaches nothing from the model is scope creep — cut it.
+- Optional **stretch step** at the end, clearly marked, outside the time-box, for when appetite exceeds it.
+- **Every step in `LAB.html` uses the same seven slots, in this order.** Each is a `<li>` in `ol.steps` with the budget as a `.budget` chip; slots render as `.step-label` blocks. Uniform shape is what makes the lab skimmable and the concepts comparable across steps:
+  1. **Question it answers** — one line, phrased as a question, directly under the title. Gives the reader a slot to file the answer into.
+  2. **Code that matters** — 5-15 lines inline in a `pre.src` with a `.srcpath` citation (`file.py:29-30`) and one sentence of framing. Never "go skim this file": the point is no context switch, and the excerpt makes clear which lines carry the idea.
+  3. **Predict** — the question as a visible `p.predict-q`, then a `details.predict` revealing the verified answer plus *why the tempting wrong answer is tempting*. This is the load-bearing slot. Good predictions have a non-obvious answer the step's output settles unambiguously ("how many of the five fail, and why not all five?"). Bad ones are yes/no or restate the concept. No input widgets — a guess box was tried and rejected as friction; the reveal is enough.
+  4. **Run** — the literal command(s) in a `pre`.
+  5. **Observe** — a `pre.out` with the real output from the verified run, trimmed to the lines that matter.
+  6. **Why it happened** — a `ul.chain` of 3-5 causal links, each `<li>` tracing one code or design fact to the output fact it produced, with the load-bearing phrase in bold. Never a prose paragraph: a wall of prose in the explanation slot is where readers skim, and a chain is scannable on the second pass. The derivation, not the slogan — this is where the concept is taught rather than named.
+  7. **What breaks otherwise** — the counterfactual, as a runnable command wherever one flag can produce it, with its verified numbers. Knowing what fails the other way is what separates understanding a design from having watched it work.
+  Close each step with a `details.takeaway-d` — summary *"Takeaway — say yours in one sentence first, then compare"*, body holding the transferable rule. Collapsed, not printed: reading a polished summary feels like learning, producing one is learning. Mirror the same line as the step's concept in `NOTES.html` and in the recap card.
+
+  A filled example of the shape, abridged from the agent-evaluation lab:
+
+  > **Lane 1 — the deterministic gate** `~12 min`
+  > *Question:* why can this check block a merge when a judge score cannot?
+  > *Code that matters:* `called = [c["tool"] for c in result["tool_calls"]]; assert called == golden["expected_tools"]` — `tests/test_deterministic.py:29-30`, no model or threshold anywhere in the file.
+  > *Predict:* "`BREAK_AGENT=1` re-routes visitor questions to the sales tool. Five goldens run — how many fail, and why not all five?" → reveals: three; two goldens already targeted sales, so the bug is invisible on 40% of the suite, which is really a lesson about golden-set coverage.
+  > *Run:* `pytest -q tests/test_deterministic.py`, then the same with `BREAK_AGENT=1`.
+  > *Observe:* `5 passed in 0.01s` → `3 failed, 2 passed`, message naming expected vs actual trajectory.
+  > *Why (a chain, one causal link per line):* the flag forces the metric before routing → visitor goldens diverge at index 0 while sales goldens match; no API in the loop → same verdict on every machine, and the 0.01s runtime is what earns a place in the blocking path.
+  > *What breaks otherwise:* `REWORD_ANSWER=1` on the text-matching test file — 5 failed there while the trajectory test stays 5 passed. A false block on unchanged behaviour.
+  > *Takeaway:* blocking checks must be deterministic **and** assert on behaviour rather than presentation.
+
+  Note what the prediction does there: the tempting answer (five) is wrong for a reason the step then makes visible, so the miss teaches the real lesson. Predictions with obvious answers are decoration.
+- **Counterfactuals are switches, not prose.** Ship the anti-pattern alongside the pattern — a `REWORD_ANSWER=1` flag, a deliberately brittle test file, a `--gate` mode — so the reader watches the wrong design fail rather than reading that it would. Mark anti-pattern files unmistakably in their docstring so they are never mistaken for the recommended lane.
+- **Nondeterministic outputs get a deterministic payoff.** When a step's interesting behavior is stochastic (LLM scores, injected flakiness), never let the lesson depend on the run being lucky. Derive something invariant from the samples and print that — a flap window ("any floor in (0.5, 1.0] flips this verdict"), a spread, a measured rate over many rounds — then hedge the raw numbers and tell the reader theirs will differ. A step whose point appears only half the time is a broken step.
+- **Interleave retrieval; do not let a concept be met once.** A lab read straight through is a single pass, and single-pass material does not survive the week. From step 3 onward, open roughly every other step with a `details.recall` posing one question about an *earlier* step, answered from memory before the new one starts ("under `BREAK_AGENT` two goldens still passed — why, and what does that say about golden sets?"). Retrieval at a delay is worth more than any amount of re-reading, and it costs a minute.
+- **End with a recap card, and make it stand alone.** Nobody re-reads a 30 KB walkthrough to refresh a topic months later, so the lab must produce one screen that survives on its own: the pipeline diagram again, every step's takeaway as a numbered list, the *contrasts* the topic is built from as an instead-of / use / because table, what each env switch proves with its verified number, and a short glossary of the terms needed to read the real docs. Most topics are a handful of contrasts — pairs learned as pairs stick far better than halves learned separately, and the card is where they finally sit side by side.
+- **Give big numbers a felt scale.** `0.01s` and `~50s` read as two facts; "a factor of 5000 — run the judge on every push and you add minutes to each PR" reads as a design constraint. Whenever a step turns on a magnitude, say what the magnitude means for someone operating the system.
+- **`LAB.html` ends with a Self-check block: 5-6 questions answered from memory**, targeting the mental model and what the steps showed, not trivia. The last one is a **transfer question** — same concepts, a domain the lab never touched ("you are gating a RAG pipeline instead — what plays the role of the trajectory?"). Questions about the lab test memory of the lab; only transfer tests whether the mental model came along.
+- **Every self-check question carries a brief answer behind a reveal.** 2-3 verified sentences in a `details.recall` inside the `<li>` — months later the reader opens the file with no chat session running, and a question they cannot verify is a question they skip. The closing note says to answer aloud first and offers the chat quiz as the deeper interrogation; "no answers in this file" was tried and is friction, not rigor.
+- **Notes discipline lives in the *How to use* block, not a section of its own.** One sentence — write 2-3 own-words sentences in `NOTES.html` after each step, plus any missed prediction. A standalone section after the recap card arrives after the reader needed it.
+- **Per-step progress checkboxes.** `LAB.html` carries a `data-done` checkbox per step persisted to `localStorage` under `lab-progress:<slug>:<n>`, with a counter and a reset button. Labs now span more than one sitting; resuming should not mean re-reading.
+- `NOTES.html` is pre-seeded with one `section.note-block` per step — heading, the step's takeaway and counterfactual as its concept line, and an empty `textarea` — under the prompt: *"After each step, write 2-3 sentences in your own words: what did the output demonstrate, and why did it come out that way? If your prediction missed, write what you expected and what corrected it."* Prediction misses are the highest-value notes in the file; ask for them explicitly.
+- **Notes live in browser localStorage, so the agent cannot read them.** `NOTES.html` autosaves as the user types and offers *Copy as Markdown* / *Download .md*. When starting a review, ask the user to paste the copied notes (or point at the downloaded `.md`) — never assume the notes are on disk.
 - Pin dependency versions to what current docs support; the lab must not break on install.
 - Never scaffold into a work repo or the cwd — always `~/Documents/tech-briefs/poc/<topic-slug>/`. Fresh folder; if one already exists for the slug, ask before touching it.
-- No solution code anywhere in the scaffold. When the user is stuck: hint first (point at the relevant doc/concept), fuller hint second, full solution only on explicit request.
+- **Leave the scaffold pristine for the user's first run.** Delete any state files the verification runs created (baselines, caches, downloaded artifacts) so first-run moments — "baseline written", first smoke check — happen for the user, not the agent.
 - After scaffolding, update the brief's `brief-poc` meta tag to `scaffolded` (from `proposed`) and rebuild the index — the card gets a lab chip.
 
-**Review loop.** When the user says "review my lab" / "check exercise N": read their code **and their `NOTES.md`**, run the verification commands, then respond with:
-- what works and what's wrong (file:line);
-- **corrections to the notes** — if an own-words explanation is wrong or fuzzy, fix the understanding, not just the code. Passing code with a wrong explanation is the failure mode this skill exists to prevent;
-- one thing they did better than the obvious approach — if true. No praise padding.
+**Review loop.** When the user says "review my lab" / "check step N": ask them to paste their notes from `NOTES.html`, then respond with:
+- **corrections to the notes** — if an own-words explanation is wrong or fuzzy, fix the understanding. Watched output with a wrong explanation is the failure mode this skill exists to prevent;
+- if they report output that differs from the documented watch-for, re-run the step yourself and explain the difference (stochastic spread vs. an actual break);
+- one connection they made beyond the lab's framing — if true. No praise padding.
 
-**Quiz — on "quiz me" (or after a full lab review passes, offer it).** Ask the Self-check questions from `LAB.md` **one at a time**, wait for the answer, then grade honestly: right / partially right / wrong, with the correction grounded in the brief or primary docs — never vibes. Add 1-2 transfer questions not in the file (novel scenario, same concepts) to test the model rather than memory of the lab. Score at the end. A wrong answer is the most valuable output of the whole loop — say what the misconception was, plainly.
+**Quiz — on "quiz me" (or after a full lab review passes, offer it).** Ask the Self-check questions from `LAB.html` **one at a time**, wait for the answer, then grade honestly: right / partially right / wrong, with the correction grounded in the brief or primary docs — never vibes. Add 1-2 transfer questions not in the file (novel scenario, same concepts) to test the model rather than memory of the lab. Score at the end. A wrong answer is the most valuable output of the whole loop — say what the misconception was, plainly.
 
-**Completion.** When all exercise verifications pass and the quiz is done (or explicitly skipped), set the brief's `brief-poc` meta tag to `completed` and rebuild the index — the card's chip flips to "lab done". That chip is the muscle tracker: library shows what was read vs. what was actually learned.
+**Completion.** When the user has walked every step and the quiz is done (or explicitly skipped), set the brief's `brief-poc` meta tag to `completed` and rebuild the index — the card's chip flips to "lab done". That chip is the muscle tracker: library shows what was read vs. what was actually learned.
 
 ## Principles
 
 - **Correct and narrow beats broad and fuzzy.** 101 means the fundamentals are *right*, not that everything got mentioned. One concept the user can reason with outweighs five they can recite.
 - **Time is the budget.** Every stage carries an honest time cost and earns it. Padding a brief, a learning path, or a lab wastes the exact resource this skill exists to save.
-- **Explaining it back is the test.** Passing verification commands proves the code works; `NOTES.md` and the quiz prove the *user* works. Both, or the loop is not done.
+- **Explaining it back is the test.** The agent's verification runs prove the code works; `NOTES.html` and the quiz prove the *user* works. Both, or the loop is not done.
 - **Decision-grade or don't ship it.** If the brief does not help someone choose, it is a Wikipedia article.
 - **Dates are non-negotiable.** An undated claim in a recency-scoped brief is a bug.
 - **Announced ≠ shipped ≠ stable.** Keep the three apart, always.
 - **Hype gets discounted, production reports get weighted.** One team's postmortem outweighs five launch posts.
 - **No fabrication.** No invented benchmarks, quotes, versions, or video contents. Thin evidence gets said out loud: "little independent verification yet".
 - **Honest verdicts.** "Hold — too early, revisit after the 2.0 spec lands" is a better answer than manufactured enthusiasm.
-- **The user's hands get dirty, not the agent's.** In a lab, agent-written core logic is a failed lab. Friction removed, learning kept.
+- **The user runs and explains; the agent prepares and verifies.** In a lab, a step whose output the user cannot watch appear and then explain is a failed step. Friction removed, learning kept.
+- **Prediction before observation.** Memory forms in the gap between what the reader expected and what happened. A step that shows its result before asking for a guess has spent the output and bought nothing.
+- **Design for the second pass, not the first.** Anything encountered once is gone by next week. Interleaved recall, a generated rather than given takeaway, and a standalone recap card are what turn an hour of watching into knowledge that survives.
+- **Understanding is knowing what breaks otherwise.** Watching the right design work proves it works; watching the wrong one fail is what makes the choice repeatable in a design review months later.
 - **Wrong answers are gold.** A quiz miss caught today is a production mistake avoided later. Grade honestly, correct with sources, never soften.
