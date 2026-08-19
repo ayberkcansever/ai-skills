@@ -6,7 +6,7 @@
 <meta name="radar-date" content="{{SCAN_DATE}}" />
 <meta name="radar-window" content="{{WINDOW}}" />
 <meta name="radar-focus" content="{{FOCUS}}" />
-<meta name="radar-venues" content="{{VENUES_META}}" /><!-- manual sources + wildcard queries used, e.g. "manual:anthropic+thoughtworks+kubecon, wild:ga-platform-2026" — next scan rotates away from these -->
+<meta name="radar-venues" content="{{VENUES_META}}" /><!-- manual sources + wildcard queries used — next scan rotates away from these -->
 <meta name="radar-mode" content="{{MODE}}" /><!-- full | quick -->
 <meta name="radar-intake" content="{{INTAKE_META}}" /><!-- e.g. "items:687 kept:42 dropped:645 feeds-ok:54 feeds-error:0" -->
 <title>Tech Radar — {{SCAN_DATE}}</title>
@@ -20,18 +20,21 @@
     --bg: #f6f8fa;
     --card: #ffffff;
     --good: #1a7f4b;
+    --good-soft: #e7f5ec;
+    --warn: #b45309;
+    --warn-soft: #fdf3e3;
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font: 16px/1.62 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     padding: 44px 20px;
   }
   .page {
-    max-width: 820px;
+    max-width: 860px;
     margin: 0 auto;
     background: var(--card);
     border: 1px solid var(--line);
@@ -41,10 +44,8 @@
   }
   .eyebrow {
     font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 12px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 12px;
   }
   h1 { font-size: 30px; line-height: 1.22; margin: 0 0 8px; letter-spacing: -0.015em; }
   .meta { color: var(--muted); font-size: 13.5px; margin: 0 0 30px; }
@@ -53,77 +54,127 @@
   h2 {
     font: 700 12.5px/1 ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
-    margin: 38px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
+    margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
   }
 
-  .pick {
-    position: relative;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 18px 22px 18px 64px;
-    margin: 0 0 14px;
-    background: #fbfcfd;
+  /* ---- Learn next: compact ranked strip (answers the question in 10 seconds) ---- */
+  ol.learnlist { list-style: none; padding: 0; margin: 0; counter-reset: rank; }
+  ol.learnlist li {
+    counter-increment: rank;
+    position: relative; padding: 10px 14px 10px 52px; margin: 0 0 8px;
+    border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd;
   }
-  .pick .rank {
-    position: absolute; left: 18px; top: 20px;
-    width: 30px; height: 30px;
-    background: var(--accent); color: #fff;
-    border-radius: 50%;
-    font: 700 15px/30px ui-sans-serif, system-ui, sans-serif;
-    text-align: center;
+  ol.learnlist li::before {
+    content: counter(rank);
+    position: absolute; left: 14px; top: 12px;
+    width: 26px; height: 26px; background: var(--accent); color: #fff;
+    border-radius: 50%; text-align: center;
+    font: 700 13.5px/26px ui-sans-serif, system-ui, sans-serif;
   }
-  .pick h3 { margin: 0 0 4px; font-size: 18px; }
+  ol.learnlist a.t { font-weight: 700; color: var(--ink); text-decoration: none; }
+  ol.learnlist a.t:hover { color: var(--accent); }
+  ol.learnlist .oneline { display: block; color: var(--muted); font-size: 13.5px; margin-top: 1px; }
+  ol.learnlist .cmd { font: 600 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--good); }
+
+  /* ---- Quadrant map: clickable table of contents ---- */
+  .quadmap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .quad { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; background: #fbfcfd; }
+  .quad h3 { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  .quad ul { padding-left: 4px; margin: 0; font-size: 13.5px; list-style: none; }
+  .quad li { margin: 5px 0; }
+  .quad a { color: var(--ink); text-decoration: none; }
+  .quad a:hover { color: var(--accent); }
+  .quad .learn-now a { font-weight: 700; }
+  .quad .rankdot {
+    display: inline-block; width: 17px; height: 17px; background: var(--accent); color: #fff;
+    border-radius: 50%; text-align: center; margin-right: 5px;
+    font: 700 11px/17px ui-sans-serif, system-ui, sans-serif;
+  }
+  .quad .quiet { color: var(--muted); font-style: italic; }
+  @media (max-width: 640px) { .quadmap { grid-template-columns: 1fr; } }
+
+  /* ---- movement markers: ▲ new · ↑ rising · → holding · ↓ fading ---- */
+  .mv { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 5px; padding: 2px 6px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+  .mv.new { color: #6d28d9; background: #f1eafe; }
+  .mv.rising { color: #1a7f4b; background: #e7f5ec; }
+  .mv.holding { color: #5f6b7a; background: #eef1f5; }
+  .mv.fading { color: #b45309; background: #fdf3e3; }
+
+  /* ---- Topic cards: ONE card per topic, inside its quadrant section ---- */
+  .card {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 20px; margin: 0 0 14px; background: #fbfcfd;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card .rankbadge {
+    display: inline-block; width: 22px; height: 22px; background: var(--accent); color: #fff;
+    border-radius: 50%; text-align: center; margin-right: 7px;
+    font: 700 12.5px/22px ui-sans-serif, system-ui, sans-serif; vertical-align: 2px;
+  }
   .cat {
     display: inline-block; background: var(--accent-soft); color: var(--accent);
     border-radius: 6px; padding: 1px 9px;
-    font: 600 11.5px/1.7 ui-sans-serif, system-ui, sans-serif;
+    font: 600 11px/1.7 ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.04em; margin-left: 8px; vertical-align: 2px;
   }
-  .pick p { margin: 8px 0 0; font-size: 15px; }
-  .pick .k { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
-  .pick .first-step { color: var(--good); }
+  .card .what { margin: 0 0 10px; font-size: 14.5px; color: var(--ink); }
+  .card ul.ev { list-style: none; padding: 0; margin: 0 0 10px; }
+  .card ul.ev li {
+    position: relative; padding-left: 86px; margin: 6px 0;
+    font-size: 14px; line-height: 1.5;
+  }
+  .card ul.ev .date {
+    position: absolute; left: 0; top: 2px;
+    font: 600 11.5px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted); background: #eef1f5; border-radius: 4px; padding: 0 6px;
+  }
+  .card ul.ev a { color: var(--accent); text-decoration: none; }
+  .card ul.ev a:hover { text-decoration: underline; }
+  .card .verdict {
+    margin: 0; padding-top: 10px; border-top: 1px dashed var(--line);
+    font-size: 14px;
+  }
+  .card .verdict .status {
+    font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    border-radius: 5px; padding: 3px 8px; margin-right: 8px;
+  }
+  .card .verdict .status.learn { color: var(--good); background: var(--good-soft); }
+  .card .verdict .status.watch { color: var(--warn); background: var(--warn-soft); }
   .effort {
     display: inline-block;
     font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
     color: var(--accent); background: var(--accent-soft);
     border-radius: 6px; padding: 1px 8px;
   }
+  .card .cmd { font: 600 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--good); }
 
-  ul { padding-left: 20px; margin: 0 0 12px; }
-  li { margin: 7px 0; }
-  ul.alsoradar li strong { font-size: 15.5px; }
+  /* ---- Not ranked: compact one-liners at the bottom of each quadrant ---- */
+  .notranked { font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin: 18px 0 0; }
+  .notranked p { margin: 5px 0; }
+  .notranked strong { color: var(--ink); font-weight: 600; }
 
-  .quadmap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .quad { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; background: #fbfcfd; }
-  .quad h3 { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
-  .quad ul { padding-left: 16px; margin: 0; font-size: 13.5px; }
-  .quad li { margin: 5px 0; }
-  .quad .learn-now { font-weight: 700; }
-  .quad .learn-now::after { content: " · learn now"; font: 600 10.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: var(--good); }
-  .quad .quiet { color: var(--muted); font-style: italic; }
-  @media (max-width: 640px) { .quadmap { grid-template-columns: 1fr; } }
-
-  /* movement markers: ▲ new · ↑ rising · → holding · ↓ fading */
-  .mv { font: 700 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 5px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
-  .mv.new { color: #6d28d9; background: #f1eafe; }
-  .mv.rising { color: #1a7f4b; background: #e7f5ec; }
-  .mv.holding { color: #5f6b7a; background: #eef1f5; }
-  .mv.fading { color: #b45309; background: #fdf3e3; }
-
-  .watchlist li { font-size: 14.5px; }
-  .watchlist .expired { color: var(--muted); font-style: italic; }
-
-  .covered { color: var(--muted); font-size: 14.5px; }
-  .pool { font-size: 13.5px; color: var(--muted); }
-  .sources { font-size: 14px; color: var(--muted); }
-  .sources li { margin: 5px 0; }
-  .sources a { color: var(--accent); word-break: break-word; }
+  /* ---- Collapsed audit + sources ---- */
+  details { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; margin: 0 0 12px; }
+  details summary {
+    cursor: pointer; padding: 12px 18px;
+    font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  }
+  details[open] summary { border-bottom: 1px solid var(--line); }
+  details .body { padding: 14px 20px; font-size: 13.5px; color: var(--muted); }
+  details .body h4 { font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); margin: 14px 0 6px; }
+  details .body h4:first-child { margin-top: 0; }
+  details .body ul { padding-left: 18px; margin: 0 0 8px; }
+  details .body li { margin: 4px 0; }
+  details .body a { color: var(--accent); word-break: break-word; }
   .date { font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
 
   footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
   @media print {
     body { background: #fff; padding: 0; }
     .page { border: none; box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+    details { display: block; } details summary { display: none; }
   }
 </style>
 </head>
@@ -135,67 +186,86 @@
       Window <code>{{WINDOW}}</code> ·
       Lens: principal software + AI engineer{{FOCUS_SUFFIX}} ·
       Mode <code>{{MODE}}</code> ·
-      Intake <code>{{INTAKE_SUMMARY}}</code><!-- e.g. "687 items / 54 feeds / kept 42" -->
+      Intake <code>{{INTAKE_SUMMARY}}</code> ·
+      Feeds <code>{{FEED_HEALTH_ONELINE}}</code><!-- e.g. "55/55 ok" — details live in the audit block -->
     </p>
 
-    <h2>Learn next (ranked)</h2>
-    {{PICKS}}
-    <!-- Repeat per pick — first .cat chip is the QUADRANT (Techniques / Platforms / Tools /
-         Languages & Frameworks), second is the library category, then a movement marker:
-    <div class="pick">
-      <span class="rank">1</span>
-      <h3>Topic name <span class="cat">Platforms</span> <span class="cat">AI-ML</span> <span class="mv new">▲ new</span></h3>
-      <p><span class="k">Why now</span> dated evidence points…</p>
-      <p><span class="k">Why you</span> principal-lens leverage…</p>
-      <p><span class="k">Effort</span> <span class="effort">~1 day to 101</span></p>
-      <p class="first-step"><span class="k">First step</span> run /learn on "…"</p>
-    </div>
-    -->
+    <h2>Learn next</h2>
+    <ol class="learnlist">
+      {{LEARN_LIST}}
+      <!-- Five rows, each linking to its card below. One line each — the detail lives on the card:
+      <li>
+        <a class="t" href="#card-topic-slug">Topic name</a> <span class="mv new">▲ new</span>
+        <span class="oneline">One sentence: what it is + the single strongest why-now fact.
+        <span class="cmd">/learn "exact topic phrasing"</span></span>
+      </li>
+      -->
+    </ol>
 
-    <h2>Also on radar</h2>
-    <ul class="alsoradar">{{ALSO_RADAR}}</ul>
-
-    <h2>Quadrant map</h2>
+    <h2>The landscape</h2>
     <div class="quadmap">
       {{QUADRANT_MAP}}
-      <!-- Four .quad blocks, always all four, whole pool distributed:
+      <!-- Four .quad blocks, always all four — this is the clickable table of contents.
+           Every pool item appears here once and links to its entry below:
       <div class="quad">
         <h3>Techniques</h3>
         <ul>
-          <li class="learn-now">Topic in the top 5</li>
-          <li>Watch-level topic</li>
+          <li class="learn-now"><span class="rankdot">1</span><a href="#card-topic-slug">Topic in the top 5</a> <span class="mv new">▲</span></li>
+          <li><a href="#card-other-topic">Watch-level topic</a> <span class="mv rising">↑</span></li>
           <li class="quiet">quiet this window</li>  (only when the quadrant is empty)
         </ul>
       </div>
       -->
     </div>
 
-    <h2>Watchlist</h2>
-    <ul class="watchlist">{{WATCHLIST}}</ul>
-    <!-- One li per watchlist item after the merge:
-    <li>Topic <span class="mv rising">↑ rising</span> — one line + what would promote it</li>
-    <li class="expired">expired after 3 quiet scans: X, Y</li>  (last, if any)
-    "Watchlist empty" as a single li if so. -->
+    {{QUADRANT_SECTIONS}}
+    <!-- One h2 section per quadrant, in map order. EVERY topic lives in exactly one card here —
+         no Also-on-radar, no separate watchlist section, no pool dump. Structure per quadrant:
 
-    <h2>Already covered (skipped)</h2>
-    <p class="covered">{{COVERED}}</p>
+    <h2 id="q-techniques">Techniques</h2>
 
-    <h2>Refresh candidates</h2>
-    <ul>{{REFRESH}}</ul><!-- omit section if none: remove both the h2 and this list -->
+    Full card — used for top-5 picks AND for watch items with real in-window evidence:
+    <div class="card" id="card-topic-slug">
+      <h3><span class="rankbadge">1</span>Topic name <span class="cat">AI-ML</span> <span class="mv new">▲ new</span></h3>
+      <p class="what">One sentence: what this actually is, no marketing.</p>
+      <ul class="ev">
+        <li><span class="date">Aug 11</span> One dated evidence fact, at most one <strong>bold number</strong> — <a href="URL">source</a></li>
+        <li><span class="date">Aug 13</span> Second independent signal — <a href="URL">source</a></li>
+        (2-4 bullets for picks, 1-2 for watch items. Each bullet ONE line-ish, link inline.)
+      </ul>
+      <p class="verdict"><span class="status learn">Learn now</span> Why it wins the slot, 1-2 sentences.
+        <span class="effort">~1 day to 101</span> · <span class="cmd">/learn "exact phrasing"</span></p>
+      — or for watch items —
+      <p class="verdict"><span class="status watch">Watch</span> Why not yet + <em>promote when:</em> the concrete condition.</p>
+    </div>
 
-    <h2>Candidate pool (audit)</h2>
-    <p class="pool">{{POOL}}</p>
+    Compact rows for the rest of the pool (losers, fading, covered-by-brief) — still visible, one line each:
+    <div class="notranked">
+      <p><strong>Topic</strong> — why it did not rank (folded into #N / covered by YYYY-MM-DD brief / no adoption evidence / fading, expires after 3 quiet scans).</p>
+    </div>
+    -->
 
-    <h2>Must-not-miss clearance</h2>
-    <ul class="pool">{{CHECKLIST}}</ul>
+    <h2>Scan audit</h2>
+    <details>
+      <summary>Dedupe, checklist clearance, coverage — expand if you want the receipts</summary>
+      <div class="body">
+        <h4>Already covered (dedupe)</h4>
+        <p>{{COVERED}}</p><!-- 1-2 lines per skipped brief. Include refresh candidates here only if any exist. -->
+        <h4>Watchlist changes</h4>
+        <p>{{WATCHLIST_CHANGES}}</p><!-- expired items + promotions only — the full list lives in watchlist.json and on the cards -->
+        <h4>Must-not-miss clearance</h4>
+        <ul>{{CHECKLIST}}</ul>
+        <h4>Coverage</h4>
+        <p>{{COVERAGE}}</p><!-- feed health detail, manual sources hit, wildcard queries, gate results, next-scan rotation -->
+      </div>
+    </details>
 
-    <h2>Coverage</h2>
-    <p class="pool">{{COVERAGE}}</p>
-    <!-- Feed health ("54 feeds ok, X error → site: fallback run"), registry fixes needed,
-         manual sources hit, wildcard queries used. Feeds the next scan's rotation. -->
-
-    <h2>Sources</h2>
-    <ul class="sources">{{SOURCES}}</ul>
+    <details>
+      <summary>All sources ({{SOURCE_COUNT}})</summary>
+      <div class="body">
+        <ul>{{SOURCES}}</ul>
+      </div>
+    </details>
 
     <footer>Generated by the tech-radar skill · why this, why now, why this level.</footer>
   </article>
