@@ -224,8 +224,6 @@ Tie-breaks favor: production adoption evidence > discussion volume; durable prim
 
 Items that are **not topics** stay off the radar as one-liners under their quadrant: artifacts of another blip ("the library of #N"), folded angles ("PQC angle lives in #2"), covered-by-brief follow-through, ecosystem signals, off-stack or narrow items.
 
-Finally derive **3–5 themes** — the macro movements the blips add up to, Thoughtworks-volume style. A theme must be carried by ≥2 blips (reference them by number) or one blip plus independent survey/report evidence. Themes are synthesis of collected evidence, never new claims.
-
 ### Step 8: Output
 
 Save the full report as HTML per [template.html](template.html); show a **compact** version in chat (the HTML is the reading artifact — do not dump the whole report into chat).
@@ -235,15 +233,14 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 **HTML structure (in order):**
 
 1. **Header + meta line** — window, lens, mode, intake summary, feed health one-liner (`55/55 ok`).
-2. **Themes this window** — 3–5 theme boxes from Step 7, each 2–3 sentences referencing carrying blips by number.
-3. **The radar** — the interactive SVG. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, move, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips; the legend below explains movement shapes and quadrant colors.
-4. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Adopt → Trial → Assess → Hold; omit empty rings). Every blip gets one card:
+2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, move, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the legend below explains movement shapes and quadrant colors.
+3. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Adopt → Trial → Assess → Hold; omit empty rings). Every blip gets one card:
    - **Adopt/Trial cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Adopt = why it wins + effort chip + `/learn` command; Trial = the cheaper pass to take now.
    - **Assess cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
    - **Hold cards** may skip evidence bullets — one-line what-it-is plus why not to spend time and what would move it back in.
    - After the ring groups, a `.notblipped` block: non-topic one-liners ("the artifact of #N", "folded into #2", "covered by YYYY-MM-DD brief", "betas; revisit at GA").
-5. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket, referencing blip numbers), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
-6. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
+4. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket, referencing blip numbers), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
+5. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
 
 **Evidence style on cards:** dated bullets, not paragraphs. A 100+-word "Why now" wall with six bold spans is the failure mode this structure replaces — one fact per bullet, one bolded number per bullet at most, link inline where the claim is made.
 
@@ -252,9 +249,6 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 ```markdown
 # Tech Radar — [YYYY-MM-DD]
 **Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
-
-## Themes
-[3-5 one-liners, each naming its carrying blips: "Frontier calls become a budget line (#1, #4)"]
 
 ## Adopt — learn now
 1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
