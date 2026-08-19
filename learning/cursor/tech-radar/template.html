@@ -81,7 +81,20 @@
 
   /* ---- The radar ---- */
   .radar-wrap { margin: 0 0 8px; }
-  .radar-wrap svg { display: block; width: 100%; height: auto; max-width: 720px; margin: 0 auto; }
+  .radar-holder { position: relative; max-width: 720px; margin: 0 auto; }
+  .radar-wrap svg { display: block; width: 100%; height: auto; }
+  .blip-tip {
+    position: absolute; z-index: 5; pointer-events: none; opacity: 0;
+    background: var(--ink); color: #fff; border-radius: 8px; padding: 7px 11px;
+    font: 600 12.5px/1.4 ui-sans-serif, system-ui, sans-serif;
+    max-width: 260px; text-align: center; white-space: normal;
+    box-shadow: 0 4px 14px rgba(19,26,36,0.28);
+    transition: opacity .12s ease;
+  }
+  .blip-tip.on { opacity: 1; }
+  .blip-tip.above { transform: translate(-50%, -100%); }
+  .blip-tip.below { transform: translate(-50%, 0); }
+  .blip-tip .tipring { display: block; font-weight: 400; font-size: 11.5px; opacity: .75; margin-top: 1px; }
   svg .gridline { stroke: var(--line); stroke-width: 1; }
   svg .ringlabel {
     font: 700 11px ui-sans-serif, system-ui, sans-serif;
@@ -210,7 +223,10 @@
 
     <h2>The radar</h2>
     <div class="radar-wrap">
-      <svg id="radar" viewBox="0 0 720 720" role="img" aria-label="Technology radar"></svg>
+      <div class="radar-holder">
+        <svg id="radar" viewBox="0 0 720 720" role="img" aria-label="Technology radar"></svg>
+        <div class="blip-tip" id="blip-tip"></div>
+      </div>
       <div class="legend">
         <span class="item"><svg viewBox="0 0 20 20"><polygon points="10,3 2,17 18,17" fill="#5f6b7a"/></svg> new</span>
         <span class="item"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" fill="#5f6b7a"/><circle cx="10" cy="10" r="9" fill="none" stroke="#5f6b7a" stroke-width="1.6"/></svg> moved in</span>
@@ -356,11 +372,36 @@ function render() {
     out += `<text class="qlabel" x="${Q.lx}" y="${Q.ly}" fill="${Q.color}" text-anchor="${Q.anchor}">${Q.name}</text>`;
   });
   // blips
-  BLIPS.forEach(b => {
+  BLIPS.forEach((b, i) => {
     const Q = QUADRANTS[b.q];
-    out += `<g class="blip" onclick="location.hash='${b.id}'"><title>#${b.n} ${b.name} — ${RINGS[b.ring].name}</title>${shapeSVG(b, Q.color)}</g>`;
+    out += `<g class="blip" data-i="${i}" onclick="location.hash='${b.id}'">${shapeSVG(b, Q.color)}</g>`;
   });
   svg.innerHTML = out;
+  attachTooltips(svg);
+}
+
+function attachTooltips(svg) {
+  const tip = document.getElementById("blip-tip");
+  const holder = svg.parentElement;
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  svg.querySelectorAll(".blip").forEach(g => {
+    const b = BLIPS[+g.dataset.i];
+    g.addEventListener("mouseenter", () => {
+      tip.innerHTML = `#${b.n} ${esc(b.name)}<span class="tipring">${QUADRANTS[b.q].name} · ${RINGS[b.ring].name}</span>`;
+      const hr = holder.getBoundingClientRect();
+      const gr = g.getBoundingClientRect();
+      const x = gr.left + gr.width / 2 - hr.left;
+      tip.style.left = x + "px";
+      if (gr.top - hr.top > 60) {
+        tip.style.top = (gr.top - hr.top - 8) + "px";
+        tip.className = "blip-tip on above";
+      } else {
+        tip.style.top = (gr.bottom - hr.top + 8) + "px";
+        tip.className = "blip-tip on below";
+      }
+    });
+    g.addEventListener("mouseleave", () => { tip.className = "blip-tip"; });
+  });
 }
 render();
 </script>
