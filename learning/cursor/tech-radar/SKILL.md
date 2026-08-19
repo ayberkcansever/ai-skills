@@ -1,11 +1,11 @@
 ---
 name: tech-radar
-description: Discover what to learn next as a principal software + AI engineer. A deterministic crawler (scripts/scan_feeds.py, driven by feeds.toml) pulls ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters gravity, endoflife.date — into a dated intake file; the agent triages 100% of items (keeps and logged drops), confirms adoption evidence, merges a persistent watchlist with movement markers (new/rising/holding/fading), then ranks through a principal-engineer lens into Thoughtworks-style quadrants (Techniques / Platforms / Tools / Languages & Frameworks) with whole-landscape balance enforced — AI is one strand, not the default. Dedupes against the user's brief library and outputs a top-5 learn-next list plus quadrant map with dated evidence. Each pick runs via the learn skill (/learn). Supports full scans and quick watchlist-update scans. Use when the user asks "what should I learn", "scan the radar", "recent topics worth learning", "what's moving in tech/AI", or wants learning recommendations without naming a topic.
+description: Discover what to learn next as a principal software + AI engineer. A deterministic crawler (scripts/scan_feeds.py, driven by feeds.toml) pulls ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters gravity, endoflife.date — into a dated intake file; the agent triages 100% of items (keeps and logged drops), confirms adoption evidence, merges a persistent watchlist with movement markers, then places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Adopt / Trial / Assess / Hold) rendered as an interactive SVG radar with numbered blips and per-blip writeups — with whole-landscape balance enforced, AI one strand not the default. Dedupes against the user's brief library; the Adopt ring is the learn-next answer, each Adopt blip runs via the learn skill (/learn). Supports full scans and quick watchlist-update scans. Use when the user asks "what should I learn", "scan the radar", "recent topics worth learning", "what's moving in tech/AI", or wants learning recommendations without naming a topic.
 ---
 
 # Tech Radar
 
-Goal: answer **"what should I learn next?"** for a principal software + AI engineer — a ranked, evidence-backed shortlist, not a trends listicle. Every recommendation must survive the question: *"why this, why now, and why for someone at this level?"*
+Goal: answer **"what should I learn next?"** for a principal software + AI engineer — a Thoughtworks-style radar, not a trends listicle. Every candidate lands on one of four **rings** in its quadrant, and the **Adopt ring is the answer**. Every placement must survive the question: *"why this, why now, and why for someone at this level?"*
 
 This skill finds the topics; the sibling **learn** skill (`~/.cursor/skills/learn/`) learns them (brief → learn path → lab → quiz). The two share one library: briefs produced there are this skill's memory, and this skill's output is that skill's input queue.
 
@@ -29,6 +29,13 @@ Explicitly out of scope: junior-level fundamentals, certification chasing, singl
 - **Platforms** — things you build on: clouds, runtimes, databases, model/inference platforms, infra products.
 - **Tools** — software you use rather than build on: dev tools, CI/CD, observability, utilities, coding agents.
 - **Languages & Frameworks** — languages, major framework releases, SDKs, standard-library movements.
+
+**The rings (learning lens — same names as Thoughtworks, adapted meanings):**
+
+- **Adopt** — *learn now.* Production-grade evidence; you would start the `/learn` loop this week. This ring is deliberately selective: only items you would actually start; if it grows past ~8, you are not choosing.
+- **Trial** — *learn soon.* Clear value but second in the queue, or the cheap pass is enough right now (read the release notes, half-day skim).
+- **Assess** — *track with a condition.* Real signal, not rankable yet; every Assess blip carries a concrete *promote when:* condition (from the watchlist).
+- **Hold** — *deliberately not spending time.* Fading, contested, or no adoption evidence — with one line on what would move it back in.
 
 Optional per-run focus narrows the lens ("AI only", "infra only", "what should I learn for the next quarter") — but the level stays principal.
 
@@ -64,7 +71,7 @@ Editing coverage = editing `feeds.toml`. No skill-text change needed to add or d
 
 - None required.
 - Optional: focus filter ("AI only", "infra/platform only"), window override (default **3 months**), "include topics I already briefed" to disable dedupe.
-- Optional mode: **full** (default — everything below) or **quick** ("quick scan", "update the watchlist") — crawl + triage + watchlist update + a short movers summary in chat; no confirm pass, no ranked top 5, no HTML. Quick exists for cheap between-scan refreshes; a top 5 without confirmed evidence would violate the two-signal rule, so quick never ranks.
+- Optional mode: **full** (default — everything below) or **quick** ("quick scan", "update the watchlist") — crawl + triage + watchlist update + a short movers summary in chat; no confirm pass, no ring placement, no HTML. Quick exists for cheap between-scan refreshes; ring placement without confirmed evidence would violate the two-signal rule, so quick never places blips.
 
 ## Workflow
 
@@ -74,8 +81,8 @@ Editing coverage = editing `feeds.toml`. No skill-text change needed to add or d
 - [ ] Step 3: Manual sweep — agent-fetched sources + wildcard slice
 - [ ] Step 4: Triage — 100% disposition of intake + watchlist
 - [ ] Step 5: Confirm evidence, build candidate pool, clear the gates
-- [ ] Step 6: Merge watchlist, rank through the role lens
-- [ ] Step 7: Output, save HTML, rebuild index, hand off        (quick mode stops after Step 4 + watchlist update)
+- [ ] Step 6: Merge watchlist, place every candidate on a ring
+- [ ] Step 7: Output the radar, save HTML, rebuild index, hand off   (quick mode stops after Step 4 + watchlist update)
 ```
 
 ### Step 1: Load memory
@@ -141,7 +148,7 @@ Watchlist items get their disposition in Step 6 — but scan the titles for sign
 
 ### Step 5: Confirm + candidate pool
 
-For each keep that could plausibly rank, run **one confirming search** for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Budget: **≤20 confirming searches** — spend them on likely top-10 material, not on obvious also-rans. Total agent search budget per full scan (manual sweep + wildcard + confirm) is roughly **25–35 calls**; the crawl itself costs one command.
+For each keep that could plausibly rank, run **one confirming search** for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Budget: **≤20 confirming searches** — spend them on likely Adopt/Trial material, not on obvious Hold blips. Total agent search budget per full scan (manual sweep + wildcard + confirm) is roughly **25–35 calls**; the crawl itself costs one command.
 
 Collect **15–25 candidates**. For each record:
 
@@ -168,11 +175,11 @@ Collect **15–25 candidates**. For each record:
 10. **Languages & frameworks** — major language releases, framework majors, TC39/std-lib advancements, notable deprecations
 11. **Stack-adjacent** — at least one candidate or clearance keyed to the user's visible stack
 
-**Coverage gate:** every erroring feed got its fallback search; every manual feed was covered; ≥3 candidates in the pool come from sources other than the top HN stories (the registry exists so the pool is not just HN's front page). **Quadrant balance gate:** pool holds **≥3 candidates per quadrant** or documents a quadrant as genuinely quiet; without an AI focus filter, at most **half** the pool may be AI-ML and the top 5 must span **≥3 quadrants**. Fail a gate → widen (more manual sources, second wildcard pass) and re-pass. Do not rank until both gates pass.
+**Coverage gate:** every erroring feed got its fallback search; every manual feed was covered; ≥3 candidates in the pool come from sources other than the top HN stories (the registry exists so the pool is not just HN's front page). **Quadrant balance gate:** pool holds **≥3 candidates per quadrant** or documents a quadrant as genuinely quiet; without an AI focus filter, at most **half** the pool may be AI-ML and the Adopt ring must span **≥3 quadrants**. Fail a gate → widen (more manual sources, second wildcard pass) and re-pass. Do not place blips until both gates pass.
 
 ### Step 6: Watchlist merge
 
-`radar/watchlist.json` holds candidates that did not make a previous top 5 but were too real to discard. Shape:
+`radar/watchlist.json` holds candidates that did not make a previous Adopt ring but were too real to discard. Shape:
 
 ```json
 {
@@ -192,39 +199,52 @@ Collect **15–25 candidates**. For each record:
 
 Disposition every watchlist item, every scan:
 
-- **promote** — new strong signal this window → joins the candidate pool (and possibly the top 5). Remove from watchlist if it ranks; keep as `rising` if it stays pool-only.
-- **hold** — new signal, still not rankable → update `last_signal`, append evidence, status `rising` or `holding`, reset `scans_quiet`.
+- **promote** — new strong signal this window → joins the candidate pool (and possibly the Adopt ring). Remove from watchlist if it reaches Adopt; keep as `rising` if it stays Trial/Assess.
+- **hold** — new signal, still not Adopt-grade → update `last_signal`, append evidence, status `rising` or `holding`, reset `scans_quiet`.
 - **quiet** — no signal this window → `scans_quiet += 1`, status `fading` at 2.
 - **expire** — `scans_quiet` reaches 3 → remove; list under "expired" in the scan output (visible, not silent).
 - **briefed** — user briefed it since last scan → remove (it lives in the library now).
 
-New this scan: pool candidates that miss the top 5 but have real momentum enter as `status: new`. Every item carries a **movement marker** into the output: `▲ new`, `↑ rising`, `→ holding`, `↓ fading`.
+New this scan: pool candidates below Adopt with real momentum enter as `status: new`. Watchlist status maps 1:1 to the blip **movement marker** in the output: `new` → `▲ new`, `rising` → `↑ moved in`, `holding` → `→ no change`, `fading` → `▼ moved out`.
 
-### Step 7: Rank
+### Step 7: Ring placement
 
-Score each candidate against the role lens (decision leverage, AI depth, durability, force-multiplier, 101-feasibility). Then apply memory:
+Score each candidate against the role lens (decision leverage, AI depth, durability, force-multiplier, 101-feasibility), then place it on a ring — **every candidate that survives triage gets a blip**, there is no fixed count:
 
-- drop fresh already-briefed topics (list them as covered);
-- promote refresh candidates only when something material changed;
+- **Adopt** — would start the `/learn` loop this week; production-grade, two-signal evidence. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
+- **Trial** — real value, second in queue, or the cheap pass suffices (release notes are the 101).
+- **Assess** — tracked with a concrete *promote when:* condition carried from the watchlist.
+- **Hold** — deliberately skipped: fading (moved out), contested, or evidence-free hype — with the condition that would move it back in.
+
+Then apply memory:
+
+- fresh already-briefed topics do not get blips (list them as covered in the audit);
+- refresh candidates re-enter only when something material changed;
 - boost topics that fill a visible gap in the library's coverage.
 
-Tie-breaks favor: production adoption evidence > discussion volume; durable primitives > tools wrapping them; topics that unlock several others. Honor the quadrant balance gate: ≥3 quadrants in the top 5 unless a focus filter narrows the scan.
+Tie-breaks favor: production adoption evidence > discussion volume; durable primitives > tools wrapping them; topics that unlock several others.
+
+Items that are **not topics** stay off the radar as one-liners under their quadrant: artifacts of another blip ("the library of #N"), folded angles ("PQC angle lives in #2"), covered-by-brief follow-through, ecosystem signals, off-stack or narrow items.
+
+Finally derive **3–5 themes** — the macro movements the blips add up to, Thoughtworks-volume style. A theme must be carried by ≥2 blips (reference them by number) or one blip plus independent survey/report evidence. Themes are synthesis of collected evidence, never new claims.
 
 ### Step 8: Output
 
 Save the full report as HTML per [template.html](template.html); show a **compact** version in chat (the HTML is the reading artifact — do not dump the whole report into chat).
 
-**The one-card rule (the load-bearing design decision):** every topic appears in the report exactly twice — once as a link in the quadrant map, once as its single card or row in its quadrant section. There is no "Also on radar" section, no standalone watchlist section, no candidate-pool dump: those were three extra repetitions of the same topics and were removed deliberately. Do not reintroduce them.
+**The one-writeup rule (the load-bearing design decision):** every blip appears exactly twice — once on the radar visualization, once as its single writeup card in its quadrant section. There is no "Also on radar" section, no standalone watchlist section, no candidate-pool dump, no separate learn-next strip: those were extra repetitions of the same topics and were removed deliberately. Do not reintroduce them. The Adopt ring *is* the learn-next list.
 
 **HTML structure (in order):**
 
 1. **Header + meta line** — window, lens, mode, intake summary, feed health one-liner (`55/55 ok`).
-2. **Learn next** — the ranked 5 as compact rows: topic (anchor-linked to its card), movement marker, ONE line (what it is + single strongest why-now fact), the `/learn` command. No detail here — detail lives on the card.
-3. **The landscape** — the quadrant map as a clickable table of contents: four quadrant boxes, every pool item linked to its card/row below, rank dots on picks, movement markers. A genuinely quiet quadrant says "quiet this window".
-4. **Four quadrant sections** — every candidate lives here, in one of two forms:
-   - **Full card** (top-5 picks and watch items with real in-window evidence): one-line *what it is* (no marketing) → 2-4 dated evidence bullets, each one line with **at most one bold number** and its source link inline → a verdict row: `Learn now` (why it wins + effort chip + `/learn` command) or `Watch` (why not yet + *promote when:* the concrete condition from the watchlist).
-   - **Compact row** (losers, fading, covered-by-brief): topic + one line of why it did not rank ("folded into #N", "covered by YYYY-MM-DD brief", "no adoption evidence", "fading — expires after 3 quiet scans").
-5. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
+2. **Themes this window** — 3–5 theme boxes from Step 7, each 2–3 sentences referencing carrying blips by number.
+3. **The radar** — the interactive SVG. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, move, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips; the legend below explains movement shapes and quadrant colors.
+4. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Adopt → Trial → Assess → Hold; omit empty rings). Every blip gets one card:
+   - **Adopt/Trial cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Adopt = why it wins + effort chip + `/learn` command; Trial = the cheaper pass to take now.
+   - **Assess cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
+   - **Hold cards** may skip evidence bullets — one-line what-it-is plus why not to spend time and what would move it back in.
+   - After the ring groups, a `.notblipped` block: non-topic one-liners ("the artifact of #N", "folded into #2", "covered by YYYY-MM-DD brief", "betas; revisit at GA").
+5. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket, referencing blip numbers), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
 6. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
 
 **Evidence style on cards:** dated bullets, not paragraphs. A 100+-word "Why now" wall with six bold spans is the failure mode this structure replaces — one fact per bullet, one bolded number per bullet at most, link inline where the claim is made.
@@ -235,13 +255,16 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 # Tech Radar — [YYYY-MM-DD]
 **Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
 
-## Learn next
-1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
-[5 entries]
+## Themes
+[3-5 one-liners, each naming its carrying blips: "Frontier calls become a budget line (#1, #4)"]
 
-## The landscape
-**Techniques:** [names + markers] · **Platforms:** […] · **Tools:** […] · **L&F:** […]
-[One line per quadrant; movers worth a sentence get one. Point at the HTML for the cards.]
+## Adopt — learn now
+1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
+[every Adopt blip]
+
+## The rest of the radar
+**Trial:** [names + numbers] · **Assess:** […] · **Hold:** […]
+[One line per ring; movers worth a sentence get one. Point at the HTML for the radar + cards.]
 
 ## Notable
 [2-4 lines: expired watchlist items, a gate that barely passed, a feed that broke,
@@ -252,7 +275,7 @@ In the saved HTML fill the meta tags: `radar-venues` (manual sources + wildcard 
 
 ### Step 9: Hand off
 
-End with: *"Pick a number — I'll run the full brief (and lab) on it."* On a pick, invoke the **learn** skill workflow on that topic.
+End with: *"Pick a blip number — I'll run the full brief (and lab) on it."* On a pick, invoke the **learn** skill workflow on that topic.
 
 ## Principles
 
@@ -261,9 +284,9 @@ End with: *"Pick a number — I'll run the full brief (and lab) on it."* On a pi
 - **Deterministic first, search second.** The registry + crawler make wide coverage free and repeatable; agent searches are for what feeds cannot reach. Adding a source is a registry edit, not a prompt edit.
 - **Disposition everything.** Every intake item is a keep or a coded drop; every watchlist item moves or expires visibly. An unexplained absence is a bug, not a judgment call.
 - **The library is memory, not decoration.** Recommending something already lab-done wastes the user's time twice.
-- **Watch ≠ learn-now.** Early-stage excitement goes on the watchlist with a promotion condition, not in the top 5.
-- **Five real candidates beat ten padded ones.** If the window was genuinely quiet, say so and return fewer.
+- **The ring is the verdict.** Assess ≠ Adopt: early-stage excitement gets an Assess blip with a promotion condition, never an Adopt slot. Ring moves between scans are the signal a static list cannot give.
+- **A selective Adopt ring beats a crowded one.** No fixed blip count anywhere — but Adopt past ~8 items means you stopped choosing. If the window was genuinely quiet, say so and place fewer.
 - **No fabricated evidence.** Every why-now point is dated and traceable to a source in the list.
 - **Missing a critical topic is worse than over-researching.** The must-not-miss checklist, feed-health fallbacks, and coverage gates exist so a thin pass cannot silently skip protocols, security, or evals.
-- **Show the pool — as the quadrant sections, once.** The ranked five without the losing candidates is unauditable, so every candidate appears in its quadrant with a verdict (learn-now / watch + promote-when / one-line reason it lost). But each topic appears exactly once as a card or row — repeating the same topic across also-on-radar, watchlist, and pool-dump sections is how a report becomes unreadable.
+- **Show the pool — as blips, once each.** An Adopt ring without the Assess/Hold context is unauditable, so every surviving candidate gets a blip with a verdict, and non-topics get a one-liner. But each topic appears exactly once as a card — repeating the same topic across also-on-radar, watchlist, and pool-dump sections is how a report becomes unreadable.
 - **Whole landscape, not the AI corner.** What an AI-heavy feed diet misses is platforms, techniques, and language movements. Quadrant balance is a gate, not a preference; an unfocused scan that returns only AI failed the sweep.
