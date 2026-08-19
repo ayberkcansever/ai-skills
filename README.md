@@ -154,35 +154,41 @@ in both directions.
 
 | Skill | What it does |
 |-------|--------------|
-| `learning-radar` | Answers "what should I learn next?" for a principal software + AI engineer. Sweeps a two-tier venue map (pinned primary change-feeds, conference calendars, discussion gravity, curated radars, security feeds + a rotated wide net of engineering blogs, surveys, newsletters), builds a 15-25 candidate pool with dated evidence, dedupes against your brief library, and outputs a ranked top-5 saved as a dated HTML scan. |
-| `tech-radar-brief` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
+| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist with movement markers (new/rising/holding/fading), and ranks into Thoughtworks-style quadrants (Techniques / Platforms / Tools / Languages & Frameworks) with whole-landscape balance enforced. Outputs a ranked top-5 + quadrant map saved as a dated HTML scan. Supports full scans and quick watchlist-update scans. |
+| `learn` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
 
 ### Flow
 
 The two share one library (`~/Documents/tech-briefs/`): briefs produced by
-`tech-radar-brief` are the radar's dedupe memory, and each scan's ranked picks
-are the brief skill's input queue. Radar scans also rotate their extended
-venues based on the previous scan's coverage, so successive scans cover
-different ground.
+`learn` are the radar's dedupe memory, and each scan's ranked picks are the
+learn skill's input queue. The radar also keeps a persistent watchlist between
+scans (candidates too real to discard but not yet rankable), and rotates its
+manual sources and wildcard searches based on the previous scan's coverage.
 
 ```mermaid
 flowchart LR
-    R["/learning-radar<br/><i>what to learn?</i>"] -->|"ranked top-5"| B["/tech-radar-brief<br/><i>learn one topic</i>"]
+    F[("feeds.toml<br/>~55 feeds")] -->|"scan_feeds.py<br/>(deterministic crawl)"| R["/tech-radar<br/><i>what to learn?</i>"]
+    R -->|"ranked top-5"| B["/learn<br/><i>learn one topic</i>"]
     B -->|"brief + lab + quiz"| L[("brief library<br/>~/Documents/tech-briefs/")]
-    L -.->|"dedupe memory +<br/>venue rotation"| R
+    L -.->|"dedupe memory +<br/>rotation"| R
+    W[("watchlist.json<br/>movement markers")] -.-> R
+    R -.-> W
 ```
 
 ### Notes
 
-- Output goes to `~/Documents/tech-briefs/` (briefs, radar scans, and a
-  self-rebuilding `index.html`) — never into the current repo.
+- Output goes to `~/Documents/tech-briefs/` (briefs, radar scans, intake files,
+  watchlist, and a self-rebuilding `index.html`) — never into the current repo.
+- The radar's coverage is a registry edit, not a prompt edit: add or drop a
+  source by editing `feeds.toml`; the crawler and skill pick it up unchanged.
+  Sources without machine-readable feeds are `type = "manual"` entries the
+  agent covers with a search hint, so nothing is silently skipped.
 - The Claude variants are text ports — their supporting files
-  (`template.html`, `lab-template.html`, `notes-template.html`,
-  `scripts/build_index.py`) ship in the matching
-  `learning/cursor/<skill>/` folder; install the Cursor variant alongside or
-  adjust the paths.
-- `learning-radar` expects `tech-radar-brief` installed as a sibling
-  (`~/.cursor/skills/tech-radar-brief/`) — install both together.
+  (`template.html`, `lab-template.html`, `notes-template.html`, `feeds.toml`,
+  `scripts/`) ship in the matching `learning/cursor/<skill>/` folder; install
+  the Cursor variant alongside or adjust the paths.
+- `tech-radar` expects `learn` installed as a sibling
+  (`~/.cursor/skills/learn/`) — install both together.
 
 ---
 

@@ -1,6 +1,9 @@
-> **Supporting files:** this skill uses `template.html`, `lab-template.html`, `notes-template.html` and `scripts/build_index.py` shipped in the Cursor variant folder (`learning/cursor/tech-radar-brief/`). Copy them next to wherever you keep this command's assets, or install the Cursor variant alongside and keep the default `~/.cursor/skills/tech-radar-brief/` paths referenced in the text.
+---
+name: learn
+description: Learn a tech topic to a correct 101 level in minimal time. Researches open sources (official docs/releases, engineering blogs, YouTube talks, HN/Reddit, news, papers) restricted to recent material, then produces a brief with a 101 mental model, what changed, tradeoffs, an adopt/trial/hold/avoid verdict, a time-budgeted learn-it-fast resource path, adjacent topics, and a proposed hands-on PoC lab (scaffolded on request; code ships complete, the user predicts, runs, observes and explains back, then gets quizzed for retention). Use when the user asks to research, learn, get up to speed on, "give me a brief/report on", or wants a hands-on PoC/lab/quiz for a technology, tool, framework, protocol, model, or engineering trend.
+---
 
-# Tech Radar Brief
+# Learn — tech radar brief
 
 Goal: take a tech topic and get the user to a **correct 101 level in minimal time** — a working mental model, the current state of play, and real hands-on muscle. Not expert depth; expert-*shaped* fundamentals. Recent material only. Every claim dated and sourced.
 
@@ -19,7 +22,7 @@ The skill delivers learning in escalating, optional stages — each stage is ski
 
 Stage 1 always happens. Stages 2-3-4 are offers the user takes or leaves. Muscle comes from 3 and 4; the brief alone is recognition-level knowledge, and the skill should say so when offering the lab.
 
-**Topic discovery:** when the user doesn't have a topic and asks "what should I learn?", that is the sibling **learning-radar** skill (`~/.cursor/skills/learning-radar/`) — it scans the recent landscape, dedupes against this library, and hands ranked topics back to this skill.
+**Topic discovery:** when the user doesn't have a topic and asks "what should I learn?", that is the sibling **tech-radar** skill (`~/.cursor/skills/tech-radar/`) — it scans the recent landscape, dedupes against this library, and hands ranked topics back to this skill.
 
 ## Storage
 
@@ -39,7 +42,7 @@ Every brief is **saved to disk automatically** as a self-contained HTML file, ne
 - `mkdir -p ~/Documents/tech-briefs/<Category>` before writing.
 - Fill the `brief-*` `<meta>` tags in [template.html](template.html) — the index builder reads them.
 - `brief-poc` on first save: `proposed` when PoC suitability is *good fit* or *partial*, `none` when *not practical*. The lab lifecycle later bumps it to `scaffolded` → `completed` (Step 6).
-- **Rebuild the index after every save**: `python3 ~/.cursor/skills/tech-radar-brief/scripts/build_index.py`
+- **Rebuild the index after every save**: `python3 ~/.cursor/skills/learn/scripts/build_index.py`
 - Print the saved path plus `open ~/Documents/tech-briefs/<Category>/<topic-slug>.html` and mention `open ~/Documents/tech-briefs/index.html`.
 
 ### Re-running a topic
@@ -163,8 +166,9 @@ thing this skill exists to save.]
 
 ## Hands-on PoC
 **Suitability:** [good fit | partial | not practical] — [why, 1 line]
-**What you walk through (~[N] min):** [one sentence — the working thing the lab demonstrates,
-then the env switches that drive its failure demos, e.g. `BREAK_AGENT=1` plants a routing bug]
+**What you walk through (~[N] min):** [1-2 sentences — the working thing the lab demonstrates
+and what one run consists of (the actor, what it acts on), then the env switches that drive its
+failure demos, e.g. `BREAK_AGENT=1` plants a routing bug]
 **Concepts it makes physical:** [2-3 named concepts from the Mental model section]
 
 **Setup (~10 min)**
@@ -173,22 +177,30 @@ then the env switches that drive its failure demos, e.g. `BREAK_AGENT=1` plants 
 - Smoke check: [one command + the output that proves setup worked]
 
 **Steps**
-1. **[~12 min] [Step name]** — [the literal command]. Watch for: [the exact output that appears
-   and what it proves]. Counterfactual: [the second command showing what breaks if built the
-   other way, and the number it produces].
+1. **[~12 min] [Step name]** — Run [the literal command] — [mechanism clause folded into the
+   same sentence: what the command makes the system do, and which piece this step adds or
+   removes relative to the previous one]. Watch for: [the exact output that appears and what it
+   proves]. Counterfactual: [the second command showing what breaks if built the other way, and
+   the number it produces].
 [4-6 steps, escalating from "make it respond" to one genuinely non-trivial concept. Every step
-carries an honest minute budget, one command to run, and a checkable watch-for. Write them so a
-reader could follow them without the agent — plain imperative sentences, no framework jargon left
-undefined, no step that silently contains three.]
+carries an honest minute budget, one command with its mechanism clause, and a checkable
+watch-for. Write them so a reader could follow them without the agent — plain imperative
+sentences, no framework jargon left undefined, no step that silently contains three.]
 
 **Stretch (optional, outside the budget):** [one harder extension]
 
 [Rules for this section: every step is *run and observe* — the scaffold ships all the code
 working, so a step names a command and the output worth watching, never code for the reader to
-write. These brief steps are the summary; `LAB.html` expands each into the full seven-slot
-anatomy (Step 6). Prefer one tool the reader installs once over a menu of options. If suitability
-is *not practical*, replace Setup/Steps with one line naming the closest runnable neighbour.]
-[If a lab is already scaffolded: `Lab: ~/Documents/tech-briefs/poc/<topic-slug>/ — open LAB.html`]
+write. A bare command plus an expected output reads as magic, so every run sentence folds in a
+short mechanism clause — what the command makes the system do. But keep steps compact: the
+brief is not the lab. When a lab is scaffolded, these steps mirror `LAB.html`'s steps one for
+one and defer all depth — code that matters, predictions, verified output, why-it-happened,
+counterfactual detail — to the lab: the lab *is* the PoC, the brief section is its index.
+Prefer one tool the reader installs once over a menu of options. If suitability is *not
+practical*, replace Setup/Steps with one line naming the closest runnable neighbour.]
+[If a lab is already scaffolded, open the section with: `Scaffolded at
+~/Documents/tech-briefs/poc/<topic-slug>/ — open LAB.html; the steps below are the lab's steps,
+one for one. Everything is implemented and verified — run & observe, no code to write.`]
 
 ## Sources
 - [YYYY-MM-DD] [Source name / title] — [URL] *(tier 1-4)*
@@ -239,6 +251,8 @@ The point: the user learns by **predicting, running, observing, and explaining b
 ```
 
 **Lab docs are HTML, not Markdown** — same reading experience as the brief, opened in the browser next to it. Build them from [lab-template.html](lab-template.html) and [notes-template.html](notes-template.html); both are self-contained (inline CSS matching the brief palette, no build step, no CDN). Every lab doc links back to its brief with a relative path (`../../<Category>/<topic-slug>.html`) and across to its siblings. Code files, `.env`, and dependency manifests stay plain — this rule is about the docs only.
+
+**Format contract — every lab, every time.** `LAB.html` carries exactly the template's sections, in the template's order, none dropped and none invented: *How to use this lab* → *The big picture* (scenario, bold question, `.lanes` diagram, `ol.arc`, one-liner, file-map `.setup`) → *Setup* → *Steps* (seven slots each, progress checkboxes) → *Stretch* → *Recap card* (small lanes, takeaways, contrasts table, switches table, glossary) → *Self-check* (with reveals, last one Transfer) → footer + progress script. The reference implementation is `~/Documents/tech-briefs/poc/agent-evaluation-release-gating/LAB.html`; a new lab should be indistinguishable from it in structure. Do not design a new layout per topic — only the content changes.
 
 **Build order — do not write `LAB.html` first.** The doc quotes verified output and reveals verified prediction answers, so it can only be written *after* the runs exist. Work in this order:
 
