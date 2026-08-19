@@ -69,7 +69,7 @@ Editing coverage = editing `feeds.toml`. No skill-text change needed to add or d
 
 - None required.
 - Optional: focus filter ("AI only", "infra/platform only"), window override (default **3 months**), "include topics I already briefed" to disable dedupe.
-- Optional mode: **full** (default — everything below) or **quick** ("quick scan", "update the watchlist") — crawl + triage + watchlist update + a short movers summary in chat; no confirm pass, no ring placement, no HTML. Quick exists for cheap between-scan refreshes; ring placement without confirmed evidence would violate the two-signal rule, so quick never places blips.
+- Optional mode: **full** (default — everything below) or **quick** ("quick scan", "update the watchlist") — crawl + triage + watchlist update + a short new-signals summary in chat; no confirm pass, no ring placement, no HTML. Quick exists for cheap between-scan refreshes; ring placement without confirmed evidence would violate the two-signal rule, so quick never places blips.
 
 ## Workflow
 
@@ -142,7 +142,7 @@ The scan output reports drop counts per reason code plus keep count — the tria
 
 Watchlist items get their disposition in Step 6 — but scan the titles for signals matching watchlist topics **now** and tag them while reading.
 
-**Quick mode stops here**: update `watchlist.json` (Step 6's merge rules, using unconfirmed keep signals), report movers + feed health in chat, done.
+**Quick mode stops here**: update `watchlist.json` (Step 6's merge rules, using unconfirmed keep signals), report new signals + expiries + feed health in chat, done.
 
 ### Step 5: Confirm + candidate pool
 
@@ -255,7 +255,7 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 
 ## The rest of the radar
 **Try:** [names + numbers] · **Watch:** […] · **Skip:** […]
-[One line per ring; movers worth a sentence get one. Point at the HTML for the radar + cards.]
+[One line per ring; anything worth a sentence gets one. Point at the HTML for the radar + cards.]
 
 ## Notable
 [2-4 lines: expired watchlist items, a gate that barely passed, a feed that broke,
