@@ -1,11 +1,11 @@
 ---
 name: tech-radar
-description: Discover what to learn next as a principal software + AI engineer. A deterministic crawler (scripts/scan_feeds.py, driven by feeds.toml) pulls ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters gravity, endoflife.date — into a dated intake file; the agent triages 100% of items (keeps and logged drops), confirms adoption evidence, merges a persistent watchlist with movement markers, then places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Adopt / Trial / Assess / Hold) rendered as an interactive SVG radar with numbered blips and per-blip writeups — with whole-landscape balance enforced, AI one strand not the default. Dedupes against the user's brief library; the Adopt ring is the learn-next answer, each Adopt blip runs via the learn skill (/learn). Supports full scans and quick watchlist-update scans. Use when the user asks "what should I learn", "scan the radar", "recent topics worth learning", "what's moving in tech/AI", or wants learning recommendations without naming a topic.
+description: Discover what to learn next as a principal software + AI engineer. A deterministic crawler (scripts/scan_feeds.py, driven by feeds.toml) pulls ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters gravity, endoflife.date — into a dated intake file; the agent triages 100% of items (keeps and logged drops), confirms adoption evidence, merges a persistent watchlist with movement markers, then places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Learn / Try / Watch / Skip — Thoughtworks geometry with learning-native names) rendered as an interactive SVG radar with numbered blips and per-blip writeups — with whole-landscape balance enforced, AI one strand not the default. Dedupes against the user's brief library; the Learn ring is the learn-next answer, each Learn blip runs via the learn skill (/learn). Supports full scans and quick watchlist-update scans. Use when the user asks "what should I learn", "scan the radar", "recent topics worth learning", "what's moving in tech/AI", or wants learning recommendations without naming a topic.
 ---
 
 # Tech Radar
 
-Goal: answer **"what should I learn next?"** for a principal software + AI engineer — a Thoughtworks-style radar, not a trends listicle. Every candidate lands on one of four **rings** in its quadrant, and the **Adopt ring is the answer**. Every placement must survive the question: *"why this, why now, and why for someone at this level?"*
+Goal: answer **"what should I learn next?"** for a principal software + AI engineer — a Thoughtworks-style radar, not a trends listicle. Every candidate lands on one of four **rings** in its quadrant, and the **Learn ring is the answer**. Every placement must survive the question: *"why this, why now, and why for someone at this level?"*
 
 This skill finds the topics; the sibling **learn** skill (`~/.cursor/skills/learn/`) learns them (brief → learn path → lab → quiz). The two share one library: briefs produced there are this skill's memory, and this skill's output is that skill's input queue.
 
@@ -30,12 +30,12 @@ Explicitly out of scope: junior-level fundamentals, certification chasing, singl
 - **Tools** — software you use rather than build on: dev tools, CI/CD, observability, utilities, coding agents.
 - **Languages & Frameworks** — languages, major framework releases, SDKs, standard-library movements.
 
-**The rings (learning lens — same names as Thoughtworks, adapted meanings):**
+**The rings (Thoughtworks geometry, learning-native names — Thoughtworks' Adopt/Trial/Assess/Hold are adoption advice for teams; a learning radar needs verbs about *your time*, so the rings are):**
 
-- **Adopt** — *learn now.* Production-grade evidence; you would start the `/learn` loop this week. This ring is deliberately selective: only items you would actually start; if it grows past ~8, you are not choosing.
-- **Trial** — *learn soon.* Clear value but second in the queue, or the cheap pass is enough right now (read the release notes, half-day skim).
-- **Assess** — *track with a condition.* Real signal, not rankable yet; every Assess blip carries a concrete *promote when:* condition (from the watchlist).
-- **Hold** — *deliberately not spending time.* Fading, contested, or no adoption evidence — with one line on what would move it back in.
+- **Learn** — *start now.* Production-grade evidence; you would start the `/learn` loop this week. This ring is deliberately selective: only items you would actually start; if it grows past ~8, you are not choosing.
+- **Try** — *the cheap pass is enough.* Clear value but second in the queue, or a half-day skim / the release notes are the whole 101.
+- **Watch** — *track with a condition.* Real signal, not rankable yet; every Watch blip carries a concrete *promote when:* condition (from the watchlist).
+- **Skip** — *deliberately not spending time.* Fading, contested, or no adoption evidence — with one line on what would move it back in.
 
 Optional per-run focus narrows the lens ("AI only", "infra only", "what should I learn for the next quarter") — but the level stays principal.
 
@@ -148,7 +148,7 @@ Watchlist items get their disposition in Step 6 — but scan the titles for sign
 
 ### Step 5: Confirm + candidate pool
 
-For each keep that could plausibly rank, run **one confirming search** for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Budget: **≤20 confirming searches** — spend them on likely Adopt/Trial material, not on obvious Hold blips. Total agent search budget per full scan (manual sweep + wildcard + confirm) is roughly **25–35 calls**; the crawl itself costs one command.
+For each keep that could plausibly rank, run **one confirming search** for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Budget: **≤20 confirming searches** — spend them on likely Learn/Try material, not on obvious Skip blips. Total agent search budget per full scan (manual sweep + wildcard + confirm) is roughly **25–35 calls**; the crawl itself costs one command.
 
 Collect **15–25 candidates**. For each record:
 
@@ -175,11 +175,11 @@ Collect **15–25 candidates**. For each record:
 10. **Languages & frameworks** — major language releases, framework majors, TC39/std-lib advancements, notable deprecations
 11. **Stack-adjacent** — at least one candidate or clearance keyed to the user's visible stack
 
-**Coverage gate:** every erroring feed got its fallback search; every manual feed was covered; ≥3 candidates in the pool come from sources other than the top HN stories (the registry exists so the pool is not just HN's front page). **Quadrant balance gate:** pool holds **≥3 candidates per quadrant** or documents a quadrant as genuinely quiet; without an AI focus filter, at most **half** the pool may be AI-ML and the Adopt ring must span **≥3 quadrants**. Fail a gate → widen (more manual sources, second wildcard pass) and re-pass. Do not place blips until both gates pass.
+**Coverage gate:** every erroring feed got its fallback search; every manual feed was covered; ≥3 candidates in the pool come from sources other than the top HN stories (the registry exists so the pool is not just HN's front page). **Quadrant balance gate:** pool holds **≥3 candidates per quadrant** or documents a quadrant as genuinely quiet; without an AI focus filter, at most **half** the pool may be AI-ML and the Learn ring must span **≥3 quadrants**. Fail a gate → widen (more manual sources, second wildcard pass) and re-pass. Do not place blips until both gates pass.
 
 ### Step 6: Watchlist merge
 
-`radar/watchlist.json` holds candidates that did not make a previous Adopt ring but were too real to discard. Shape:
+`radar/watchlist.json` holds candidates that did not make a previous Learn ring but were too real to discard. Shape:
 
 ```json
 {
@@ -199,22 +199,22 @@ Collect **15–25 candidates**. For each record:
 
 Disposition every watchlist item, every scan:
 
-- **promote** — new strong signal this window → joins the candidate pool (and possibly the Adopt ring). Remove from watchlist if it reaches Adopt; keep as `rising` if it stays Trial/Assess.
-- **hold** — new signal, still not Adopt-grade → update `last_signal`, append evidence, status `rising` or `holding`, reset `scans_quiet`.
+- **promote** — new strong signal this window → joins the candidate pool (and possibly the Learn ring). Remove from watchlist if it reaches Learn; keep as `rising` if it stays Try/Watch.
+- **hold** — new signal, still not Learn-grade → update `last_signal`, append evidence, status `rising` or `holding`, reset `scans_quiet`.
 - **quiet** — no signal this window → `scans_quiet += 1`, status `fading` at 2.
 - **expire** — `scans_quiet` reaches 3 → remove; list under "expired" in the scan output (visible, not silent).
 - **briefed** — user briefed it since last scan → remove (it lives in the library now).
 
-New this scan: pool candidates below Adopt with real momentum enter as `status: new`. Watchlist status maps 1:1 to the blip **movement marker** in the output: `new` → `▲ new`, `rising` → `↑ moved in`, `holding` → `→ no change`, `fading` → `▼ moved out`.
+New this scan: pool candidates below the Learn ring with real momentum enter as `status: new`. Watchlist status maps 1:1 to the blip **movement marker** in the output: `new` → `▲ new`, `rising` → `↑ moved in`, `holding` → `→ no change`, `fading` → `▼ moved out`.
 
 ### Step 7: Ring placement
 
 Score each candidate against the role lens (decision leverage, AI depth, durability, force-multiplier, 101-feasibility), then place it on a ring — **every candidate that survives triage gets a blip**, there is no fixed count:
 
-- **Adopt** — would start the `/learn` loop this week; production-grade, two-signal evidence. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
-- **Trial** — real value, second in queue, or the cheap pass suffices (release notes are the 101).
-- **Assess** — tracked with a concrete *promote when:* condition carried from the watchlist.
-- **Hold** — deliberately skipped: fading (moved out), contested, or evidence-free hype — with the condition that would move it back in.
+- **Learn** — would start the `/learn` loop this week; production-grade, two-signal evidence. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
+- **Try** — real value, second in queue, or the cheap pass suffices (release notes are the 101).
+- **Watch** — tracked with a concrete *promote when:* condition carried from the watchlist.
+- **Skip** — deliberately skipped: fading (moved out), contested, or evidence-free hype — with the condition that would move it back in.
 
 Then apply memory:
 
@@ -230,16 +230,16 @@ Items that are **not topics** stay off the radar as one-liners under their quadr
 
 Save the full report as HTML per [template.html](template.html); show a **compact** version in chat (the HTML is the reading artifact — do not dump the whole report into chat).
 
-**The one-writeup rule (the load-bearing design decision):** every blip appears exactly twice — once on the radar visualization, once as its single writeup card in its quadrant section. There is no "Also on radar" section, no standalone watchlist section, no candidate-pool dump, no separate learn-next strip: those were extra repetitions of the same topics and were removed deliberately. Do not reintroduce them. The Adopt ring *is* the learn-next list.
+**The one-writeup rule (the load-bearing design decision):** every blip appears exactly twice — once on the radar visualization, once as its single writeup card in its quadrant section. There is no "Also on radar" section, no standalone watchlist section, no candidate-pool dump, no separate learn-next strip: those were extra repetitions of the same topics and were removed deliberately. Do not reintroduce them. The Learn ring *is* the learn-next list.
 
 **HTML structure (in order):**
 
 1. **Header + meta line** — window, lens, mode, intake summary, feed health one-liner (`55/55 ok`).
 2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, move, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the legend below explains movement shapes and quadrant colors.
-3. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Adopt → Trial → Assess → Hold; omit empty rings). Every blip gets one card:
-   - **Adopt/Trial cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Adopt = why it wins + effort chip + `/learn` command; Trial = the cheaper pass to take now.
-   - **Assess cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
-   - **Hold cards** may skip evidence bullets — one-line what-it-is plus why not to spend time and what would move it back in.
+3. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Learn → Try → Watch → Skip; omit empty rings). Every blip gets one card:
+   - **Learn/Try cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Learn = why it wins + effort chip + `/learn` command; Try = the cheaper pass to take now.
+   - **Watch cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
+   - **Skip cards** may drop evidence bullets — one-line what-it-is plus why not to spend time and what would move it back in.
    - After the ring groups, a `.notblipped` block: non-topic one-liners ("the artifact of #N", "folded into #2", "covered by YYYY-MM-DD brief", "betas; revisit at GA").
 4. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket, referencing blip numbers), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
 5. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
@@ -252,12 +252,12 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 # Tech Radar — [YYYY-MM-DD]
 **Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
 
-## Adopt — learn now
+## Learn — start now
 1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
-[every Adopt blip]
+[every Learn blip]
 
 ## The rest of the radar
-**Trial:** [names + numbers] · **Assess:** […] · **Hold:** […]
+**Try:** [names + numbers] · **Watch:** […] · **Skip:** […]
 [One line per ring; movers worth a sentence get one. Point at the HTML for the radar + cards.]
 
 ## Notable
@@ -278,9 +278,9 @@ End with: *"Pick a blip number — I'll run the full brief (and lab) on it."* On
 - **Deterministic first, search second.** The registry + crawler make wide coverage free and repeatable; agent searches are for what feeds cannot reach. Adding a source is a registry edit, not a prompt edit.
 - **Disposition everything.** Every intake item is a keep or a coded drop; every watchlist item moves or expires visibly. An unexplained absence is a bug, not a judgment call.
 - **The library is memory, not decoration.** Recommending something already lab-done wastes the user's time twice.
-- **The ring is the verdict.** Assess ≠ Adopt: early-stage excitement gets an Assess blip with a promotion condition, never an Adopt slot. Ring moves between scans are the signal a static list cannot give.
-- **A selective Adopt ring beats a crowded one.** No fixed blip count anywhere — but Adopt past ~8 items means you stopped choosing. If the window was genuinely quiet, say so and place fewer.
+- **The ring is the verdict.** Watch ≠ Learn: early-stage excitement gets a Watch blip with a promotion condition, never a Learn slot. Ring moves between scans are the signal a static list cannot give.
+- **A selective Learn ring beats a crowded one.** No fixed blip count anywhere — but Learn past ~8 items means you stopped choosing. If the window was genuinely quiet, say so and place fewer.
 - **No fabricated evidence.** Every why-now point is dated and traceable to a source in the list.
 - **Missing a critical topic is worse than over-researching.** The must-not-miss checklist, feed-health fallbacks, and coverage gates exist so a thin pass cannot silently skip protocols, security, or evals.
-- **Show the pool — as blips, once each.** An Adopt ring without the Assess/Hold context is unauditable, so every surviving candidate gets a blip with a verdict, and non-topics get a one-liner. But each topic appears exactly once as a card — repeating the same topic across also-on-radar, watchlist, and pool-dump sections is how a report becomes unreadable.
+- **Show the pool — as blips, once each.** A Learn ring without the Watch/Skip context is unauditable, so every surviving candidate gets a blip with a verdict, and non-topics get a one-liner. But each topic appears exactly once as a card — repeating the same topic across also-on-radar, watchlist, and pool-dump sections is how a report becomes unreadable.
 - **Whole landscape, not the AI corner.** What an AI-heavy feed diet misses is platforms, techniques, and language movements. Quadrant balance is a gate, not a preference; an unfocused scan that returns only AI failed the sweep.
