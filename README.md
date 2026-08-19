@@ -154,7 +154,7 @@ in both directions.
 
 | Skill | What it does |
 |-------|--------------|
-| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist with movement markers (new/rising/holding/fading), and ranks into Thoughtworks-style quadrants (Techniques / Platforms / Tools / Languages & Frameworks) with whole-landscape balance enforced. Outputs a ranked top-5 + quadrant map saved as a dated HTML scan. Supports full scans and quick watchlist-update scans. |
+| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist with movement markers, and places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Adopt / Trial / Assess / Hold) — rendered as an interactive SVG radar with numbered blips, movement shapes, volume themes, and per-blip writeups in a dated HTML scan. The Adopt ring is the learn-next answer. Supports full scans and quick watchlist-update scans. |
 | `learn` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
 
 ### Flow
@@ -168,7 +168,7 @@ manual sources and wildcard searches based on the previous scan's coverage.
 ```mermaid
 flowchart LR
     F[("feeds.toml<br/>~55 feeds")] -->|"scan_feeds.py<br/>(deterministic crawl)"| R["/tech-radar<br/><i>what to learn?</i>"]
-    R -->|"ranked top-5"| B["/learn<br/><i>learn one topic</i>"]
+    R -->|"Adopt-ring blips"| B["/learn<br/><i>learn one topic</i>"]
     B -->|"brief + lab + quiz"| L[("brief library<br/>~/Documents/tech-briefs/")]
     L -.->|"dedupe memory +<br/>rotation"| R
     W[("watchlist.json<br/>movement markers")] -.-> R
