@@ -127,12 +127,6 @@
     font: 600 11px/1.7 ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.04em; margin-left: 8px; vertical-align: 2px;
   }
-  .mv { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 5px; padding: 2px 6px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
-  .mv.new { color: #6d28d9; background: #f1eafe; }
-  .mv.in { color: #1a7f4b; background: #e7f5ec; }
-  .mv.none { color: #5f6b7a; background: #eef1f5; }
-  .mv.out { color: #b45309; background: #fdf3e3; }
-
   .card .what { margin: 0 0 10px; font-size: 14.5px; color: var(--ink); }
   .card ul.ev { list-style: none; padding: 0; margin: 0 0 10px; }
   .card ul.ev li { position: relative; padding-left: 86px; margin: 6px 0; font-size: 14px; line-height: 1.5; }
@@ -209,11 +203,7 @@
         <div class="blip-tip" id="blip-tip"></div>
       </div>
       <div class="legend">
-        <span class="item"><svg viewBox="0 0 20 20"><polygon points="10,3 2,17 18,17" fill="#5f6b7a"/></svg> new</span>
-        <span class="item"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" fill="#5f6b7a"/><circle cx="10" cy="10" r="9" fill="none" stroke="#5f6b7a" stroke-width="1.6"/></svg> moved in</span>
-        <span class="item"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#5f6b7a"/></svg> no change</span>
-        <span class="item"><svg viewBox="0 0 20 20"><polygon points="10,17 2,3 18,3" fill="#5f6b7a"/></svg> moved out</span>
-        <span class="item" style="margin-left:14px"><span style="width:10px;height:10px;border-radius:50%;background:var(--q0);display:inline-block"></span> Techniques</span>
+        <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q0);display:inline-block"></span> Techniques</span>
         <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q1);display:inline-block"></span> Platforms</span>
         <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q2);display:inline-block"></span> Tools</span>
         <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q3);display:inline-block"></span> Languages &amp; Frameworks</span>
@@ -229,7 +219,7 @@
 
     <h3 class="ring">Learn — start now</h3>
     <div class="card" id="card-topic-slug">
-      <h4><span class="bnum q0">1</span>Topic name <span class="cat">AI-ML</span> <span class="mv new">▲ new</span></h4>
+      <h4><span class="bnum q0">1</span>Topic name <span class="cat">AI-ML</span></h4>
       <p class="what">One sentence: what this actually is, no marketing.</p>
       <ul class="ev">
         <li><span class="date">Aug 11</span> One dated fact, at most one <strong>bold number</strong> — <a href="URL">source</a></li>
@@ -281,11 +271,10 @@
    The agent fills BLIPS; everything else is deterministic.
    q: 0 Techniques · 1 Platforms · 2 Tools · 3 Languages & Frameworks
    ring: 0 Learn · 1 Try · 2 Watch · 3 Skip
-   move: "new" | "in" | "none" | "out"
    id: anchor of the blip's card below */
 const BLIPS = [
 {{BLIPS_JSON}}
-  // {n:1, q:0, ring:0, move:"new", name:"Topic name", id:"card-topic-slug"},
+  // {n:1, q:0, ring:0, name:"Topic name", id:"card-topic-slug"},
 ];
 
 const QUADRANTS = [
@@ -322,14 +311,7 @@ function positionBlips() {
 }
 
 function shapeSVG(b, color) {
-  const x = b.x, y = b.y;
-  if (b.move === "new")
-    return `<polygon class="shape" points="${x},${y - 13} ${x - 12},${y + 8} ${x + 12},${y + 8}" fill="${color}"/><text x="${x}" y="${y + 5.5}">${b.n}</text>`;
-  if (b.move === "out")
-    return `<polygon class="shape" points="${x},${y + 13} ${x - 12},${y - 8} ${x + 12},${y - 8}" fill="${color}"/><text x="${x}" y="${y + 1.5}">${b.n}</text>`;
-  if (b.move === "in")
-    return `<circle class="shape" cx="${x}" cy="${y}" r="10.5" fill="${color}"/><circle cx="${x}" cy="${y}" r="14" fill="none" stroke="${color}" stroke-width="2"/><text x="${x}" y="${y + 3.5}">${b.n}</text>`;
-  return `<circle class="shape" cx="${x}" cy="${y}" r="11" fill="${color}"/><text x="${x}" y="${y + 3.5}">${b.n}</text>`;
+  return `<circle class="shape" cx="${b.x}" cy="${b.y}" r="11" fill="${color}"/><text x="${b.x}" y="${b.y + 3.5}">${b.n}</text>`;
 }
 
 function render() {

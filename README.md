@@ -154,7 +154,7 @@ in both directions.
 
 | Skill | What it does |
 |-------|--------------|
-| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist with movement markers, and places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Learn / Try / Watch / Skip — Thoughtworks geometry, learning-native names) — rendered as an interactive SVG radar with numbered blips, movement shapes, and per-blip writeups in a dated HTML scan. The Learn ring is the learn-next answer. Supports full scans and quick watchlist-update scans. |
+| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist (promote-when conditions, quiet-scan expiry), and places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Learn / Try / Watch / Skip — Thoughtworks geometry, learning-native names) — rendered as an interactive SVG radar with numbered blips and per-blip writeups in a dated HTML scan. The Learn ring is the learn-next answer. Supports full scans and quick watchlist-update scans. |
 | `learn` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
 
 ### Flow
@@ -171,7 +171,7 @@ flowchart LR
     R -->|"Learn-ring blips"| B["/learn<br/><i>learn one topic</i>"]
     B -->|"brief + lab + quiz"| L[("brief library<br/>~/Documents/tech-briefs/")]
     L -.->|"dedupe memory +<br/>rotation"| R
-    W[("watchlist.json<br/>movement markers")] -.-> R
+    W[("watchlist.json<br/>promote-when + expiry")] -.-> R
     R -.-> W
 ```
 

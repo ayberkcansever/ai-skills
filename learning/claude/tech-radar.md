@@ -45,7 +45,7 @@ Coverage is **deterministic first, search second**. A feed registry and a stdlib
 feeds.toml            registry: ~55 feeds (rss/hn/lobsters/endoflife) + manual entries
 scripts/scan_feeds.py stdlib crawler → intake JSON + compact titles view + feed health
 intake/YYYY-MM-DD.*   every windowed item, indexed — the triage input
-watchlist.json        persistent candidates across scans, with movement status
+watchlist.json        persistent candidates across scans (promote-when conditions, expiry counters)
 ```
 
 Editing coverage = editing `feeds.toml`. No skill-text change needed to add or drop a source.
@@ -186,7 +186,6 @@ Collect **15–25 candidates**. For each record:
     {
       "topic": "…", "quadrant": "Platforms", "category": "Infrastructure",
       "first_seen": "YYYY-MM-DD", "last_signal": "YYYY-MM-DD",
-      "status": "new | rising | holding | fading",
       "scans_quiet": 0,
       "evidence": [{"d": "YYYY-MM-DD", "src": "feed-id or venue", "u": "URL"}],
       "note": "one line — what it is and what would promote it"
@@ -198,12 +197,12 @@ Collect **15–25 candidates**. For each record:
 Disposition every watchlist item, every scan:
 
 - **promote** — new strong signal this window → joins the candidate pool (and possibly the Learn ring). Remove from watchlist if it reaches Learn; keep as `rising` if it stays Try/Watch.
-- **hold** — new signal, still not Learn-grade → update `last_signal`, append evidence, status `rising` or `holding`, reset `scans_quiet`.
-- **quiet** — no signal this window → `scans_quiet += 1`, status `fading` at 2.
+- **hold** — new signal, still not Learn-grade → update `last_signal`, append evidence, reset `scans_quiet`.
+- **quiet** — no signal this window → `scans_quiet += 1`.
 - **expire** — `scans_quiet` reaches 3 → remove; list under "expired" in the scan output (visible, not silent).
 - **briefed** — user briefed it since last scan → remove (it lives in the library now).
 
-New this scan: pool candidates below the Learn ring with real momentum enter as `status: new`. Watchlist status maps 1:1 to the blip **movement marker** in the output: `new` → `▲ new`, `rising` → `↑ moved in`, `holding` → `→ no change`, `fading` → `▼ moved out`.
+New this scan: pool candidates below the Learn ring with real momentum enter the watchlist. No movement history is tracked or displayed — blips carry no per-scan markers; the watchlist exists only for promote-when conditions and quiet-scan expiry.
 
 ### Step 7: Ring placement
 
@@ -212,7 +211,7 @@ Score each candidate against the role lens (decision leverage, AI depth, durabil
 - **Learn** — would start the `/learn` loop this week; production-grade, two-signal evidence. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
 - **Try** — real value, second in queue, or the cheap pass suffices (release notes are the 101).
 - **Watch** — tracked with a concrete *promote when:* condition carried from the watchlist.
-- **Skip** — deliberately skipped: fading (moved out), contested, or evidence-free hype — with the condition that would move it back in.
+- **Skip** — deliberately skipped: fading, contested, or evidence-free hype — with the condition that would move it back in.
 
 Then apply memory:
 
@@ -233,7 +232,7 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 **HTML structure (in order):**
 
 1. **Header + meta line** — window, lens, mode, intake summary, feed health one-liner (`55/55 ok`).
-2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, move, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the legend below explains movement shapes and quadrant colors.
+2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the legend below maps quadrant colors.
 3. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Learn → Try → Watch → Skip; omit empty rings). Every blip gets one card:
    - **Learn/Try cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Learn = why it wins + effort chip + `/learn` command; Try = the cheaper pass to take now.
    - **Watch cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
@@ -251,7 +250,7 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 **Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
 
 ## Learn — start now
-1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
+1. **[Topic]** [quadrant] — one line + strongest dated fact. → /learn "…"
 [every Learn blip]
 
 ## The rest of the radar
@@ -276,7 +275,7 @@ End with: *"Pick a blip number — I'll run the full brief (and lab) on it."* On
 - **Deterministic first, search second.** The registry + crawler make wide coverage free and repeatable; agent searches are for what feeds cannot reach. Adding a source is a registry edit, not a prompt edit.
 - **Disposition everything.** Every intake item is a keep or a coded drop; every watchlist item moves or expires visibly. An unexplained absence is a bug, not a judgment call.
 - **The library is memory, not decoration.** Recommending something already lab-done wastes the user's time twice.
-- **The ring is the verdict.** Watch ≠ Learn: early-stage excitement gets a Watch blip with a promotion condition, never a Learn slot. Ring moves between scans are the signal a static list cannot give.
+- **The ring is the verdict.** Watch ≠ Learn: early-stage excitement gets a Watch blip with a promotion condition, never a Learn slot.
 - **A selective Learn ring beats a crowded one.** No fixed blip count anywhere — but Learn past ~8 items means you stopped choosing. If the window was genuinely quiet, say so and place fewer.
 - **No fabricated evidence.** Every why-now point is dated and traceable to a source in the list.
 - **Missing a critical topic is worse than over-researching.** The must-not-miss checklist, feed-health fallbacks, and coverage gates exist so a thin pass cannot silently skip protocols, security, or evals.
