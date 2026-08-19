@@ -223,7 +223,7 @@
     </div>
 
     <h2>Steps</h2>
-    <p class="progress"><span id="progress-text">0 / 0 steps done</span><button id="reset-progress" type="button">reset progress</button></p>
+    <p class="progress"><span id="progress-text">0 / {{STEP_COUNT}} steps done</span><button id="reset-progress" type="button">reset progress</button></p><!-- fill STEP_COUNT with the real number of steps -->
     <ol class="steps">
       <!-- Repeat one <li> per step, incrementing data-step / data-done. Keep all seven slots
            in this order — the uniform shape is what makes the lab skimmable.

@@ -1,0 +1,573 @@
+# tech-radar feed registry — the single source of truth for the intake crawl.
+#
+# type:
+#   rss        — RSS/Atom feed fetched by scripts/scan_feeds.py
+#   hn         — Hacker News via Algolia API (windowed, points-floored)
+#   lobsters   — Lobsters hottest.json
+#   endoflife  — endoflife.date API for the products listed in [settings]
+#   manual     — no machine-readable feed; the AGENT must cover it with the
+#                search hint during the scan (the script lists these in its
+#                summary so they cannot be silently skipped)
+#
+# tier:  core = every scan | extended = rotated, but still crawled (crawling is free;
+#        rotation now only applies to manual sources and wildcard searches)
+# class: ai | platform | language | database | runtime | framework | security |
+#        press | survey | aggregator | conference | production
+#
+# Editing: add/remove [[feeds]] blocks freely — the crawler and the skill read
+# this file; nothing else needs to change. Keep ids unique.
+
+[settings]
+window_days = 90
+per_feed_cap = 15
+hn_min_points = 400
+hn_cap = 150
+noise_keywords = ["webinar", "hiring", "we're hiring", "job opening", "careers at", "sponsor", "advent of code"]
+eol_products = ["python", "nodejs", "postgresql", "kubernetes", "java", "go", "dotnet", "django", "rails", "react", "redis", "mongodb", "mysql", "ubuntu", "debian"]
+eol_horizon_days = 180
+
+# ---------- AI labs & agent stack ----------
+
+[[feeds]]
+id = "openai-news"
+name = "OpenAI News"
+type = "rss"
+url = "https://openai.com/news/rss.xml"
+tier = "core"
+class = "ai"
+
+[[feeds]]
+id = "hf-blog"
+name = "Hugging Face Blog"
+type = "rss"
+url = "https://huggingface.co/blog/feed.xml"
+tier = "core"
+class = "ai"
+
+[[feeds]]
+id = "langchain-blog"
+name = "LangChain Blog"
+type = "rss"
+url = "https://www.langchain.com/blog/rss.xml"
+tier = "core"
+class = "ai"
+
+[[feeds]]
+id = "google-dev-blog"
+name = "Google Developers Blog"
+type = "rss"
+url = "https://developers.googleblog.com/rss/"
+tier = "core"
+class = "ai"
+# NOTE: this feed publishes no item dates — the crawler keeps its latest items undated
+
+[[feeds]]
+id = "aws-ml-blog"
+name = "AWS Machine Learning Blog"
+type = "rss"
+url = "https://aws.amazon.com/blogs/machine-learning/feed/"
+tier = "core"
+class = "ai"
+
+[[feeds]]
+id = "nvidia-dev"
+name = "NVIDIA Developer Blog"
+type = "rss"
+url = "https://developer.nvidia.com/blog/feed"
+tier = "extended"
+class = "ai"
+
+[[feeds]]
+id = "anthropic-eng"
+name = "Anthropic Engineering / News"
+type = "manual"
+url = "https://www.anthropic.com/engineering"
+tier = "core"
+class = "ai"
+hint = "site:anthropic.com/engineering OR site:anthropic.com/news"
+
+[[feeds]]
+id = "mcp-blog"
+name = "MCP Blog / SEPs"
+type = "manual"
+url = "https://blog.modelcontextprotocol.io"
+tier = "core"
+class = "ai"
+hint = "site:blog.modelcontextprotocol.io OR modelcontextprotocol SEP"
+
+[[feeds]]
+id = "deepmind-blog"
+name = "Google DeepMind Blog"
+type = "manual"
+url = "https://deepmind.google/discover/blog/"
+tier = "extended"
+class = "ai"
+hint = "site:deepmind.google/discover/blog"
+
+# ---------- Cloud / infra / platform ----------
+
+[[feeds]]
+id = "k8s-blog"
+name = "Kubernetes Blog"
+type = "rss"
+url = "https://kubernetes.io/feed.xml"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "cncf"
+name = "CNCF Blog + Announcements"
+type = "rss"
+url = "https://www.cncf.io/feed/"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "aws-arch-blog"
+name = "AWS Architecture Blog"
+type = "rss"
+url = "https://aws.amazon.com/blogs/architecture/feed/"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "cloudflare-blog"
+name = "Cloudflare Blog"
+type = "rss"
+url = "https://blog.cloudflare.com/rss/"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "github-blog"
+name = "GitHub Blog"
+type = "rss"
+url = "https://github.blog/feed/"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "github-changelog"
+name = "GitHub Changelog"
+type = "rss"
+url = "https://github.blog/changelog/feed/"
+tier = "extended"
+class = "platform"
+
+[[feeds]]
+id = "vercel-blog"
+name = "Vercel Blog"
+type = "rss"
+url = "https://vercel.com/atom"
+tier = "extended"
+class = "platform"
+
+[[feeds]]
+id = "azure-blog"
+name = "Microsoft Azure Blog"
+type = "rss"
+url = "https://azure.microsoft.com/en-us/blog/feed/"
+tier = "extended"
+class = "platform"
+
+# ---------- Languages (official feeds, all majors) ----------
+
+[[feeds]]
+id = "go-blog"
+name = "Go Blog"
+type = "rss"
+url = "https://go.dev/blog/feed.atom"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "rust-blog"
+name = "Rust Blog"
+type = "rss"
+url = "https://blog.rust-lang.org/feed.xml"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "python-insider"
+name = "Python Insider"
+type = "rss"
+url = "https://blog.python.org/rss.xml"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "nodejs-blog"
+name = "Node.js Blog"
+type = "rss"
+url = "https://nodejs.org/en/feed/blog.xml"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "typescript-blog"
+name = "TypeScript Blog"
+type = "rss"
+url = "https://devblogs.microsoft.com/typescript/feed/"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "inside-java"
+name = "Inside Java"
+type = "rss"
+url = "https://inside.java/feed.xml"
+tier = "core"
+class = "language"
+
+[[feeds]]
+id = "dotnet-blog"
+name = ".NET Blog"
+type = "rss"
+url = "https://devblogs.microsoft.com/dotnet/feed/"
+tier = "extended"
+class = "language"
+
+[[feeds]]
+id = "ruby-news"
+name = "Ruby News"
+type = "rss"
+url = "https://www.ruby-lang.org/en/feeds/news.rss"
+tier = "extended"
+class = "language"
+
+[[feeds]]
+id = "php-news"
+name = "PHP News"
+type = "rss"
+url = "https://www.php.net/feed.atom"
+tier = "extended"
+class = "language"
+
+[[feeds]]
+id = "kotlin-blog"
+name = "Kotlin Blog"
+type = "rss"
+url = "https://blog.jetbrains.com/kotlin/feed/"
+tier = "extended"
+class = "language"
+
+[[feeds]]
+id = "swift-blog"
+name = "Swift Blog"
+type = "rss"
+url = "https://www.swift.org/atom.xml"
+tier = "extended"
+class = "language"
+
+# ---------- Runtimes ----------
+
+[[feeds]]
+id = "deno-blog"
+name = "Deno Blog"
+type = "rss"
+url = "https://deno.com/feed"
+tier = "extended"
+class = "runtime"
+
+[[feeds]]
+id = "bun-blog"
+name = "Bun Blog"
+type = "rss"
+url = "https://bun.sh/rss.xml"
+tier = "extended"
+class = "runtime"
+
+[[feeds]]
+id = "wasm-w3c"
+name = "WebAssembly / Bytecode Alliance"
+type = "rss"
+url = "https://bytecodealliance.org/feed.xml"
+tier = "extended"
+class = "runtime"
+
+# ---------- Databases ----------
+
+[[feeds]]
+id = "postgres-news"
+name = "PostgreSQL News"
+type = "rss"
+url = "https://www.postgresql.org/news.rss"
+tier = "core"
+class = "database"
+
+[[feeds]]
+id = "duckdb-blog"
+name = "DuckDB Blog"
+type = "rss"
+url = "https://duckdb.org/feed.xml"
+tier = "extended"
+class = "database"
+
+[[feeds]]
+id = "clickhouse-blog"
+name = "ClickHouse Blog"
+type = "rss"
+url = "https://clickhouse.com/rss.xml"
+tier = "extended"
+class = "database"
+
+[[feeds]]
+id = "mongodb-blog"
+name = "MongoDB Blog"
+type = "rss"
+url = "https://www.mongodb.com/blog/rss"
+tier = "extended"
+class = "database"
+
+# ---------- Famous frameworks & infra repos (GitHub releases.atom — no rate limits) ----------
+
+[[feeds]]
+id = "gh-react"
+name = "React releases"
+type = "rss"
+url = "https://github.com/facebook/react/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-nextjs"
+name = "Next.js releases"
+type = "rss"
+url = "https://github.com/vercel/next.js/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-vue"
+name = "Vue releases"
+type = "rss"
+url = "https://github.com/vuejs/core/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-svelte"
+name = "Svelte releases"
+type = "rss"
+url = "https://github.com/sveltejs/svelte/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-django"
+name = "Django releases"
+type = "rss"
+url = "https://github.com/django/django/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-rails"
+name = "Rails releases"
+type = "rss"
+url = "https://github.com/rails/rails/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-spring-boot"
+name = "Spring Boot releases"
+type = "rss"
+url = "https://github.com/spring-projects/spring-boot/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-fastapi"
+name = "FastAPI releases"
+type = "rss"
+url = "https://github.com/fastapi/fastapi/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-pytorch"
+name = "PyTorch releases"
+type = "rss"
+url = "https://github.com/pytorch/pytorch/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-vllm"
+name = "vLLM releases"
+type = "rss"
+url = "https://github.com/vllm-project/vllm/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-langgraph"
+name = "LangGraph releases"
+type = "rss"
+url = "https://github.com/langchain-ai/langgraph/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-temporal"
+name = "Temporal releases"
+type = "rss"
+url = "https://github.com/temporalio/temporal/releases.atom"
+tier = "extended"
+class = "framework"
+
+# ---------- Production engineering blogs ----------
+
+[[feeds]]
+id = "netflix-tech"
+name = "Netflix TechBlog"
+type = "rss"
+url = "https://netflixtechblog.com/feed"
+tier = "extended"
+class = "production"
+
+[[feeds]]
+id = "stripe-blog"
+name = "Stripe Blog"
+type = "rss"
+url = "https://stripe.com/blog/feed.rss"
+tier = "extended"
+class = "production"
+
+[[feeds]]
+id = "shopify-eng"
+name = "Shopify Engineering"
+type = "manual"
+url = "https://shopify.engineering"
+tier = "extended"
+class = "production"
+hint = "site:shopify.engineering"
+
+[[feeds]]
+id = "slack-eng"
+name = "Slack Engineering"
+type = "rss"
+url = "https://slack.engineering/feed/"
+tier = "extended"
+class = "production"
+
+[[feeds]]
+id = "airbnb-eng"
+name = "Airbnb Engineering"
+type = "rss"
+url = "https://medium.com/feed/airbnb-engineering"
+tier = "extended"
+class = "production"
+
+[[feeds]]
+id = "meta-eng"
+name = "Meta Engineering"
+type = "rss"
+url = "https://engineering.fb.com/feed/"
+tier = "extended"
+class = "production"
+
+[[feeds]]
+id = "uber-eng"
+name = "Uber Engineering"
+type = "manual"
+url = "https://www.uber.com/blog/engineering/"
+tier = "extended"
+class = "production"
+hint = "site:uber.com/blog/engineering"
+
+# ---------- Press / analysis ----------
+
+[[feeds]]
+id = "infoq"
+name = "InfoQ"
+type = "rss"
+url = "https://feed.infoq.com/"
+tier = "extended"
+class = "press"
+
+[[feeds]]
+id = "simonwillison"
+name = "Simon Willison"
+type = "rss"
+url = "https://simonwillison.net/atom/everything/"
+tier = "core"
+class = "press"
+
+# ---------- Security ----------
+
+[[feeds]]
+id = "trailofbits"
+name = "Trail of Bits Blog"
+type = "rss"
+url = "https://blog.trailofbits.com/feed/"
+tier = "core"
+class = "security"
+
+[[feeds]]
+id = "owasp-genai"
+name = "OWASP GenAI Security"
+type = "manual"
+url = "https://genai.owasp.org"
+tier = "core"
+class = "security"
+hint = "site:genai.owasp.org OR OWASP LLM top 10 update"
+
+# ---------- Surveys & curated radars (agent-fetched) ----------
+
+[[feeds]]
+id = "thoughtworks-radar"
+name = "Thoughtworks Technology Radar"
+type = "manual"
+url = "https://www.thoughtworks.com/radar"
+tier = "core"
+class = "survey"
+hint = "fetch latest volume; mine blips + themes, not the press release"
+
+[[feeds]]
+id = "trend-surveys"
+name = "Trend surveys in season"
+type = "manual"
+url = ""
+tier = "extended"
+class = "survey"
+hint = "whichever is fresh: InfoQ Trends, DORA, StackOverflow survey, CNCF survey, State of JS, RedMonk"
+
+# ---------- Conferences (agent-searched) ----------
+
+[[feeds]]
+id = "conferences"
+name = "Conference tracks in window ±6 weeks"
+type = "manual"
+url = ""
+tier = "core"
+class = "conference"
+hint = "KubeCon, re:Invent, Google Cloud Next, MS Build, AI Engineer World's Fair, Data+AI Summit, NeurIPS/ICML industry, PyCon — track lists and theme writeups"
+
+# ---------- Aggregators (API-crawled) ----------
+
+[[feeds]]
+id = "hn"
+name = "Hacker News (Algolia API)"
+type = "hn"
+url = "https://hn.algolia.com/api/v1/search"
+tier = "core"
+class = "aggregator"
+
+[[feeds]]
+id = "lobsters"
+name = "Lobsters hottest"
+type = "lobsters"
+url = "https://lobste.rs/hottest.json"
+tier = "extended"
+class = "aggregator"
+
+[[feeds]]
+id = "eol"
+name = "endoflife.date"
+type = "endoflife"
+url = "https://endoflife.date/api"
+tier = "core"
+class = "aggregator"

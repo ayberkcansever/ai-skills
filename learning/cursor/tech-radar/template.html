@@ -6,8 +6,10 @@
 <meta name="radar-date" content="{{SCAN_DATE}}" />
 <meta name="radar-window" content="{{WINDOW}}" />
 <meta name="radar-focus" content="{{FOCUS}}" />
-<meta name="radar-venues" content="{{VENUES_META}}" /><!-- Extended venues hit, e.g. "E1:meta+hf, E2:netflix+stripe, E3:infoq" — next scan rotates away from these -->
-<title>Learning Radar — {{SCAN_DATE}}</title>
+<meta name="radar-venues" content="{{VENUES_META}}" /><!-- manual sources + wildcard queries used, e.g. "manual:anthropic+thoughtworks+kubecon, wild:ga-platform-2026" — next scan rotates away from these -->
+<meta name="radar-mode" content="{{MODE}}" /><!-- full | quick -->
+<meta name="radar-intake" content="{{INTAKE_META}}" /><!-- e.g. "items:687 kept:42 dropped:645 feeds-ok:54 feeds-error:0" -->
+<title>Tech Radar — {{SCAN_DATE}}</title>
 <style>
   :root {
     --ink: #131a24;
@@ -91,6 +93,26 @@
   li { margin: 7px 0; }
   ul.alsoradar li strong { font-size: 15.5px; }
 
+  .quadmap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .quad { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; background: #fbfcfd; }
+  .quad h3 { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  .quad ul { padding-left: 16px; margin: 0; font-size: 13.5px; }
+  .quad li { margin: 5px 0; }
+  .quad .learn-now { font-weight: 700; }
+  .quad .learn-now::after { content: " · learn now"; font: 600 10.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: var(--good); }
+  .quad .quiet { color: var(--muted); font-style: italic; }
+  @media (max-width: 640px) { .quadmap { grid-template-columns: 1fr; } }
+
+  /* movement markers: ▲ new · ↑ rising · → holding · ↓ fading */
+  .mv { font: 700 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 5px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+  .mv.new { color: #6d28d9; background: #f1eafe; }
+  .mv.rising { color: #1a7f4b; background: #e7f5ec; }
+  .mv.holding { color: #5f6b7a; background: #eef1f5; }
+  .mv.fading { color: #b45309; background: #fdf3e3; }
+
+  .watchlist li { font-size: 14.5px; }
+  .watchlist .expired { color: var(--muted); font-style: italic; }
+
   .covered { color: var(--muted); font-size: 14.5px; }
   .pool { font-size: 13.5px; color: var(--muted); }
   .sources { font-size: 14px; color: var(--muted); }
@@ -107,28 +129,53 @@
 </head>
 <body>
   <article class="page">
-    <p class="eyebrow">Learning Radar</p>
+    <p class="eyebrow">Tech Radar</p>
     <h1>What to learn next — {{SCAN_DATE}}</h1>
     <p class="meta">
       Window <code>{{WINDOW}}</code> ·
-      Lens: principal software + AI engineer{{FOCUS_SUFFIX}}
+      Lens: principal software + AI engineer{{FOCUS_SUFFIX}} ·
+      Mode <code>{{MODE}}</code> ·
+      Intake <code>{{INTAKE_SUMMARY}}</code><!-- e.g. "687 items / 54 feeds / kept 42" -->
     </p>
 
     <h2>Learn next (ranked)</h2>
     {{PICKS}}
-    <!-- Repeat per pick:
+    <!-- Repeat per pick — first .cat chip is the QUADRANT (Techniques / Platforms / Tools /
+         Languages & Frameworks), second is the library category, then a movement marker:
     <div class="pick">
       <span class="rank">1</span>
-      <h3>Topic name <span class="cat">AI-ML</span></h3>
+      <h3>Topic name <span class="cat">Platforms</span> <span class="cat">AI-ML</span> <span class="mv new">▲ new</span></h3>
       <p><span class="k">Why now</span> dated evidence points…</p>
       <p><span class="k">Why you</span> principal-lens leverage…</p>
       <p><span class="k">Effort</span> <span class="effort">~1 day to 101</span></p>
-      <p class="first-step"><span class="k">First step</span> run tech-radar-brief on "…"</p>
+      <p class="first-step"><span class="k">First step</span> run /learn on "…"</p>
     </div>
     -->
 
     <h2>Also on radar</h2>
     <ul class="alsoradar">{{ALSO_RADAR}}</ul>
+
+    <h2>Quadrant map</h2>
+    <div class="quadmap">
+      {{QUADRANT_MAP}}
+      <!-- Four .quad blocks, always all four, whole pool distributed:
+      <div class="quad">
+        <h3>Techniques</h3>
+        <ul>
+          <li class="learn-now">Topic in the top 5</li>
+          <li>Watch-level topic</li>
+          <li class="quiet">quiet this window</li>  (only when the quadrant is empty)
+        </ul>
+      </div>
+      -->
+    </div>
+
+    <h2>Watchlist</h2>
+    <ul class="watchlist">{{WATCHLIST}}</ul>
+    <!-- One li per watchlist item after the merge:
+    <li>Topic <span class="mv rising">↑ rising</span> — one line + what would promote it</li>
+    <li class="expired">expired after 3 quiet scans: X, Y</li>  (last, if any)
+    "Watchlist empty" as a single li if so. -->
 
     <h2>Already covered (skipped)</h2>
     <p class="covered">{{COVERED}}</p>
@@ -142,13 +189,15 @@
     <h2>Must-not-miss clearance</h2>
     <ul class="pool">{{CHECKLIST}}</ul>
 
-    <h2>Venues covered</h2>
-    <p class="pool">{{VENUES_COVERED}}</p>
+    <h2>Coverage</h2>
+    <p class="pool">{{COVERAGE}}</p>
+    <!-- Feed health ("54 feeds ok, X error → site: fallback run"), registry fixes needed,
+         manual sources hit, wildcard queries used. Feeds the next scan's rotation. -->
 
     <h2>Sources</h2>
     <ul class="sources">{{SOURCES}}</ul>
 
-    <footer>Generated by the learning-radar skill · why this, why now, why this level.</footer>
+    <footer>Generated by the tech-radar skill · why this, why now, why this level.</footer>
   </article>
 </body>
 </html>
