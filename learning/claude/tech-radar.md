@@ -207,59 +207,42 @@ Score each candidate against the role lens (decision leverage, AI depth, durabil
 
 Tie-breaks favor: production adoption evidence > discussion volume; durable primitives > tools wrapping them; topics that unlock several others. Honor the quadrant balance gate: ≥3 quadrants in the top 5 unless a focus filter narrows the scan.
 
-### Step 8: Output — use this template
+### Step 8: Output
 
-Show in chat (markdown) **and** save as HTML per [template.html](template.html).
+Save the full report as HTML per [template.html](template.html); show a **compact** version in chat (the HTML is the reading artifact — do not dump the whole report into chat).
+
+**The one-card rule (the load-bearing design decision):** every topic appears in the report exactly twice — once as a link in the quadrant map, once as its single card or row in its quadrant section. There is no "Also on radar" section, no standalone watchlist section, no candidate-pool dump: those were three extra repetitions of the same topics and were removed deliberately. Do not reintroduce them.
+
+**HTML structure (in order):**
+
+1. **Header + meta line** — window, lens, mode, intake summary, feed health one-liner (`55/55 ok`).
+2. **Learn next** — the ranked 5 as compact rows: topic (anchor-linked to its card), movement marker, ONE line (what it is + single strongest why-now fact), the `/learn` command. No detail here — detail lives on the card.
+3. **The landscape** — the quadrant map as a clickable table of contents: four quadrant boxes, every pool item linked to its card/row below, rank dots on picks, movement markers. A genuinely quiet quadrant says "quiet this window".
+4. **Four quadrant sections** — every candidate lives here, in one of two forms:
+   - **Full card** (top-5 picks and watch items with real in-window evidence): one-line *what it is* (no marketing) → 2-4 dated evidence bullets, each one line with **at most one bold number** and its source link inline → a verdict row: `Learn now` (why it wins + effort chip + `/learn` command) or `Watch` (why not yet + *promote when:* the concrete condition from the watchlist).
+   - **Compact row** (losers, fading, covered-by-brief): topic + one line of why it did not rank ("folded into #N", "covered by YYYY-MM-DD brief", "no adoption evidence", "fading — expires after 3 quiet scans").
+5. **Scan audit** — a collapsed `<details>` block: already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
+6. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
+
+**Evidence style on cards:** dated bullets, not paragraphs. A 100+-word "Why now" wall with six bold spans is the failure mode this structure replaces — one fact per bullet, one bolded number per bullet at most, link inline where the claim is made.
+
+**Chat version (compact):**
 
 ```markdown
 # Tech Radar — [YYYY-MM-DD]
-**Window:** last 3 months · **Lens:** principal software + AI engineer[ · Focus: X] · **Mode:** full
-**Intake:** N items from M feeds (F errors) · kept K · dropped: noise A / minor B / marketing C / dup D / junior E
+**Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
 
-## Learn next (ranked)
-### 1. [Topic] — [quadrant · category · ▲/↑/→ movement]
-**Why now:** [2-3 dated evidence points from different venues — releases, talks, adoption]
-**Why you (principal lens):** [1-2 lines — the decision leverage / force-multiplier angle]
-**Effort to 101:** [~half day / day — via brief + lab]
-**First step:** run /learn on "[exact topic phrasing]"
-[5 entries. Rank 1 = best leverage-per-hour, not loudest hype. ≥3 quadrants unless focused.]
+## Learn next
+1. **[Topic]** [quadrant · movement] — one line + strongest dated fact. → /learn "…"
+[5 entries]
 
-## Also on radar
-- **[Topic]** — [quadrant · movement · 1 line: what it is + why watch-not-learn-now]
-[5 entries — real candidates that lost on ranking, not filler.]
+## The landscape
+**Techniques:** [names + markers] · **Platforms:** […] · **Tools:** […] · **L&F:** […]
+[One line per quadrant; movers worth a sentence get one. Point at the HTML for the cards.]
 
-## Quadrant map
-[The whole pool, Thoughtworks-style. Each item: status marker (**learn-now** / *watch*)
-+ movement marker (▲ new, ↑ rising, → holding, ↓ fading). A genuinely quiet quadrant
-says "quiet this window".]
-**Techniques:** [items…]
-**Platforms:** [items…]
-**Tools:** [items…]
-**Languages & Frameworks:** [items…]
-
-## Watchlist
-[Every watchlist item after the merge: topic, movement, one line. Expired items listed
-last: "expired after 3 quiet scans: X, Y". "Watchlist empty" if so.]
-
-## Already covered (skipped)
-[Topics excluded by dedupe, with brief dates. "None — library empty" if so.]
-
-## Refresh candidates
-[Stale briefs where the window's events justify an update run. Omit if none.]
-
-## Candidate pool (audit)
-[All 15-25 scored candidates, one line each, quadrant-tagged — including losers.
-This is how misses get caught on review — do not omit.]
-
-## Must-not-miss clearance
-[One line per checklist bucket: candidate name, or "cleared: …".]
-
-## Coverage
-[Feed health: "54 feeds ok, langchain-blog error → site: fallback run". Registry fixes
-needed, if any. Manual sources hit. Wildcard queries used. This feeds next scan's rotation.]
-
-## Sources
-- [YYYY-MM-DD] [venue/title] — [URL]
+## Notable
+[2-4 lines: expired watchlist items, a gate that barely passed, a feed that broke,
+a topic recommended repeatedly and skipped. Only what the user should actually react to.]
 ```
 
 In the saved HTML fill the meta tags: `radar-venues` (manual sources + wildcard queries used, for rotation), `radar-mode`, `radar-intake` (item/keep/drop counts). Save `watchlist.json`. Rebuild the index, print paths.
@@ -279,5 +262,5 @@ End with: *"Pick a number — I'll run the full brief (and lab) on it."* On a pi
 - **Five real candidates beat ten padded ones.** If the window was genuinely quiet, say so and return fewer.
 - **No fabricated evidence.** Every why-now point is dated and traceable to a source in the list.
 - **Missing a critical topic is worse than over-researching.** The must-not-miss checklist, feed-health fallbacks, and coverage gates exist so a thin pass cannot silently skip protocols, security, or evals.
-- **Show the pool.** The ranked five without the losing candidates is unauditable. Always publish the candidate pool and the triage counts.
+- **Show the pool — as the quadrant sections, once.** The ranked five without the losing candidates is unauditable, so every candidate appears in its quadrant with a verdict (learn-now / watch + promote-when / one-line reason it lost). But each topic appears exactly once as a card or row — repeating the same topic across also-on-radar, watchlist, and pool-dump sections is how a report becomes unreadable.
 - **Whole landscape, not the AI corner.** What an AI-heavy feed diet misses is platforms, techniques, and language movements. Quadrant balance is a gate, not a preference; an unfocused scan that returns only AI failed the sweep.
