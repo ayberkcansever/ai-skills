@@ -47,14 +47,29 @@
     padding: 52px 56px;
     box-shadow: 0 8px 40px rgba(19,26,36,0.06);
   }
+  /* ---- Masthead ---- */
+  .brandrow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 10px; }
   .eyebrow {
     font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--accent); margin: 0 0 12px;
+    color: var(--accent); margin: 0;
   }
-  h1 { font-size: 30px; line-height: 1.22; margin: 0 0 8px; letter-spacing: -0.015em; }
-  .meta { color: var(--muted); font-size: 13.5px; margin: 0 0 30px; }
-  .meta code { background: #eef1f5; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+  .scandate { margin: 0; font: 600 12.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+  h1 { font-size: 32px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.015em; }
+  .lede { color: var(--muted); font-size: 15px; margin: 0 0 22px; max-width: 62ch; }
+
+  .ringstrip { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 4px; padding: 0; list-style: none; }
+  .rs {
+    flex: 1 1 150px; border: 1px solid var(--line); border-left-width: 4px;
+    border-radius: 10px; padding: 10px 14px; background: #fbfcfd;
+  }
+  .rs .n { font: 700 22px/1.1 ui-sans-serif, system-ui, sans-serif; margin-right: 7px; }
+  .rs .nm { font: 700 11.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.09em; text-transform: uppercase; }
+  .rs .ds { display: block; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .rs.learn { border-left-color: var(--good); } .rs.learn .n, .rs.learn .nm { color: var(--good); }
+  .rs.try   { border-left-color: #0e7490; }     .rs.try .n,   .rs.try .nm   { color: #0e7490; }
+  .rs.watch { border-left-color: var(--warn); } .rs.watch .n, .rs.watch .nm { color: var(--warn); }
+  .rs.skip  { border-left-color: #9aa5b1; }     .rs.skip .n,  .rs.skip .nm  { color: #6b7280; }
 
   h2 {
     font: 700 12.5px/1 ui-sans-serif, system-ui, sans-serif;
@@ -186,15 +201,25 @@
 </head>
 <body>
   <article class="page">
-    <p class="eyebrow">Tech Radar</p>
-    <h1>What to learn next — {{SCAN_DATE}}</h1>
-    <p class="meta">
-      Window <code>{{WINDOW}}</code> ·
-      Lens: principal software + AI engineer{{FOCUS_SUFFIX}} ·
-      Mode <code>{{MODE}}</code> ·
-      Intake <code>{{INTAKE_SUMMARY}}</code> ·
-      Feeds <code>{{FEED_HEALTH_ONELINE}}</code>
-    </p>
+    <div class="brandrow">
+      <p class="eyebrow">Tech Radar</p>
+      <p class="scandate">{{SCAN_DATE}}</p>
+    </div>
+    <h1>What to learn next</h1>
+    <p class="lede">{{LEDE}}</p>
+    <!-- ONE human sentence: the window in words, how wide the sweep was, the lens.
+         No counts, no mode, no feed health — those are receipts and live in Scan audit.
+         e.g. "Three months of ~55 primary sources, read through a principal software
+         + AI engineer lens." Add the focus filter here when one was given. -->
+
+    <ul class="ringstrip">
+      <li class="rs learn"><span class="n">{{COUNT_LEARN}}</span><span class="nm">Learn</span><span class="ds">start now</span></li>
+      <li class="rs try"><span class="n">{{COUNT_TRY}}</span><span class="nm">Try</span><span class="ds">quick pass</span></li>
+      <li class="rs watch"><span class="n">{{COUNT_WATCH}}</span><span class="nm">Watch</span><span class="ds">tracking</span></li>
+      <li class="rs skip"><span class="n">{{COUNT_SKIP}}</span><span class="nm">Skip</span><span class="ds">not now</span></li>
+    </ul>
+    <!-- Blip count per ring. Doubles as the ring legend — the radar itself only labels
+         the rings in small type on the axis. Show a 0 rather than dropping a chip. -->
 
     <h2>The radar</h2>
     <div class="radar-wrap">
@@ -245,6 +270,9 @@
     <details>
       <summary>Dedupe, checklist clearance, coverage — expand if you want the receipts</summary>
       <div class="body">
+        <h4>Scan parameters</h4>
+        <p>Window <span class="date">{{WINDOW}}</span> · Mode {{MODE}}{{FOCUS_SUFFIX}}</p>
+        <!-- Intake counts and feed health are NOT repeated here — they live in Coverage below. -->
         <h4>Already covered (dedupe)</h4>
         <p>{{COVERED}}</p>
         <h4>Watchlist changes</h4>
