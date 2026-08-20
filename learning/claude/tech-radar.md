@@ -146,14 +146,22 @@ Watchlist items get their disposition in Step 6 — but scan the titles for sign
 
 ### Step 5: Confirm + candidate pool
 
-For each keep that could plausibly rank, run **one confirming search** for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Budget: **≤20 confirming searches** — spend them on likely Learn/Try material, not on obvious Skip blips. Total agent search budget per full scan (manual sweep + wildcard + confirm) is roughly **25–35 calls**; the crawl itself costs one command.
+Split the surviving keeps into two tiers. **The tiers exist because cost is not evenly distributed** — confirming searches are the expensive step, and only the top two rings need them. Bounding the whole pool would throw away free landscape coverage.
 
-Collect **15–25 candidates**. For each record:
+**Contender tier — could plausibly reach Learn or Try.** Run **one confirming search** each for adoption evidence (`"X in production"`, `"migrating to X"`, `"X postmortem"`, `"X GA"`). Aim for **12–18 contenders**; budget **≤20 confirming searches**. Evidence bar: **≥2 independent dated signals from different sources** plus the confirming search. One vendor launch is not momentum.
+
+**Landscape tier — everything else that is a real topic.** No confirming search, so **no cap**: these are placed on Watch or Skip from triage evidence alone. Evidence bar: **≥1 dated signal** and a defensible one-line reason for the ring. A typical full scan lands **25–35 blips total**.
+
+Total agent search budget per full scan (manual sweep + wildcard + confirm) stays roughly **25–35 calls**; the crawl itself costs one command. Growing the landscape tier does not move this number.
+
+**Skip is not a dumping ground.** A Skip blip is a topic you would plausibly hear about and wonder whether to learn — visible buzz that fails the lens. Routine releases, artifacts of another blip, and folded angles are *not* topics and stay as one-liners under their quadrant (see Step 7). If you cannot write a promote-back condition for it, it is not a Skip blip.
+
+For each candidate in either tier, record:
 
 - name + one-line what-it-is;
 - **quadrant** (`Techniques`, `Platforms`, `Tools`, `Languages & Frameworks`);
 - category (brief-library taxonomy: `AI-ML`, `Infrastructure`, `Data`, `Security`, `Languages-Frameworks`, `DevTools`, `Web`, `Other`);
-- **momentum evidence, dated** — at least 2 independent signals from different sources. One vendor launch is not momentum;
+- **momentum evidence, dated** — to the bar set by its tier above;
 - maturity: research / early-adopter / production-adopted;
 - which must-not-miss bucket(s) it satisfies.
 
@@ -208,10 +216,12 @@ New this scan: pool candidates below the Learn ring with real momentum enter the
 
 Score each candidate against the role lens (decision leverage, AI depth, durability, force-multiplier, 101-feasibility), then place it on a ring — **every candidate that survives triage gets a blip**, there is no fixed count:
 
-- **Learn** — would start the `/learn` loop this week; production-grade, two-signal evidence. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
-- **Try** — real value, second in queue, or the cheap pass suffices (release notes are the 101).
-- **Watch** — tracked with a concrete *promote when:* condition carried from the watchlist.
-- **Skip** — deliberately skipped: fading, contested, or evidence-free hype — with the condition that would move it back in.
+- **Learn** — would start the `/learn` loop this week; production-grade, two-signal evidence plus a confirming search. Selective: 3–8 blips typical; past ~8 you are not choosing. Must span ≥3 quadrants (unless a focus filter narrows the scan).
+- **Try** — real value, second in queue, or the cheap pass suffices (release notes are the 101). Contender tier only; 2–6 typical.
+- **Watch** — tracked with a concrete *promote when:* condition. Landscape tier lands here. No cap.
+- **Skip** — deliberately skipped: fading, contested, or evidence-free hype — with the condition that would move it back in. No cap.
+
+**Rendering headroom.** Blips are spread evenly across 66° of arc per quadrant with an alternating radial offset, so a quadrant×ring cell holds roughly 6 in the Learn band, 12 in Try, 18 in Watch and 24 in Skip before circles touch. The inner rings are the tight ones and they are also the capped ones, so the uncapped tiers cannot crowd the picture. If a single cell would exceed its number, the ring call is probably too generous — tighten it rather than widening the geometry.
 
 Then apply memory:
 
