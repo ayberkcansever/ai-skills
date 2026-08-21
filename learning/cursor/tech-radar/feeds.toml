@@ -53,6 +53,7 @@ type = "rss"
 url = "https://openai.com/news/rss.xml"
 tier = "core"
 class = "ai"
+cap = 160
 
 [[feeds]]
 id = "hf-blog"
@@ -61,6 +62,7 @@ type = "rss"
 url = "https://huggingface.co/blog/feed.xml"
 tier = "core"
 class = "ai"
+cap = 80
 
 [[feeds]]
 id = "langchain-blog"
@@ -69,6 +71,7 @@ type = "rss"
 url = "https://www.langchain.com/blog/rss.xml"
 tier = "core"
 class = "ai"
+cap = 115
 
 [[feeds]]
 id = "google-dev-blog"
@@ -94,6 +97,7 @@ type = "rss"
 url = "https://developer.nvidia.com/blog/feed"
 tier = "extended"
 class = "ai"
+cap = 115
 
 [[feeds]]
 id = "anthropic-eng"
@@ -116,11 +120,13 @@ hint = "site:blog.modelcontextprotocol.io OR modelcontextprotocol SEP"
 [[feeds]]
 id = "deepmind-blog"
 name = "Google DeepMind Blog"
-type = "manual"
-url = "https://deepmind.google/discover/blog/"
+type = "rss"
+# Was registered as manual against /discover/blog, whose site: search returns
+# 2017-2021 pages. The 2026-08-21 scan reported DeepMind quiet while the feed
+# below held 8 in-window posts including Gemini 3.7 Flash.
+url = "https://deepmind.google/blog/rss.xml"
 tier = "extended"
 class = "ai"
-hint = "site:deepmind.google/discover/blog"
 
 # ---------- Cloud / infra / platform ----------
 
@@ -188,6 +194,10 @@ type = "rss"
 url = "https://vercel.com/atom"
 tier = "extended"
 class = "platform"
+# A changelog firehose: ~310 items per 90-day window. Truncation is expected and
+# still reported, so the agent runs the discharge search; the cap only decides
+# how many of the most notable it reads first.
+cap = 60
 
 [[feeds]]
 id = "azure-blog"
@@ -363,6 +373,7 @@ type = "rss"
 url = "https://clickhouse.com/rss.xml"
 tier = "extended"
 class = "database"
+cap = 130
 
 [[feeds]]
 id = "mongodb-blog"
@@ -563,6 +574,7 @@ type = "rss"
 url = "https://simonwillison.net/atom/everything/"
 tier = "core"
 class = "press"
+cap = 45
 
 # ---------- Security ----------
 

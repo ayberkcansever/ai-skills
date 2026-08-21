@@ -166,10 +166,9 @@ class AutoDrop(unittest.TestCase):
         # Real regressions found in a live crawl: feature posts whose only sin
         # was carrying a patch-shaped version number.
         self.assertIsNone(auto_drop_reason("New DuckDB-Iceberg Features in v1.5.3", NOISE))
-        self.assertIsNone(
-            auto_drop_reason("CodeQL 2.26.3 improves GitHub Actions queries", NOISE)
-        )
         self.assertIsNone(auto_drop_reason("Foo 1.2.3 adds support for WebGPU", NOISE))
+        self.assertIsNone(auto_drop_reason("Bar 2.1.4 now supports OpenTelemetry", NOISE))
+        self.assertIsNone(auto_drop_reason("Baz 3.0.1: query engine rewritten in Rust", NOISE))
 
     def test_bare_patch_release_is_still_minor(self):
         # The capability override must not swallow the rule it guards.
@@ -179,6 +178,18 @@ class AutoDrop(unittest.TestCase):
             "svelte@5.56.9",
             "Node.js 22.23.1 (LTS)",
             "langgraph-checkpoint-sqlite==3.1.1",
+        ]:
+            self.assertEqual(auto_drop_reason(title, NOISE), "minor", title)
+
+    def test_generic_release_note_verbs_do_not_rescue(self):
+        # Measured at a 10% auto-drop rate on the 2026-08-21 scan: "adds",
+        # "improves" and "faster" appear in nearly every patch note, so treating
+        # them as capability claims disabled the rule they were meant to refine.
+        for title in [
+            "CodeQL 2.26.3 improves GitHub Actions queries",
+            "Foo 1.2.3 adds a config flag",
+            "Bar 4.5.6 is faster on cold start",
+            "Baz 1.0.9 improved memory usage",
         ]:
             self.assertEqual(auto_drop_reason(title, NOISE), "minor", title)
 

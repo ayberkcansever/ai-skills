@@ -53,7 +53,9 @@ NOVELTY_RE = re.compile(
     | \bbreaking\s+chang\w*\b
     | \bdeprecat\w*\b | \bsunset\w*\b | \bend[-\s]of[-\s]life\b | \bEOL\b
     | \bopen[-\s]sourc\w*\b
-    | \b[vV]?[1-9]\d*\.0(\.0)?\b
+    # A .0 release, but the trailing guard matters: without it "1.0.9" matches
+    # on its "1.0" prefix and every x.0.z patch is mistaken for a major release.
+    | \b[vV]?[1-9]\d*\.0(\.0)?\b(?![.\d])
     | \b(public\s+)?(beta|preview)\b | \brelease\s+candidate\b
     """
 )
@@ -70,11 +72,14 @@ SECURITY_RE = re.compile(
 
 # A capability claim rescues a patch-shaped title: "New Iceberg features in
 # v1.5.3" is a topic, "v1.5.3" is not. Real patch releases do not advertise.
+# Keep this narrow. Generic release-note verbs ("adds", "improves", "faster")
+# appear in almost every patch note, so rescuing on them defeats the auto-drop
+# entirely — measured at a 10% drop rate on the 2026-08-21 scan.
 FEATURE_RE = re.compile(
     r"""(?ix)
       \bnew\s+(\w+[\s-]+){0,3}features?\b | \bnew\s+features?\b
-    | \badds?\b | \bnow\s+supports?\b | \bsupport\s+for\b
-    | \bimprove\w*\b | \bfaster\b | \brewritten\b | \brewrite\b
+    | \badds?\s+support\s+for\b | \bnow\s+supports?\b
+    | \brewrit(?:e|es|ten|ing)\b | \bredesign\w*\b
     """
 )
 
