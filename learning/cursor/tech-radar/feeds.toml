@@ -12,17 +12,35 @@
 # tier:  core = every scan | extended = rotated, but still crawled (crawling is free;
 #        rotation now only applies to manual sources and wildcard searches)
 # class: ai | platform | language | database | runtime | framework | security |
-#        press | survey | aggregator | conference | production
+#        web | observability | press | survey | aggregator | conference | production
+#
+# cap:   optional per-feed override of settings.per_feed_cap, for a publisher that
+#        genuinely posts more than the default in one window
+#
+# Coverage contract: the non-AI must-not-miss buckets in SKILL.md (platform shifts,
+# data & storage, observability, security & supply chain, techniques, languages &
+# web platform) each need at least one deterministic source here. Removing the last
+# feed backing a bucket turns that bucket into an agent-search-only guess.
 #
 # Editing: add/remove [[feeds]] blocks freely — the crawler and the skill read
 # this file; nothing else needs to change. Keep ids unique.
 
 [settings]
 window_days = 90
-per_feed_cap = 15
+# A feed that hits this cap is reported as TRUNCATED — the agent then owes it a
+# direct search, so raising the cap costs tokens but lowering it costs coverage.
+per_feed_cap = 25
+# Consensus band: what the crowd already voted up.
 hn_min_points = 400
 hn_cap = 150
-noise_keywords = ["webinar", "hiring", "we're hiring", "job opening", "careers at", "sponsor", "advent of code"]
+# Discovery band [discovery_min, hn_min): where a project in its first weeks
+# lives. Hard-capped because this band is mostly noise by volume.
+hn_discovery_min_points = 120
+hn_discovery_cap = 40
+noise_keywords = ["webinar", "hiring", "we're hiring", "job opening", "careers at", "sponsor", "advent of code", "this week in", "weekly roundup", "newsletter", "podcast episode", "office hours", "meetup", "livestream", "ask me anything"]
+# Read by the SKILL, not the crawler: a watchlist entry expires on the calendar,
+# never on the scan count, so scanning less often cannot keep it alive forever.
+quiet_expiry_days = 21
 eol_products = ["python", "nodejs", "postgresql", "kubernetes", "java", "go", "dotnet", "django", "rails", "react", "redis", "mongodb", "mysql", "ubuntu", "debian"]
 eol_horizon_days = 180
 
@@ -131,6 +149,15 @@ tier = "core"
 class = "platform"
 
 [[feeds]]
+id = "aws-compute-blog"
+name = "AWS Compute Blog"
+type = "rss"
+url = "https://aws.amazon.com/blogs/compute/feed/"
+tier = "core"
+class = "platform"
+# What's New RSS exists but is region-expansion firehose; Compute is the engineering peer of Architecture.
+
+[[feeds]]
 id = "cloudflare-blog"
 name = "Cloudflare Blog"
 type = "rss"
@@ -167,6 +194,31 @@ id = "azure-blog"
 name = "Microsoft Azure Blog"
 type = "rss"
 url = "https://azure.microsoft.com/en-us/blog/feed/"
+tier = "extended"
+class = "platform"
+
+[[feeds]]
+id = "gcp-blog"
+name = "Google Cloud Blog"
+type = "rss"
+url = "https://cloudblog.withgoogle.com/rss"
+tier = "core"
+class = "platform"
+# cloud.google.com/blog/rss serves HTML; this is the actual RSS host.
+
+[[feeds]]
+id = "otel-blog"
+name = "OpenTelemetry Blog"
+type = "rss"
+url = "https://opentelemetry.io/blog/index.xml"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "grafana-blog"
+name = "Grafana Labs Blog"
+type = "rss"
+url = "https://grafana.com/blog/index.xml"
 tier = "extended"
 class = "platform"
 
@@ -403,6 +455,22 @@ tier = "extended"
 class = "framework"
 
 [[feeds]]
+id = "gh-kserve"
+name = "KServe releases"
+type = "rss"
+url = "https://github.com/kserve/kserve/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
+id = "gh-gateway-api-inference"
+name = "Gateway API Inference Extension releases"
+type = "rss"
+url = "https://github.com/kubernetes-sigs/gateway-api-inference-extension/releases.atom"
+tier = "extended"
+class = "framework"
+
+[[feeds]]
 id = "gh-langgraph"
 name = "LangGraph releases"
 type = "rss"
@@ -514,6 +582,145 @@ url = "https://genai.owasp.org"
 tier = "core"
 class = "security"
 hint = "site:genai.owasp.org OR OWASP LLM top 10 update"
+
+[[feeds]]
+id = "github-security"
+name = "GitHub Security Blog"
+type = "rss"
+url = "https://github.blog/security/feed/"
+tier = "core"
+class = "security"
+
+[[feeds]]
+id = "cisa-kev"
+name = "CISA Known Exploited Vulnerabilities"
+type = "manual"
+url = "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+tier = "core"
+class = "security"
+hint = "site:cisa.gov Known Exploited Vulnerabilities catalog additions this window; notable KEVs against widely used runtimes, package registries, or cloud control planes. CISA killed the KEV RSS in 2025 — do not look for a feed."
+
+[[feeds]]
+id = "openssf-blog"
+name = "OpenSSF Blog"
+type = "rss"
+url = "https://openssf.org/feed/"
+tier = "core"
+class = "security"
+
+[[feeds]]
+id = "gh-cosign"
+name = "Sigstore cosign releases"
+type = "rss"
+url = "https://github.com/sigstore/cosign/releases.atom"
+tier = "core"
+class = "security"
+
+# ---------- Web & client platform ----------
+# The browser engines. Without these the "languages, frameworks & web platform"
+# bucket has no deterministic source and depends entirely on HN noticing.
+
+[[feeds]]
+id = "chrome-dev-blog"
+name = "Chrome for Developers Blog"
+type = "rss"
+url = "https://developer.chrome.com/static/blog/feed.xml"
+tier = "core"
+class = "web"
+
+[[feeds]]
+id = "webkit-blog"
+name = "WebKit Blog"
+type = "rss"
+url = "https://webkit.org/feed/atom/"
+tier = "core"
+class = "web"
+
+[[feeds]]
+id = "mozilla-hacks"
+name = "Mozilla Hacks"
+type = "rss"
+url = "https://hacks.mozilla.org/feed/"
+tier = "core"
+class = "web"
+
+[[feeds]]
+id = "v8-blog"
+name = "V8 Engine Blog"
+type = "rss"
+url = "https://v8.dev/blog.atom"
+tier = "core"
+class = "web"
+
+# ---------- Observability & operations ----------
+
+[[feeds]]
+id = "gh-prometheus"
+name = "Prometheus releases"
+type = "rss"
+url = "https://github.com/prometheus/prometheus/releases.atom"
+tier = "core"
+class = "observability"
+
+[[feeds]]
+id = "gh-cilium"
+name = "Cilium releases (eBPF networking)"
+type = "rss"
+url = "https://github.com/cilium/cilium/releases.atom"
+tier = "core"
+class = "observability"
+
+# ---------- Data & storage engines ----------
+
+[[feeds]]
+id = "gh-iceberg"
+name = "Apache Iceberg releases"
+type = "rss"
+url = "https://github.com/apache/iceberg/releases.atom"
+tier = "core"
+class = "database"
+
+[[feeds]]
+id = "gh-valkey"
+name = "Valkey releases"
+type = "rss"
+url = "https://github.com/valkey-io/valkey/releases.atom"
+tier = "core"
+class = "database"
+
+# ---------- Service mesh / infrastructure-as-code ----------
+
+[[feeds]]
+id = "gh-envoy"
+name = "Envoy proxy releases"
+type = "rss"
+url = "https://github.com/envoyproxy/envoy/releases.atom"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "istio-news"
+name = "Istio News"
+type = "rss"
+url = "https://istio.io/latest/news/feed.xml"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "gh-opentofu"
+name = "OpenTofu releases"
+type = "rss"
+url = "https://github.com/opentofu/opentofu/releases.atom"
+tier = "core"
+class = "platform"
+
+[[feeds]]
+id = "gh-zig"
+name = "Zig releases"
+type = "rss"
+url = "https://github.com/ziglang/zig/releases.atom"
+tier = "core"
+class = "language"
 
 # ---------- Surveys & curated radars (agent-fetched) ----------
 
