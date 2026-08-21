@@ -154,7 +154,7 @@ in both directions.
 
 | Skill | What it does |
 |-------|--------------|
-| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~55 primary feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, HN/Lobsters, endoflife.date) pulls the window into a dated intake file; the agent triages 100% of items (keeps + coded drops), confirms adoption evidence, merges a persistent watchlist (promote-when conditions, quiet-scan expiry), and places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Learn / Try / Watch / Skip — Thoughtworks geometry, learning-native names) — rendered as an interactive SVG radar with numbered blips and per-blip writeups in a dated HTML scan. The Learn ring is the learn-next answer. Supports full scans and quick watchlist-update scans. |
+| `tech-radar` | Answers "what should I learn next?" for a principal software + AI engineer. A deterministic stdlib crawler (`scripts/scan_feeds.py`, driven by an editable `feeds.toml` registry of ~86 feeds — AI labs, cloud/platform, every major language, databases, famous framework releases, production engineering blogs, security, observability, web platform, HN consensus plus a sub-threshold discovery band, Lobsters, endoflife.date) pulls the window into a dated intake split into reviewable items and auto-dropped ones with reasons on disk; novelty and security patterns can never be auto-dropped. The agent dispositions 100% of the reviewable set (keeps + coded drops in `triage.json`), confirms adoption evidence, merges a calendar-expiring watchlist (`quiet_expiry_days`, with optional `review_after`), and places every candidate on a Thoughtworks-style radar — four quadrants (Techniques / Platforms / Tools / Languages & Frameworks) × four rings (Learn / Try / Watch / Skip) — rendered as an interactive SVG radar with numbered blips and per-blip writeups. Whole-landscape balance enforced (AI one strand, not the default). The Learn ring is the learn-next answer. Supports full scans and quick watchlist-update scans. |
 | `learn` | Learns one topic to a correct 101 level in minimal time. Researches recent primary sources, produces a brief (101 mental model, what changed, verdict) saved to a searchable HTML library, then offers a learn path, a run-and-observe hands-on lab (code ships complete and verified; you predict, run, and explain back), and a quiz. |
 
 ### Flow
@@ -162,27 +162,35 @@ in both directions.
 The two share one library (`~/Documents/tech-briefs/`): briefs produced by
 `learn` are the radar's dedupe memory, and each scan's ranked picks are the
 learn skill's input queue. The radar also keeps a persistent watchlist between
-scans (candidates too real to discard but not yet rankable), and rotates its
-manual sources and wildcard searches based on the previous scan's coverage.
+scans (candidates too real to discard but not yet Learn-rankable — calendar
+expiry, not scan-count), and rotates its manual sources and wildcard searches
+based on the previous scan's coverage.
 
 ```mermaid
 flowchart LR
-    F[("feeds.toml<br/>~55 feeds")] -->|"scan_feeds.py<br/>(deterministic crawl)"| R["/tech-radar<br/><i>what to learn?</i>"]
+    F[("feeds.toml<br/>~86 feeds")] -->|"scan_feeds.py<br/>(crawl + auto-drop)"| R["/tech-radar<br/><i>what to learn?</i>"]
     R -->|"Learn-ring blips"| B["/learn<br/><i>learn one topic</i>"]
     B -->|"brief + lab + quiz"| L[("brief library<br/>~/Documents/tech-briefs/")]
     L -.->|"dedupe memory +<br/>rotation"| R
-    W[("watchlist.json<br/>promote-when + expiry")] -.-> R
+    W[("watchlist.json<br/>promote-when + calendar expiry")] -.-> R
     R -.-> W
+    H[("feed_health.json<br/>consecutive errors")] -.-> R
 ```
 
 ### Notes
 
-- Output goes to `~/Documents/tech-briefs/` (briefs, radar scans, intake files,
-  watchlist, and a self-rebuilding `index.html`) — never into the current repo.
+- Output goes to `~/Documents/tech-briefs/` (briefs, radar scans, intake files —
+  `titles.txt` / `drops.txt` / `.json` / `triage.json`, watchlist,
+  `feed_health.json`, and a self-rebuilding `index.html`) — never into the
+  current repo.
 - The radar's coverage is a registry edit, not a prompt edit: add or drop a
   source by editing `feeds.toml`; the crawler and skill pick it up unchanged.
   Sources without machine-readable feeds are `type = "manual"` entries the
-  agent covers with a search hint, so nothing is silently skipped.
+  agent covers with a search hint, so nothing is silently skipped. Broken or
+  truncated feeds are reported (and consecutive failures remembered in
+  `feed_health.json`) rather than skipped quietly.
+- Auto-drop rules live in `scripts/scan_feeds.py` and are covered by
+  `scripts/test_scan_feeds.py` — change a pattern, run the tests.
 - The Claude variants are text ports — their supporting files
   (`template.html`, `lab-template.html`, `notes-template.html`, `feeds.toml`,
   `scripts/`) ship in the matching `learning/cursor/<skill>/` folder; install
