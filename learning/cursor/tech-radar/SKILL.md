@@ -94,7 +94,7 @@ Read `~/Documents/tech-briefs/` before anything else:
 - **Briefed but stale** (>180 days) or verdict was "Hold — revisit when X" and X may have happened → eligible again, flagged as *refresh* rather than *new*.
 - **Lab done** topics indicate the user's strong areas — use them to spot *gaps* (e.g. lots of agent-framework briefs, nothing on serving/inference → inference economics ranks up).
 - **Watchlist**: read `radar/watchlist.json` — every item on it must be dispositioned this scan (Step 6). Missing file = first scan, start empty.
-- **Previous scan**: read the newest file in `~/Documents/tech-briefs/radar/` — its `radar-venues` meta lists which manual sources and wildcard queries were used; prefer different ones this scan.
+- **Previous scan**: read the newest file in `~/Documents/tech-briefs/radar/` — its `radar-venues` meta lists which manual sources and wildcard queries were used; prefer different ones this scan. Its `radar-next` meta carries that scan's forward guidance (venues due again, conferences to catch); treat it as this scan's starting plan.
 - Empty library → say so and rank purely on the landscape.
 
 ### Step 2: Intake crawl
@@ -206,7 +206,7 @@ For each candidate in either tier, record:
 
 Disposition every watchlist item, every scan:
 
-- **promote** — new strong signal this window → joins the candidate pool (and possibly the Learn ring). Remove from watchlist if it reaches Learn; keep as `rising` if it stays Try/Watch.
+- **promote** — new strong signal this window → joins the candidate pool (and possibly the Learn ring). Remove from watchlist if it reaches Learn; keep it on the watchlist if it stays Try/Watch.
 - **hold** — new signal, still not Learn-grade → update `last_signal`, append evidence, reset `scans_quiet`.
 - **quiet** — no signal this window → `scans_quiet += 1`.
 - **expire** — `scans_quiet` reaches 3 → remove; list under "expired" in the scan output (visible, not silent).
@@ -227,7 +227,7 @@ Score each candidate against the role lens (decision leverage, AI depth, durabil
 
 Then apply memory:
 
-- fresh already-briefed topics do not get blips (list them as covered in the audit);
+- fresh already-briefed topics do not get blips (name them in the chat Notable lines);
 - refresh candidates re-enter only when something material changed;
 - boost topics that fill a visible gap in the library's coverage.
 
@@ -244,14 +244,15 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 **HTML structure (in order):**
 
 1. **Masthead — answer first, receipts later.** Eyebrow left, scan date right, then a clean `What to learn next` h1 (no date in the title). Below it ONE human sentence: the window in words, how wide the sweep was, the lens — no counts, no mode, no feed health. Then the **ring-count strip** (`5 Learn / 2 Try / 7 Watch / 6 Skip`), which tells the reader the shape of the scan and doubles as the ring legend, since the radar itself only labels rings in small axis type. Show a `0` rather than dropping a chip. Scan diagnostics never appear up here — a reader opening the report wants the answer, not the plumbing.
-2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the legend below maps quadrant colors.
-3. **Four quadrant sections** (`h2.qhead` color-matched to the radar) — blips grouped under `h3.ring` subheads in ring order (Learn → Try → Watch → Skip; omit empty rings). Every blip gets one card:
-   - **Learn/Try cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Learn = why it wins + effort chip + `/learn` command; Try = the cheaper pass to take now.
+2. **The radar** — the interactive SVG, first thing on the page. The template's script renders it from a `BLIPS` array; the agent's only job is to fill the array (`{n, q, ring, name, id}` per blip — numbered continuously, Techniques → Platforms → Tools → L&F) and leave the renderer, `QUADRANTS`, and `RINGS` constants untouched. Blips are click-to-scroll (each `id` anchors its card) with hover tooltips showing the topic name; the corner quadrant labels and the legend below both scroll to their quadrant section.
+3. **Four quadrant sections** (`h2.qhead` color-matched to the radar, carrying the fixed ids the radar links to — `q-techniques`, `q-platforms`, `q-tools`, `q-langs`) — each quadrant wrapped in a `section.qsec` and each ring group in a `div.ringgrp`, which is what lets the quadrant and ring headers freeze at the top of the viewport and hand off cleanly on scroll. Blips grouped under `h3.ring` subheads in ring order (Learn → Try → Watch → Skip; omit empty rings). Every blip gets one card:
+   - **Learn/Try cards** carry 2–4 dated evidence bullets, each one line with **at most one bold number** and its source link inline, then a verdict: Learn = why it wins; Try = the cheaper pass to take now, with a `span.effort` estimate when it is a real per-topic number. No `/learn` command on cards for now — it is parked until the learn skill is updated, then it comes back. Skip the effort chip when the honest answer is the same for every topic; a constant is not information.
    - **Watch cards** carry 1–2 evidence bullets and *promote when:* the concrete condition.
    - **Skip cards** may drop evidence bullets — one-line what-it-is plus why not to spend time and what would move it back in.
    - After the ring groups, a `.notblipped` block: non-topic one-liners ("the artifact of #N", "folded into #2", "covered by YYYY-MM-DD brief", "betas; revisit at GA").
-4. **Scan audit** — a collapsed `<details>` block: scan parameters (exact window + mode + focus filter — the facts the masthead deliberately drops), already-covered dedupe lines (+ refresh candidates only if any exist), watchlist changes (expirations + counters only — promote-when conditions live on the cards), must-not-miss clearance (one line per bucket, referencing blip numbers), coverage (feed health detail, manual sources, wildcards, gate results, next-scan rotation).
-5. **All sources** — a second collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
+4. **All sources** — a collapsed `<details>` with the full dated list. Every evidence bullet on a card already links its source inline; this list is the complete audit trail.
+
+**No scan-audit section in the HTML.** The gates still run and the checklist is still cleared — that discipline is not optional — but the receipts are not written into the page: scan parameters, dedupe, watchlist changes, clearance and gate results are reported in chat, and the machine-readable state lives in the `radar-*` meta tags plus `watchlist.json`. Anything the *next* scan needs must go in a meta tag, never only in prose: `radar-venues` for what was used, `radar-next` for forward guidance (venues due again, conferences to catch, wildcards to vary).
 
 **Evidence style on cards:** dated bullets, not paragraphs. A 100+-word "Why now" wall with six bold spans is the failure mode this structure replaces — one fact per bullet, one bolded number per bullet at most, link inline where the claim is made.
 
@@ -262,8 +263,8 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 **Window** · **Lens**[ · Focus] · **Mode** · intake one-liner · feeds one-liner
 
 ## Learn — start now
-1. **[Topic]** [quadrant] — one line + strongest dated fact. → /learn "…"
-[every Learn blip]
+1. **[Topic]** [quadrant] — one line + strongest dated fact.
+[every Learn blip. No `→ /learn "…"` suffix while the command is parked.]
 
 ## The rest of the radar
 **Try:** [names + numbers] · **Watch:** […] · **Skip:** […]
@@ -271,10 +272,12 @@ Save the full report as HTML per [template.html](template.html); show a **compac
 
 ## Notable
 [2-4 lines: expired watchlist items, a gate that barely passed, a feed that broke,
-a topic recommended repeatedly and skipped. Only what the user should actually react to.]
+topics excluded as already briefed, a topic recommended repeatedly and skipped.
+The HTML has no audit section, so this is where the receipts surface — but still only
+what the user should actually react to, not the full ledger.]
 ```
 
-In the saved HTML fill the meta tags: `radar-venues` (manual sources + wildcard queries used, for rotation), `radar-mode`, `radar-intake` (item/keep/drop counts). Save `watchlist.json`. Rebuild the index, print paths.
+In the saved HTML fill the meta tags: `radar-venues` (manual sources + wildcard queries used, for rotation), `radar-next` (forward guidance for the next scan), `radar-mode`, `radar-intake` (item/keep/drop counts). These tags are the only scan memory the page carries, so an unfilled one is lost state. Save `watchlist.json`. Rebuild the index, print paths.
 
 ### Step 9: Hand off
 

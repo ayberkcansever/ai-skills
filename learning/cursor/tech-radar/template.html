@@ -7,6 +7,7 @@
 <meta name="radar-window" content="{{WINDOW}}" />
 <meta name="radar-focus" content="{{FOCUS}}" />
 <meta name="radar-venues" content="{{VENUES_META}}" /><!-- manual sources + wildcard queries used — next scan rotates away from these -->
+<meta name="radar-next" content="{{NEXT_ROTATION}}" /><!-- forward guidance for the next scan: venues due again, conferences to catch, wildcards to vary -->
 <meta name="radar-mode" content="{{MODE}}" /><!-- full | quick -->
 <meta name="radar-intake" content="{{INTAKE_META}}" /><!-- e.g. "items:687 kept:42 dropped:645 feeds-ok:54 feeds-error:0" -->
 <title>Tech Radar — {{SCAN_DATE}}</title>
@@ -87,6 +88,28 @@
     margin: 22px 0 10px;
   }
 
+  /* ---- Frozen quadrant + ring headers ----
+     Sticky only sticks inside its own parent, so each quadrant needs its .qsec box
+     and each ring group its .ringgrp box; that is what makes one header hand off to
+     the next instead of piling up. --stick-q is the stuck height of h2.qhead; the value
+     below is the no-JS fallback, syncStickyOffset() replaces it with the measured one. */
+  :root { --stick-q: 36px; }
+  .qsec { position: relative; }
+  .ringgrp { position: relative; }
+  h2.qhead {
+    position: sticky; top: 0; z-index: 3;
+    background: var(--card);
+    margin-top: 26px; padding-top: 14px;
+  }
+  h3.ring {
+    position: sticky; top: var(--stick-q); z-index: 2;
+    background: var(--card);
+    margin-top: 16px; padding: 6px 0;
+  }
+  /* anchor jumps must clear the frozen stack */
+  .card { scroll-margin-top: calc(var(--stick-q) + 40px); }
+  h2.qhead { scroll-margin-top: 8px; }
+
   /* ---- The radar ---- */
   .radar-wrap { margin: 0 0 8px; }
   .radar-holder { position: relative; max-width: 720px; margin: 0 auto; }
@@ -108,7 +131,12 @@
     font: 700 11px ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.08em; fill: #9aa5b1; text-transform: uppercase; text-anchor: middle;
   }
-  svg .qlabel { font: 700 12px ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.06em; }
+  svg .qlabel { font: 700 12px ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.06em; user-select: none; }
+  /* corner quadrant labels jump to their section below */
+  svg a.qlink { cursor: pointer; }
+  svg a.qlink text { text-decoration: none; }
+  svg a.qlink:hover text { text-decoration: underline; }
+  svg a.qlink:focus-visible text { outline: 2px solid currentColor; outline-offset: 3px; }
   svg .blip { cursor: pointer; }
   svg .blip text {
     font: 700 10px ui-sans-serif, system-ui, sans-serif;
@@ -122,6 +150,8 @@
   }
   .legend .item { display: flex; align-items: center; gap: 6px; }
   .legend svg { width: 18px; height: 18px; }
+  .legend a.item { color: inherit; text-decoration: none; }
+  .legend a.item:hover { color: var(--ink); text-decoration: underline; }
 
   /* ---- Blip writeup cards ---- */
   .card {
@@ -177,6 +207,8 @@
 
   /* ---- Collapsed audit + sources ---- */
   details { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; margin: 0 0 12px; }
+  /* the summary is the only label these blocks get, so the gap the old h2 gave lives here */
+  .qsec + details { margin-top: 40px; }
   details summary {
     cursor: pointer; padding: 12px 18px;
     font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
@@ -195,7 +227,8 @@
   @media print {
     body { background: #fff; padding: 0; }
     .page { border: none; box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
-    details { display: block; } details summary { display: none; }
+    details { display: block; } details summary { list-style: none; }
+    h2.qhead, h3.ring { position: static; }
   }
 </style>
 </head>
@@ -228,35 +261,49 @@
         <div class="blip-tip" id="blip-tip"></div>
       </div>
       <div class="legend">
-        <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q0);display:inline-block"></span> Techniques</span>
-        <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q1);display:inline-block"></span> Platforms</span>
-        <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q2);display:inline-block"></span> Tools</span>
-        <span class="item"><span style="width:10px;height:10px;border-radius:50%;background:var(--q3);display:inline-block"></span> Languages &amp; Frameworks</span>
+        <a class="item" href="#q-techniques"><span style="width:10px;height:10px;border-radius:50%;background:var(--q0);display:inline-block"></span> Techniques</a>
+        <a class="item" href="#q-platforms"><span style="width:10px;height:10px;border-radius:50%;background:var(--q1);display:inline-block"></span> Platforms</a>
+        <a class="item" href="#q-tools"><span style="width:10px;height:10px;border-radius:50%;background:var(--q2);display:inline-block"></span> Tools</a>
+        <a class="item" href="#q-langs"><span style="width:10px;height:10px;border-radius:50%;background:var(--q3);display:inline-block"></span> Languages &amp; Frameworks</a>
       </div>
     </div>
 
     {{QUADRANT_SECTIONS}}
     <!-- One h2.qhead section per quadrant (q0 Techniques, q1 Platforms, q2 Tools, q3 L&F),
          blips grouped under h3.ring subheads in ring order (Learn, Try, Watch, Skip —
-         omit an empty ring). EVERY blip gets exactly one card here. Structure:
+         omit an empty ring). EVERY blip gets exactly one card here.
 
-    <h2 class="qhead q0" id="q-techniques">Techniques</h2>
+         REQUIRED ids — the radar's corner labels and the legend link to these, so all four
+         must be present exactly as written, even if a quadrant has only one blip:
+           q-techniques · q-platforms · q-tools · q-langs
 
-    <h3 class="ring">Learn — start now</h3>
-    <div class="card" id="card-topic-slug">
-      <h4><span class="bnum q0">1</span>Topic name <span class="cat">AI-ML</span></h4>
-      <p class="what">One sentence: what this actually is, no marketing.</p>
-      <ul class="ev">
-        <li><span class="date">Aug 11</span> One dated fact, at most one <strong>bold number</strong> — <a href="URL">source</a></li>
-        (2-4 bullets for Learn/Try, 1-2 for Watch. Skip cards may have none.)
-      </ul>
-      <p class="verdict"><span class="status learn">Learn</span> Why it earns the ring, 1-2 sentences.
-        <span class="effort">~1 day to 101</span> · <span class="cmd">/learn "exact phrasing"</span></p>
-    </div>
+         REQUIRED wrappers — the headers freeze on scroll, and sticky only sticks inside its
+         own parent. Every quadrant goes in a section.qsec and every ring group in a
+         div.ringgrp, or the headers stack up instead of handing off. Structure:
+
+    <section class="qsec">
+      <h2 class="qhead q0" id="q-techniques">Techniques</h2>
+
+      <div class="ringgrp">
+        <h3 class="ring">Learn — start now</h3>
+        <div class="card" id="card-topic-slug">
+          <h4><span class="bnum q0">1</span>Topic name <span class="cat">AI-ML</span></h4>
+          <p class="what">One sentence: what this actually is, no marketing.</p>
+          <ul class="ev">
+            <li><span class="date">Aug 11</span> One dated fact, at most one <strong>bold number</strong> — <a href="URL">source</a></li>
+            (2-4 bullets for Learn/Try, 1-2 for Watch. Skip cards may have none.)
+          </ul>
+          <p class="verdict"><span class="status learn">Learn</span> Why it earns the ring, 1-2 sentences.</p>
+        </div>
+      </div>
+      (one div.ringgrp per ring present, then the .notblipped block, then </section>)
+    </section>
 
     Ring verdict lines:
-      Learn — why start now + effort chip + /learn command
-      Try   — the cheaper pass to take now (release notes, half-day skim) + /learn optional
+      Learn — why start now. No /learn command yet (parked until the learn skill is updated)
+              and no effort chip: the same "~1 day to 101" on every card was noise.
+      Try   — the cheaper pass to take now (release notes, half-day skim), with a
+              span.effort estimate when it is a real per-topic number, not boilerplate
       Watch — why not yet + "Promote when:" the concrete condition (from the watchlist)
       Skip  — why not to spend time (fading / contested / no adoption) + what would change that
 
@@ -266,23 +313,10 @@
     </div>
     -->
 
-    <h2>Scan audit</h2>
-    <details>
-      <summary>Dedupe, checklist clearance, coverage — expand if you want the receipts</summary>
-      <div class="body">
-        <h4>Scan parameters</h4>
-        <p>Window <span class="date">{{WINDOW}}</span> · Mode {{MODE}}{{FOCUS_SUFFIX}}</p>
-        <!-- Intake counts and feed health are NOT repeated here — they live in Coverage below. -->
-        <h4>Already covered (dedupe)</h4>
-        <p>{{COVERED}}</p>
-        <h4>Watchlist changes</h4>
-        <p>{{WATCHLIST_CHANGES}}</p><!-- expirations + quiet counters only — promote-when conditions live on the cards -->
-        <h4>Must-not-miss clearance</h4>
-        <ul>{{CHECKLIST}}</ul>
-        <h4>Coverage</h4>
-        <p>{{COVERAGE}}</p>
-      </div>
-    </details>
+    <!-- No scan audit section: the receipts (window, mode, dedupe, watchlist changes,
+         checklist clearance, gate results, feed health) are reported in chat and kept in
+         the radar-* meta tags above + watchlist.json. The next scan reads rotation state
+         from radar-venues, not from the page body. -->
 
     <details>
       <summary>All sources ({{SOURCE_COUNT}})</summary>
@@ -305,11 +339,12 @@ const BLIPS = [
   // {n:1, q:0, ring:0, name:"Topic name", id:"card-topic-slug"},
 ];
 
+/* href = the id of this quadrant's section below; the corner label links to it */
 const QUADRANTS = [
-  { name: "Techniques", color: "#6d28d9", start: 90,  end: 180, lx: 12,  ly: 24,  anchor: "start" },
-  { name: "Platforms",  color: "#0e7490", start: 0,   end: 90,  lx: 708, ly: 24,  anchor: "end" },
-  { name: "Tools",      color: "#1a7f4b", start: 180, end: 270, lx: 12,  ly: 706, anchor: "start" },
-  { name: "Languages & Frameworks", color: "#b45309", start: 270, end: 360, lx: 708, ly: 706, anchor: "end" },
+  { name: "Techniques", color: "#6d28d9", start: 90,  end: 180, lx: 12,  ly: 24,  anchor: "start", href: "q-techniques" },
+  { name: "Platforms",  color: "#0e7490", start: 0,   end: 90,  lx: 708, ly: 24,  anchor: "end",   href: "q-platforms" },
+  { name: "Tools",      color: "#1a7f4b", start: 180, end: 270, lx: 12,  ly: 706, anchor: "start", href: "q-tools" },
+  { name: "Languages & Frameworks", color: "#b45309", start: 270, end: 360, lx: 708, ly: 706, anchor: "end", href: "q-langs" },
 ];
 const RINGS = [
   { name: "Learn", r0: 0,   r1: 108 },
@@ -358,9 +393,11 @@ function render() {
     out += `<text class="ringlabel" x="${CX + mid}" y="${CY - 6}">${R.name}</text>`;
     out += `<text class="ringlabel" x="${CX - mid}" y="${CY - 6}">${R.name}</text>`;
   });
-  // quadrant labels in the corners
+  // quadrant labels in the corners — each links to its section
   QUADRANTS.forEach(Q => {
-    out += `<text class="qlabel" x="${Q.lx}" y="${Q.ly}" fill="${Q.color}" text-anchor="${Q.anchor}">${Q.name}</text>`;
+    out += `<a class="qlink" href="#${Q.href}" aria-label="Jump to ${Q.name}">`
+        +  `<text class="qlabel" x="${Q.lx}" y="${Q.ly}" fill="${Q.color}" text-anchor="${Q.anchor}">${Q.name}</text>`
+        +  `</a>`;
   });
   // blips
   BLIPS.forEach((b, i) => {
@@ -394,7 +431,20 @@ function attachTooltips(svg) {
     g.addEventListener("mouseleave", () => { tip.className = "blip-tip"; });
   });
 }
+
+/* The ring header freezes directly beneath the quadrant header, so the gap has to be the
+   real rendered height — it shifts with text size and with label wrapping on narrow screens. */
+function syncStickyOffset() {
+  let h = 0;
+  document.querySelectorAll("h2.qhead").forEach(el => {
+    h = Math.max(h, el.getBoundingClientRect().height);
+  });
+  if (h) document.documentElement.style.setProperty("--stick-q", Math.round(h) + "px");
+}
+
 render();
+syncStickyOffset();
+addEventListener("resize", syncStickyOffset);
 </script>
 </body>
 </html>
