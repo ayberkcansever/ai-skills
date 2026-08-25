@@ -192,9 +192,10 @@ flowchart LR
 - Auto-drop rules live in `scripts/scan_feeds.py` and are covered by
   `scripts/test_scan_feeds.py` — change a pattern, run the tests.
 - The Claude variants are text ports — their supporting files
-  (`template.html`, `lab-template.html`, `notes-template.html`, `feeds.toml`,
-  `scripts/`) ship in the matching `learning/cursor/<skill>/` folder; install
-  the Cursor variant alongside or adjust the paths.
+  (`assets/`, `references/`, `template.html`, `lab-template.html`,
+  `notes-template.html`, `feeds.toml`, `scripts/`) ship in the matching
+  `learning/cursor/<skill>/` folder; install the Cursor variant alongside
+  or adjust the paths.
 - `tech-radar` expects `learn` installed as a sibling
   (`~/.cursor/skills/learn/`) — install both together.
 

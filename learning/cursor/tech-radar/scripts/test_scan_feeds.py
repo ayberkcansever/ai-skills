@@ -27,6 +27,7 @@ from scan_feeds import (  # noqa: E402
     select_window,
     update_feed_health,
 )
+from validate_triage import check as check_triage  # noqa: E402
 
 NOISE = ["webinar", "hiring", "this week in"]
 
@@ -304,6 +305,45 @@ class FeedHealthMemory(unittest.TestCase):
             health = [{"id": "a", "status": "ok"}]
             update_feed_health(Path(tmp) / "nested" / "feed_health.json", health, dt.date.today())
             self.assertEqual(health[0]["consecutive_errors"], 0)
+
+
+def _intake(*titles):
+    items = [{"i": i, "t": t} for i, t in enumerate(titles)]
+    return {"items": items, "stats": {"reviewable": len(items)}}
+
+
+class ValidateTriage(unittest.TestCase):
+    def test_complete_ledger_is_ok(self):
+        triage = {
+            "generated": "2026-08-25",
+            "kept": [0, 2],
+            "dropped": {"marketing": [1], "dup": [], "junior": [], "noise": [], "narrow": [3]},
+        }
+        self.assertEqual(check_triage(_intake("a", "b", "c", "d"), triage), [])
+
+    def test_skipped_index_is_an_error(self):
+        triage = {
+            "kept": [0],
+            "dropped": {"marketing": [], "dup": [], "junior": [], "noise": [], "narrow": []},
+        }
+        errs = check_triage(_intake("a", "b"), triage)
+        self.assertTrue(any("undispositioned" in e for e in errs))
+
+    def test_duplicate_index_is_an_error(self):
+        triage = {
+            "kept": [0],
+            "dropped": {"marketing": [0], "dup": [], "junior": [], "noise": [], "narrow": []},
+        }
+        errs = check_triage(_intake("a"), triage)
+        self.assertTrue(any("both" in e for e in errs))
+
+    def test_unknown_reason_is_an_error(self):
+        triage = {
+            "kept": [0],
+            "dropped": {"marketing": [], "dup": [], "junior": [], "noise": [], "narrow": [], "vibes": []},
+        }
+        errs = check_triage(_intake("a"), triage)
+        self.assertTrue(any("unknown drop reasons" in e for e in errs))
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@
 # cap:   optional per-feed override of settings.per_feed_cap, for a publisher that
 #        genuinely posts more than the default in one window
 #
-# Coverage contract: the non-AI must-not-miss buckets in SKILL.md (platform shifts,
+# Coverage contract: the non-AI must-not-miss buckets in references/gates.md (platform shifts,
 # data & storage, observability, security & supply chain, techniques, languages &
 # web platform) each need at least one deterministic source here. Removing the last
 # feed backing a bucket turns that bucket into an agent-search-only guess.
@@ -38,9 +38,10 @@ hn_cap = 150
 hn_discovery_min_points = 120
 hn_discovery_cap = 40
 noise_keywords = ["webinar", "hiring", "we're hiring", "job opening", "careers at", "sponsor", "advent of code", "this week in", "weekly roundup", "newsletter", "podcast episode", "office hours", "meetup", "livestream", "ask me anything"]
-# Read by the SKILL, not the crawler: a watchlist entry expires on the calendar,
-# never on the scan count, so scanning less often cannot keep it alive forever.
-quiet_expiry_days = 21
+# Read by the SKILL, not the crawler: calendar expiry, never scan-count.
+# Matched to window_days so a quiet Watch item survives the recommended 2–4
+# week cadence. 21 days expired items between scans.
+quiet_expiry_days = 90
 eol_products = ["python", "nodejs", "postgresql", "kubernetes", "java", "go", "dotnet", "django", "rails", "react", "redis", "mongodb", "mysql", "ubuntu", "debian"]
 eol_horizon_days = 180
 
