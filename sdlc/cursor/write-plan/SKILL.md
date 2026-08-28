@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
-**Context:** If working in an isolated git worktree, it should already exist before execution starts (created via the `git-worktrees` skill).
+**Context:** Plans are written in the user's checkout; they are *executed* in a per-ticket worktree that execute-plan opens via the `git-worktrees` skill. Keep every path in the plan repo-relative so it resolves in either place.
 
 ## Documentation layout (two tiers)
 
@@ -135,7 +135,9 @@ The **Architecture constraints** block is mandatory: parallel or fresh subagents
 ### Task N: [Component Name]
 
 **Implements:** D3, D7 (decision numbers from the spec; "—" only for pure plumbing)
-**Depends on:** Task 2 (or "none" — tasks with `none` and disjoint file sets are safe to dispatch in parallel)
+**Depends on:** Task 2 (or "none")
+
+`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Both fields are load-bearing on every task; omitting them anywhere forces the whole plan sequential.
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -287,7 +289,7 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **5. Test-matrix completeness:** Every spec decision and accepted edge scenario has a row in the Test matrix pointing at a named test in a task (or an explicit justified exception). Every test in the matrix exists in some task's code block.
 
-**6. Dependency sanity:** Every task declares `Depends on:`; no cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration.
+**6. Dependency sanity:** Every task declares `Depends on:` and `Files:`; no cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration. Then read the graph as waves (each round = all tasks whose dependencies are met and whose files are disjoint): if it comes out as a single chain, check whether the dependencies are genuine or just the order you happened to write them in.
 
 **7. Fake-green scan:** No implementation step's code block returns a hardcoded test-expected value or branches on test-specific input. If one does, generalize it and strengthen the test.
 
