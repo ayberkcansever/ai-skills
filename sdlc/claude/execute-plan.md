@@ -2,8 +2,9 @@
 
 ## Overview
 
-Load plan, review critically, execute ready tasks in waves inside the
-ticket worktree, run the verifications the plan specifies, report when complete.
+Load plan, review critically, execute ready tasks in waves in the ticket
+venue (this checkout if already on the ticket branch, else a worktree),
+run the verifications the plan specifies, report when complete.
 
 **Announce at start:** "I'm using the execute-plan skill to implement this plan."
 
@@ -33,29 +34,32 @@ ticket worktree, run the verifications the plan specifies, report when complete.
 3. If concerns: raise them with the user before starting. Resume / stash /
    TodoWrite wait until Step 2 has the live plan.
 
-### Step 2: Open the worktree (the execution venue)
+### Step 2: Open the execution venue
 
-**Execution always happens in a dedicated worktree for this `<TICKET-ID>`,
-never in the user's checkout.** The user's checkout is theirs — it may be
-dirty, on any branch, running a dev server; none of that concerns this run.
-One worktree per ticket is also what lets several tickets execute in parallel
-on the same repo.
+**Already on this ticket's branch** (`git branch --show-current` contains
+`<TICKET-ID>`): this checkout is the venue. Skip git-worktrees. Skip the
+WIP copy below. Git will not attach the same branch in a second worktree —
+stay here instead of deadlocking.
 
-Do not ask which branch to use, do not offer to switch branches, and do not
-gate on the user's tree being clean — those questions belong to a workflow
-that edits the checkout in place, which this one does not.
+**Otherwise** execution happens in a dedicated worktree for this
+`<TICKET-ID>`. The user's checkout is theirs — it may be dirty, on another
+branch, running a dev server. One worktree per ticket also lets several
+tickets execute in parallel on the same repo. Do not ask which branch to
+use, do not offer to switch branches, and do not gate on the user's tree
+being clean.
 
-1. Run the **git-worktrees** skill with the ticket ID. It detects existing
-   isolation, reuses or creates the worktree at `.worktrees/<branch>` (branch
-   `<TICKET-ID>-<slug>`, per that skill's naming), and runs the project's
-   install + baseline check. Consent is implied by `/execute-plan` — it does
-   not re-ask. Already inside a linked worktree for this ticket → it reports
-   and continues; nothing is created.
-2. **Live plan.** The WIP tiers (`docs/plans/`, `docs/specs/`) are gitignored,
-   so a *fresh* worktree does not contain the plan or spec. Run this **from
-   inside the worktree**. Copy only when the destination does not already
-   exist — a prior run's worktree copy is live; overwriting it from the origin
-   checkout destroys ticks, drift notes, blockers, and review entries:
+1. **Worktree path only.** Run the **git-worktrees** skill with the ticket
+   ID. It detects existing isolation, reuses or creates the worktree at
+   `.worktrees/<branch>` (branch `<TICKET-ID>-<slug>`, per that skill's
+   naming), and runs the project's install + baseline check. Consent is
+   implied by `/execute-plan` — it does not re-ask. Already inside a linked
+   worktree for this ticket → it reports and continues; nothing is created.
+2. **Live plan (worktree path only).** The WIP tiers (`docs/plans/`,
+   `docs/specs/`) are gitignored, so a *fresh* worktree does not contain the
+   plan or spec. Run this **from inside the worktree**. Copy only when the
+   destination does not already exist — a prior run's worktree copy is live;
+   overwriting it from the origin checkout destroys ticks, drift notes,
+   blockers, and review entries:
 
    ```bash
    for d in docs/plans/<TICKET-ID> docs/specs/<TICKET-ID>; do
@@ -67,8 +71,8 @@ that edits the checkout in place, which this one does not.
 
    The worktree copy (or the tracked `docs/features/<TICKET-ID>/` already on
    the branch) is now the live plan. Never write the origin checkout's copy
-   mid-run.
-3. **Resume on the live plan, in this worktree.** Reconcile checkboxes
+   mid-run. In-place: the files are already here; this copy does not run.
+3. **Resume on the live plan, in this venue.** Reconcile checkboxes
    against `git log` here (this is the ticket branch): a ticked task with no
    `[T<N>]` commit → untick and redo; a `[T<N>]` commit with its task
    unticked → re-run the gate and tick without redoing. If `## Blockers`
@@ -77,13 +81,13 @@ that edits the checkout in place, which this one does not.
    session mirror. Every task ticked but no `## Review` with `Verdict: ship`
    at current HEAD → jump to Step 4. Stale `reviewed @` SHA (code commits
    after it, docs-only excepted) → re-run Step 4.
-4. Confirm the worktree is clean (`git status --porcelain` empty) aside from
+4. Confirm the venue is clean (`git status --porcelain` empty) aside from
    gitignored WIP docs. A reused worktree that is dirty is leftover work —
    reconcile against `## Blockers` before Task 1.
 5. Create a TodoWrite list from the live plan and proceed.
 
-Report the worktree path before Task 1 so the user knows where the work is
-landing.
+Report the venue path (this checkout, or the worktree) before Task 1 so the
+user knows where the work is landing.
 
 ### Step 3: Execute Tasks
 
@@ -92,7 +96,7 @@ fresh subagent in one message; this session acts as orchestrator.** Waves are
 the default, not an optimization to opt into — a plan whose tasks are
 independent should finish in as many rounds as its dependency graph is deep,
 not as many rounds as it has tasks. All subagents in a wave share the Step 2
-worktree; isolation between them comes from the disjoint-files rule below, not
+venue; isolation between them comes from the disjoint-files rule below, not
 from separate directories.
 
 Inline execution is fine for small or tightly coupled plans where one context
@@ -108,11 +112,13 @@ current wave only if all four hold:
    metadata entirely, treat every task as depending on the one before it** and
    run the whole plan sequentially — an absent declaration is unknown, not
    independent.
-2. **`Files:` disjoint** from every other task already in this wave. Two
-   subagents editing one file in one worktree overwrite each other; there is no
-   merge step to catch it. A task with no `Files:` list does not join a wave
-   with others — unknown overlap. (The Review gate has no `Files:` and is
-   excluded by rule 4 anyway.)
+2. **`Files:` disjoint** from every other task already in this wave. Compare
+   **paths only** — strip a trailing `:line-range` (e.g. `src/foo.py:123-145`
+   → `src/foo.py`) before the check. Two tasks on the same file at different
+   lines still collide. Two subagents editing one file in one venue overwrite
+   each other; there is no merge step to catch it. A task with no `Files:`
+   list does not join a wave with others — unknown overlap. (The Review gate
+   has no `Files:` and is excluded by rule 4 anyway.)
 3. **Gate commands do not contend** — tasks whose verifications write the same
    build output, coverage file, fixture database, or bind the same port go in
    different waves even when their `Files:` are disjoint. Shared *read-only*
@@ -130,9 +136,9 @@ resumed session can tell which tasks were in flight together.
 
 **Subagent contract — the prompt MUST contain all of:**
 
-- the **absolute worktree path** from Step 2, and the instruction to work
-  only inside it — a subagent given a repo-relative path resolves it against
-  the user's checkout and silently edits the wrong tree;
+- the **absolute venue path** from Step 2, and the instruction to work only
+  inside it — a subagent given a repo-relative path can resolve it against
+  the wrong checkout and silently edit the other tree;
 - the plan file path and the task number (the plan's **Architecture
   constraints** section is the subagent's conventions source — it sees nothing
   else);
@@ -255,11 +261,12 @@ After all tasks are done and verified:
    review's Step 0 refuses a dirty tree because uncommitted changes silently
    escape the diff.
 4. **Run the review gate:** invoke **thermo-nuclear-code-quality-review** as a
-   read-only subagent **with this worktree as its working directory** (or
-   equivalent `git -C <worktree>`) on the branch diff, passing the spec and
-   plan **absolute** paths in the prompt. A reviewer launched from the user's
-   checkout diffs the wrong branch. A fresh-context reviewer cannot find
-   gitignored WIP paths on its own. This step IS the plan's final Review gate
+   read-only subagent **with this venue as its working directory** (or
+   equivalent `git -C <venue>`) on the branch diff, passing the spec and
+   plan **absolute** paths in the prompt. A reviewer launched from a
+   different checkout than the venue diffs the wrong branch. A fresh-context
+   reviewer cannot find gitignored WIP paths on its own. This step IS the
+   plan's final Review gate
    task (write-plan appends one to every plan) — tick that task's checkboxes
    here; never run the review once in the Step 3 loop and again here.
    - **Pinned review model:** launch the reviewer subagent with the model
@@ -292,12 +299,13 @@ After all tasks are done and verified:
    promotion is premature. Docs-only commits after the reviewed SHA that
    leave spec decisions unchanged do not invalidate the ship verdict.
 6. Report what was implemented, which verifications passed, and anything
-   skipped — and state the **worktree path and branch** so the user knows
+   skipped — and state the **venue path and branch** so the user knows
    where to look.
 7. Hand back to the user for manual testing. Do not open a PR or merge unless the
-   user asks. **Leave the worktree in place**: it holds the branch, the
-   as-built plan, and any still-gitignored WIP docs. Removing it is
-   git-worktrees Step 4, run only after merge or on explicit user say-so.
+   user asks. If the venue is a worktree, **leave it in place**: it holds
+   the branch, the as-built plan, and any still-gitignored WIP docs.
+   Removing it is git-worktrees Step 4, run only after merge or on explicit
+   user say-so.
 
 ## When to Stop and Ask for Help
 
@@ -357,7 +365,7 @@ the work.
 - Follow plan steps exactly; don't skip verifications.
 - Commit with explicit paths only (or the repo's commit helper); never `git add .`.
 - Stop when blocked — don't guess.
-- Execute in the ticket's worktree, never in the user's checkout; the
-  worktree's plan copy is the live one.
+- Execute in this checkout when already on the ticket branch; otherwise in
+  the ticket worktree. The venue's plan copy is the live one.
 - Dispatch every legal task in a wave; fan in serially — commit, sync docs,
   tick, one task at a time.

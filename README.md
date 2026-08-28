@@ -53,10 +53,11 @@ built around a counter:
 - **Agents overclaim.** `execute-plan`'s orchestrator re-runs every task's
   gate command itself before ticking a checkbox — a subagent's "done" is a
   claim, not evidence.
-- **Agents work one task at a time in your checkout.** `execute-plan` runs in
-  a per-ticket worktree — your own checkout is never touched, and two tickets
-  can execute at once on one repo — and dispatches tasks in waves: everything
-  whose dependencies are met and whose files don't overlap goes out together.
+- **Agents work one task at a time in your checkout.** `execute-plan` runs
+  in this checkout when you are already on the ticket branch; otherwise in
+  a per-ticket worktree so another ticket on `main` stays untouched — and
+  dispatches tasks in waves: everything whose dependencies are met and whose
+  files don't overlap (paths, not line ranges) goes out together.
 - **Reviews go stale.** `thermo-nuclear-code-quality-review` pins its verdict
   to the reviewed commit SHA; any later code commit re-opens the gate until
   the verdict is `ship` again at the new HEAD.
@@ -72,8 +73,8 @@ built around a counter:
 | `brainstorm` | Turns a fuzzy idea into an approved design through one-question-at-a-time dialogue, 2-3 proposed approaches, and a written spec — with an optional browser-based visual companion for mockups/diagrams. Gates on user approval before any implementation. |
 | `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
 | `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
-| `execute-plan` | Executes the plan in a per-ticket worktree, dispatching each wave of independent tasks as parallel subagents, re-running each task's gate itself before ticking it, committing serially as it goes, then running the review gate until the verdict is `ship`. |
-| `git-worktrees` | Sets up an isolated git worktree (detect/reuse → create or attach `.worktrees/<branch>` → baseline check) so execution never disturbs the user's checkout and several tickets can run at once. Called by `execute-plan` on every run. |
+| `execute-plan` | Executes the plan in this checkout when already on the ticket branch, otherwise in a per-ticket worktree, dispatching each wave of independent tasks as parallel subagents, re-running each task's gate itself before ticking it, committing serially as it goes, then running the review gate until the verdict is `ship`. |
+| `git-worktrees` | Sets up an isolated git worktree (detect/reuse → create or attach `.worktrees/<branch>` → baseline check) so a ticket on another branch can execute without touching this checkout. Called by `execute-plan` when the checkout is not already on the ticket branch. |
 | `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
 | `graph-retro` | Post-deploy retrospective on the skill chain itself — extracts every drift note, blocker, and review finding from a shipped ticket's plan, attributes each to the skill that should have prevented it, and proposes human-gated amendments so the chain improves with every ticket. |
 
@@ -127,23 +128,27 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 - These skills reference generic conventions (e.g. `docs/features/<TICKET-ID>/`,
   `docs/plans/<TICKET-ID>/`, `docs/specs/<TICKET-ID>/`, explicit-path commits).
   Adjust paths, ticket-key format, and commit tooling to match your own repo.
-- `execute-plan` treats a worktree as the execution venue, not a fallback: it
-  always runs in `.worktrees/<branch>` for the ticket. Add `.worktrees/` to
-  your `.gitignore`. Because the WIP tiers (`docs/plans/`, `docs/specs/`) are
-  gitignored, a fresh worktree does not contain them — the skill copies them
-  in **only if they are missing** (a prior run's worktree copy is live; do
-  not overwrite it). Anything else untracked that your build needs (`.env`,
-  local config) you must copy in too.
+- `execute-plan` picks a venue: this checkout if it is already on the
+  ticket branch (git will not attach that branch in a second worktree),
+  otherwise `.worktrees/<branch>`. Add `.worktrees/` to your `.gitignore`.
+  Because the WIP tiers (`docs/plans/`, `docs/specs/`) are gitignored, a
+  fresh worktree does not contain them — the skill copies them in **only if
+  they are missing** (a prior run's worktree copy is live; do not overwrite
+  it). In-place runs skip that copy. Anything else untracked that your
+  build needs (`.env`, local config) you must copy in too.
 - Task parallelism is driven entirely by the plan's `Depends on:` and `Files:`
-  metadata, so `write-plan`'s accuracy there sets your wall-clock time. A plan
-  with no `Depends on:` lines executes sequentially by design — absent metadata
+  metadata, so `write-plan`'s accuracy there sets your wall-clock time. Compare
+  `Files:` as **paths** — strip `:line-range` suffixes or two tasks on the
+  same file at different lines will clobber each other. A plan with no
+  `Depends on:` lines executes sequentially by design — absent metadata
   is treated as unknown, not independent.
 - `thermo-nuclear-code-quality-review` pins a dedicated **review model** so the
   reviewer never inherits the implementer session's model. The skill's
   "Pinned review model" section is the source of truth (a model family +
   latest, not a slug to paste here). write-plan and execute-plan reference
   that section instead of hardcoding a slug. Execute-plan launches the
-  reviewer inside the ticket worktree so `git diff` hits the right branch.
+  reviewer inside the venue (this checkout or the ticket worktree) so
+  `git diff` hits the right branch.
 - Examples use Python/`pytest` and a `handler → use case → repository` layering
   purely as illustration — apply them to whatever stack your repo uses.
 - `graph-retro` commits approved amendments to your skills directory — keep
