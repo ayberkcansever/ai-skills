@@ -145,7 +145,10 @@ anything answerable from the repo. Read, then report. Produce a short
    or contract the change touches. List them with `file:line`. This list *is*
    the backward-compat surface. **For API/event/contract changes, the grep MUST
    span every repo/package that consumes the contract** — prefix each entry
-   with the repo/package name.
+   with the repo/package name. **When the change removes a field or stops writing
+   one, include same-repo readers that *derive* behavior from it** — audit diffs,
+   changed-field labels, conditional logs, cache keys. These break silently: the
+   field is simply never there, so nothing throws.
 3. **Stored / in-flight data** — records written under the old contract,
    queued messages, deployed clients that will outlive the deploy.
 4. **Existing tests** — tests that pin current behaviour and would break.
@@ -508,7 +511,7 @@ file directly under its header, then return:
 
 > Plan ready at `<absolute path>`
 > Audit: clean.
-> Run `/execute-plan` (or say "execute") to implement task-by-task.
+> Run `/execute-plan` (or say "execute") to implement it.
 
 Do **not** paste the file contents back into chat — the file is the
 deliverable; pasting wastes tokens and forks the source of truth.

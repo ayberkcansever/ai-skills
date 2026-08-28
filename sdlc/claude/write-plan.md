@@ -101,11 +101,11 @@ mismatch at execution time.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** Use the execute-plan skill to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Plan code was written before implementation — when reality differs (API mismatch, wrong signature), adapt, update the step in place, and add a `> Drift:` note (see execute-plan's Plan Drift Protocol). The plan file is the as-built source of truth.
+> **For agentic workers:** Use the execute-plan skill to implement this plan. Ready tasks run in parallel waves; the orchestrator commits serially. Steps use checkbox (`- [ ]`) syntax for tracking. Plan code was written before implementation — when reality differs (API mismatch, wrong signature), adapt, update the step in place, and add a `> Drift:` note (see execute-plan's Plan Drift Protocol). The plan file is the as-built source of truth.
 
 **Goal:** [One sentence describing what this builds]
 
-**Spec:** [Path to the interview spec file, e.g. `docs/specs/<TICKET-ID>/spec.md`. No interview? Synthesize a minimal numbered spec (D1., D2., … from the given requirements, each with a `Check:` line) at that path first — tasks' `Implements:` and the Test matrix need stable decision IDs, and the review gate needs a spec to check conformance against.]
+**Spec:** [Path to the interview spec file, e.g. `docs/specs/<TICKET-ID>/spec.md`. No `spec.md`? If brainstorm left `design.md` in that folder, synthesize a numbered spec (`D1.` + `Check:` lines) at `spec.md` from it — do not point the plan header at `design.md`. No interview and no design.md? Synthesize `spec.md` from the given requirements. Tasks' `Implements:` and the Test matrix need stable decision IDs, and the review gate needs a spec to check conformance against.]
 
 **Architecture:** [2-3 sentences about approach]
 
@@ -132,7 +132,7 @@ The **Architecture constraints** block is mandatory: parallel or fresh subagents
 **Implements:** D3, D7 (decision numbers from the spec; "—" only for pure plumbing)
 **Depends on:** Task 2 (or "none")
 
-`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Both fields are load-bearing on every task; omitting them anywhere forces the whole plan sequential.
+`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Omit `Depends on:` on any task and execute-plan runs the whole plan sequentially. Omit `Files:` on a task and that task cannot share a wave (unknown overlap). The Review gate needs no `Files:` list.
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -284,7 +284,7 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **5. Test-matrix completeness:** Every spec decision and accepted edge scenario has a row in the Test matrix pointing at a named test in a task (or an explicit justified exception). Every test in the matrix exists in some task's code block.
 
-**6. Dependency sanity:** Every task declares `Depends on:` and `Files:`; no cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration. Then read the graph as waves (each round = all tasks whose dependencies are met and whose files are disjoint): if it comes out as a single chain, check whether the dependencies are genuine or just the order you happened to write them in.
+**6. Dependency sanity:** Every task declares `Depends on:`; every task except the Review gate declares `Files:`. No cycles; no task uses a symbol defined in a task it doesn't (transitively) depend on. Tasks marked `none` with overlapping file sets are a lie — fix the declaration. Then read the graph as waves (each round = all tasks whose dependencies are met and whose files are disjoint): if it comes out as a single chain, check whether the dependencies are genuine or just the order you happened to write them in.
 
 **7. Fake-green scan:** No implementation step's code block returns a hardcoded test-expected value or branches on test-specific input. If one does, generalize it and strengthen the test.
 
@@ -296,6 +296,6 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 After saving the plan, tell the user:
 
-**"Plan complete and saved to `docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`. Run `/execute-plan` (or say "execute") to implement it task-by-task. Promote to `docs/features/<TICKET-ID>/` when ready to commit."**
+**"Plan complete and saved to `docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`. Run `/execute-plan` (or say "execute") to implement it. Promote to `docs/features/<TICKET-ID>/` when ready to commit."**
 
 The next step in the workflow is the **execute-plan** skill. Do not start implementing here — writing the plan and executing it are separate phases so the user can review the plan first.

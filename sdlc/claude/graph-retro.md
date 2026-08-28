@@ -65,8 +65,8 @@ Classify with this rubric (quote the evidence, name the node):
   in `Verify first`)
 - Drift from genuinely unknowable environment state → **no node** (normal
   drift, skip)
-- Blocker from missing preflight (env, credentials, dirty tree, absent
-  dependency) → **execute-plan** (workspace/preflight gap)
+- Blocker from missing preflight (env, credentials, leftover dirty
+  worktree, absent dependency) → **execute-plan** (workspace/preflight gap)
 - Overridden recommendation → **interview-plan** (recommendation heuristic
   wrong for this domain — capture the user's stated reason)
 - Decision superseded because the chosen *approach* was wrong →

@@ -1,7 +1,8 @@
 # Git Worktrees
 
 Ensure work happens in an isolated workspace without disturbing the current
-checkout. Detect first, ask consent, then create.
+checkout. Detect first. Consent only when the user invoked this skill
+directly; execute-plan skips it.
 
 **Announce at start:** "I'm using the git-worktrees skill to set up an isolated workspace."
 
@@ -27,7 +28,7 @@ git worktree list
 > "Set up an isolated worktree? It protects your current branch and
 > uncommitted work."
 
-If declined, work in place and stop here. **Invoked from execute-plan, consent
+If declined, stop. Do not execute in the current checkout. **Invoked from execute-plan, consent
 is implied and this question is skipped**: that skill executes in a worktree by
 definition, and the user opted in by running it.
 
@@ -51,7 +52,7 @@ preference:
 | Does not exist | `git worktree add .worktrees/<branch> -b <branch> <base>` |
 | Exists, not checked out anywhere | `git worktree add .worktrees/<branch> <branch>` |
 | Exists, checked out in another worktree | stop — report which, and either reuse that worktree or pick a different branch |
-| Exists, checked out in the user's own checkout | stop and ask: switch that checkout off the branch, or execute in place |
+| Exists, checked out in the user's own checkout | stop — that checkout must leave the branch (switch it to the default branch) before this worktree can attach. Never execute in the user's checkout |
 
 `<base>` defaults to the repo's default branch (`origin/HEAD`) for new work;
 use the branch the user names when they name one.
@@ -86,8 +87,8 @@ Never remove a worktree with uncommitted changes without explicit confirmation.
 - Never create a worktree inside another worktree — Step 1 prevents this.
 - One worktree per ticket, reused across runs. Several **different** tickets
   may hold worktrees at once — that is how parallel work on one repo is done.
-- Never start implementation on `main`/`master`; a worktree with a feature
-  branch is the default answer when the user is parked on a protected branch.
+- The worktree's branch is never `main`/`master`. The user's checkout may
+  stay on a protected branch — that is the point.
 - `.worktrees/` stays gitignored; a tracked worktree directory pollutes status
   for every other checkout.
 - A gitignored path does **not** exist in a new worktree. Anything the work

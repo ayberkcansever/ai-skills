@@ -1,14 +1,14 @@
 ---
 name: execute-plan
-description: Use when you have a written implementation plan (from write-plan or interview-plan) and the user says "execute" / "implement it". Loads the plan, reviews it critically, opens a per-ticket worktree so the user's checkout stays untouched, executes each task step-by-step running the verifications the plan specifies, and stops to ask when blocked.
+description: Use when you have a written implementation plan (from write-plan or interview-plan) and the user says "execute" / "implement it". Loads the plan, reviews it critically, opens a per-ticket worktree so the user's checkout stays untouched, executes ready tasks in parallel waves, and stops to ask when blocked.
 ---
 
 # Execute Plan
 
 ## Overview
 
-Load plan, review critically, execute all tasks step-by-step, run the
-verifications the plan specifies, report when complete.
+Load plan, review critically, execute ready tasks in waves inside the
+ticket worktree, run the verifications the plan specifies, report when complete.
 
 **Announce at start:** "I'm using the execute-plan skill to implement this plan."
 
@@ -17,37 +17,26 @@ verifications the plan specifies, report when complete.
 ### Step 1: Load and Review Plan
 
 1. Read the plan file (the one produced by **write-plan** or **interview-plan**).
+   Infer `<TICKET-ID>` from the plan path first, then an existing ticket
+   worktree, then the current branch, then ask once — the user's checkout
+   may be on `main` or another ticket.
    If the user did not say which file, search in this order:
-   - `docs/features/<TICKET-ID>/` (tracked — prefer when present)
+   - already-listed worktree for this ticket (it is live — prefer it)
+   - `docs/features/<TICKET-ID>/` (tracked)
    - `docs/plans/<TICKET-ID>/` (gitignored WIP)
    - Legacy flat `docs/plans/*.md` or `docs/PLAN_*.md`
-   Infer `<TICKET-ID>` from the branch name or ask once.
-   If both tiers contain a copy of the plan, diff them; if they diverge, ask
-   which is active — never silently prefer the promoted copy over newer WIP.
-   Record the **absolute path of the checkout you read it from** — Step 2
-   copies the gitignored WIP docs from there into the worktree.
-2. **Resume check:** if the plan already has ticked checkboxes (`- [x]`), resume
-   from the first unticked task — first reconcile the plan against `git log`:
-   a ticked task with no `[T<N>]` commit → untick and redo; a `[T<N>]` commit
-   with its task unticked → re-run the task's gate and tick without redoing.
-   If `## Blockers` holds an unresolved entry with a stash OID, restore it
-   (`git stash apply <OID>`) and mark the entry resolved before any task runs.
-   The plan file's checkboxes are the source of truth for
-   progress; TodoWrite is an optional in-session mirror only.
-   **A plan with every task ticked but no `## Review` section containing
-   `Verdict: ship` is NOT complete** — jump straight to Step 4 and run the
-   review gate. Same when the ship entry is **stale**: its `reviewed @ <SHA>`
-   must match current HEAD (docs-only commits that leave spec decisions
-   unchanged excepted) — commits after the reviewed SHA are unreviewed
-   changes, so re-run Step 4.
-   Never declare a plan done on task checkboxes alone.
-3. Review it critically — identify any questions, gaps, or concerns before
+   If both tracked and WIP copies exist in the same checkout, diff them; if
+   they diverge, ask which is active — never silently prefer the promoted
+   copy over newer WIP.
+   Record the **absolute path of the user's checkout** — Step 2 copies from
+   there only when the worktree does not already have the WIP docs.
+2. Review it critically — identify any questions, gaps, or concerns before
    touching code. A plan whose header links a spec but carries no
    `**Audit:** clean` line may be un-audited interview output (generation
    interrupted before the Audit Pass) — confirm with the user before
    executing.
-4. If concerns: raise them with the user before starting.
-5. If no concerns: create a TodoWrite list (one todo per plan task) and proceed.
+3. If concerns: raise them with the user before starting. Resume / stash /
+   TodoWrite wait until Step 2 has the live plan.
 
 ### Step 2: Open the worktree (the execution venue)
 
@@ -67,29 +56,36 @@ that edits the checkout in place, which this one does not.
    install + baseline check. Consent is implied by `/execute-plan` — it does
    not re-ask. Already inside a linked worktree for this ticket → it reports
    and continues; nothing is created.
-2. **Carry the WIP docs across.** The WIP tiers (`docs/plans/`, `docs/specs/`)
-   are gitignored, so a fresh worktree does **not** contain the plan or spec
-   that Step 1 just read. Copy both from the checkout you loaded them from,
-   preserving their relative paths. Run this **from inside the worktree**:
+2. **Live plan.** The WIP tiers (`docs/plans/`, `docs/specs/`) are gitignored,
+   so a *fresh* worktree does not contain the plan or spec. Run this **from
+   inside the worktree**. Copy only when the destination does not already
+   exist — a prior run's worktree copy is live; overwriting it from the origin
+   checkout destroys ticks, drift notes, blockers, and review entries:
 
    ```bash
    for d in docs/plans/<TICKET-ID> docs/specs/<TICKET-ID>; do
-     [ -d "<origin-checkout>/$d" ] && mkdir -p "$(dirname "$d")" && cp -R "<origin-checkout>/$d" "$d"
+     if [ -d "<origin-checkout>/$d" ] && [ ! -d "$d" ]; then
+       mkdir -p "$(dirname "$d")" && cp -R "<origin-checkout>/$d" "$d"
+     fi
    done
    ```
 
-   From here the **worktree copy is the live plan** — every checkbox tick,
-   `> Drift:` note, `## Blockers` entry, and `## Review` entry is written
-   there. Never write the origin checkout's copy mid-run; two live plan files
-   is the state-fork this step exists to prevent. A plan already promoted to
-   tracked `docs/features/<TICKET-ID>/` and committed on the branch checks out
-   with it — copy nothing.
-3. Confirm the worktree's own tree is clean (`git status --porcelain` empty)
-   apart from the WIP docs copied in substep 2, which are gitignored and
-   therefore invisible to it. A freshly created worktree is clean by
-   construction; a reused one may not be — dirty means an earlier run left
-   work behind, so reconcile it against `## Blockers` (Step 1 resume check)
-   before the first task.
+   The worktree copy (or the tracked `docs/features/<TICKET-ID>/` already on
+   the branch) is now the live plan. Never write the origin checkout's copy
+   mid-run.
+3. **Resume on the live plan, in this worktree.** Reconcile checkboxes
+   against `git log` here (this is the ticket branch): a ticked task with no
+   `[T<N>]` commit → untick and redo; a `[T<N>]` commit with its task
+   unticked → re-run the gate and tick without redoing. If `## Blockers`
+   holds an unresolved stash OID, `git stash apply <OID>` **here**, then
+   mark it resolved. Checkboxes are the source of truth; TodoWrite is a
+   session mirror. Every task ticked but no `## Review` with `Verdict: ship`
+   at current HEAD → jump to Step 4. Stale `reviewed @` SHA (code commits
+   after it, docs-only excepted) → re-run Step 4.
+4. Confirm the worktree is clean (`git status --porcelain` empty) aside from
+   gitignored WIP docs. A reused worktree that is dirty is leftover work —
+   reconcile against `## Blockers` before Task 1.
+5. Create a TodoWrite list from the live plan and proceed.
 
 Report the worktree path before Task 1 so the user knows where the work is
 landing.
@@ -119,7 +115,9 @@ current wave only if all four hold:
    independent.
 2. **`Files:` disjoint** from every other task already in this wave. Two
    subagents editing one file in one worktree overwrite each other; there is no
-   merge step to catch it.
+   merge step to catch it. A task with no `Files:` list does not join a wave
+   with others — unknown overlap. (The Review gate has no `Files:` and is
+   excluded by rule 4 anyway.)
 3. **Gate commands do not contend** — tasks whose verifications write the same
    build output, coverage file, fixture database, or bind the same port go in
    different waves even when their `Files:` are disjoint. Shared *read-only*
@@ -149,8 +147,9 @@ resumed session can tell which tasks were in flight together.
 - the task's gate/verification command(s) verbatim;
 - the 5-attempt cap and the instruction to report a blocker instead of
   grinding;
-- the Plan Drift Protocol below (adapt, amend the step in place, add
-  `> Drift:` note);
+- the Plan Drift Protocol below. **Dispatched subagents return a proposed
+  `> Drift:` line; they do not write the plan.** The orchestrator applies it
+  at fan-in. Only inline execution amends the plan in place;
 - **edit and test only — never commit, never write the plan file** (git index
   and plan md are orchestrator-owned state, sequential or parallel): skip the
   task's commit step and return changed paths, drift notes, and gate output
@@ -222,10 +221,10 @@ blocker. When a step's code or command doesn't match reality (renamed symbol,
 different signature, moved file, API mismatch):
 
 1. **Adapt** — implement what the step *intends* against the real code.
-2. **Amend the plan step in place** — update the code block/command to what
-   was actually done, and append a one-line `> Drift: <what differed and why>`
-   under the step. The plan file stays the as-built source of truth; a plan
-   that lies about what was built is worse than no plan.
+2. **Record the drift** — dispatched: return `> Drift: <what differed and why>`
+   to the orchestrator (do not write the plan). Inline: amend the step in place
+   and append that line under it. The plan file stays the as-built source of
+   truth; a plan that lies about what was built is worse than no plan.
 3. **Escalate instead** when the drift changes a spec **decision**, a
    contract, invalidates a later task, or would make you delete, narrow, or
    invert an assertion covering behavior the plan never set out to change —
@@ -261,11 +260,13 @@ After all tasks are done and verified:
    review's Step 0 refuses a dirty tree because uncommitted changes silently
    escape the diff.
 4. **Run the review gate:** invoke **thermo-nuclear-code-quality-review** as a
-   read-only subagent on the branch diff, passing the spec and plan absolute
-   paths in the prompt — a fresh-context reviewer cannot find gitignored WIP
-   paths on its own. This step IS the plan's final Review gate task (write-plan
-   appends one to every plan) — tick that task's checkboxes here; never run
-   the review once in the Step 3 loop and again here.
+   read-only subagent **with this worktree as its working directory** (or
+   equivalent `git -C <worktree>`) on the branch diff, passing the spec and
+   plan **absolute** paths in the prompt. A reviewer launched from the user's
+   checkout diffs the wrong branch. A fresh-context reviewer cannot find
+   gitignored WIP paths on its own. This step IS the plan's final Review gate
+   task (write-plan appends one to every plan) — tick that task's checkboxes
+   here; never run the review once in the Step 3 loop and again here.
    - **Pinned review model:** launch the reviewer subagent with the model
      named in thermo-nuclear-code-quality-review's "Pinned review model"
      section — that skill is the single source of truth for the slug; do not
@@ -275,7 +276,7 @@ After all tasks are done and verified:
      issue / Net), the model used, the full-suite command + result at that
      SHA, `reviewed @ <HEAD SHA>` and `base @ <base SHA>`, and the subagent
      link to the plan file under a `## Review` section — one entry per review
-     cycle. This is what the Step 1 resume check looks for; a review that
+     cycle. This is what the Step 2 resume check looks for; a review that
      leaves no `## Review` entry did not happen.
    - Accepted findings are inserted into the plan as structured remediation
      tasks **before the review gate task** (write-plan's remediation

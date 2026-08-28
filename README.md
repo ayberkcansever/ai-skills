@@ -131,16 +131,19 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
   always runs in `.worktrees/<branch>` for the ticket. Add `.worktrees/` to
   your `.gitignore`. Because the WIP tiers (`docs/plans/`, `docs/specs/`) are
   gitignored, a fresh worktree does not contain them — the skill copies them
-  in and then treats the worktree copy as the one live plan. Anything else
-  untracked that your build needs (`.env`, local config) you must copy in too.
+  in **only if they are missing** (a prior run's worktree copy is live; do
+  not overwrite it). Anything else untracked that your build needs (`.env`,
+  local config) you must copy in too.
 - Task parallelism is driven entirely by the plan's `Depends on:` and `Files:`
   metadata, so `write-plan`'s accuracy there sets your wall-clock time. A plan
   with no `Depends on:` lines executes sequentially by design — absent metadata
   is treated as unknown, not independent.
 - `thermo-nuclear-code-quality-review` pins a dedicated **review model** so the
-  reviewer never inherits the implementer session's model — fill in your chosen
-  model slug in its "Pinned review model" section (write-plan and execute-plan
-  reference that section instead of hardcoding a slug).
+  reviewer never inherits the implementer session's model. The skill's
+  "Pinned review model" section is the source of truth (a model family +
+  latest, not a slug to paste here). write-plan and execute-plan reference
+  that section instead of hardcoding a slug. Execute-plan launches the
+  reviewer inside the ticket worktree so `git diff` hits the right branch.
 - Examples use Python/`pytest` and a `handler → use case → repository` layering
   purely as illustration — apply them to whatever stack your repo uses.
 - `graph-retro` commits approved amendments to your skills directory — keep
