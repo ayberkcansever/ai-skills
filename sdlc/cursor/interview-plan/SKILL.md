@@ -527,7 +527,7 @@ file directly under its header, then return:
 
 > Plan ready at `<absolute path>`
 > Audit: clean.
-> Run `/execute-plan` (or say "execute") to implement task-by-task.
+> Run `/execute-plan` (or say "execute") to implement it.
 
 Do **not** paste the file contents back into chat — the file is the
 deliverable; pasting wastes tokens and forks the source of truth.

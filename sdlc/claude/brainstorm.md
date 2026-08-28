@@ -105,6 +105,7 @@ digraph brainstorming {
 
 - Write the validated design (spec) to `docs/specs/<TICKET-ID>/design.md` (gitignored WIP). Promote to `docs/features/<TICKET-ID>/design.md` when stable.
   - Infer `<TICKET-ID>` from branch name or ask once. User preferences override.
+- Use elements-of-style:writing-clearly-and-concisely skill if available
 - Do not commit the design document unless the user explicitly asks; follow repository commit rules if they do.
 
 **Spec Self-Review:**
@@ -153,3 +154,6 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 - **Use the terminal** for content that is text — requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions
 
 A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
+
+If they agree to the companion, read the detailed guide before proceeding:
+`visual-companion.md` (in this skill's folder)

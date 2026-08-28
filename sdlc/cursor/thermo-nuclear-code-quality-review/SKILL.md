@@ -10,7 +10,9 @@ disable-model-invocation: true
 
 # Thermo-Nuclear Code Quality Review
 
-Review **current branch changes** through five lenses, in order.
+Review **current branch changes** through five lenses, in order
+(the checkout you were launched in — execute-plan launches the reviewer
+in the ticket worktree).
 Phases 0–3 are **review-first**: report findings, change code only if the user says "fix".
 Phase 4 (docs) is **always applied** where a feature-docs flow exists.
 
