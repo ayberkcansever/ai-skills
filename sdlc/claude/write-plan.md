@@ -8,7 +8,7 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
-**Context:** Plans are written in the user's checkout; they are *executed* in a per-ticket worktree that execute-plan opens via the `git-worktrees` skill. Keep every path in the plan repo-relative so it resolves in either place.
+**Context:** Plans are written in the user's checkout; they are *executed* in this checkout if already on the ticket branch, otherwise in a per-ticket worktree that execute-plan opens via the `git-worktrees` skill. Keep every path in the plan repo-relative so it resolves in either place.
 
 ## Documentation layout (two tiers)
 
@@ -132,7 +132,7 @@ The **Architecture constraints** block is mandatory: parallel or fresh subagents
 **Implements:** D3, D7 (decision numbers from the spec; "—" only for pure plumbing)
 **Depends on:** Task 2 (or "none")
 
-`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Omit `Depends on:` on any task and execute-plan runs the whole plan sequentially. Omit `Files:` on a task and that task cannot share a wave (unknown overlap). The Review gate needs no `Files:` list.
+`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Disjoint means **paths** — a `:line-range` suffix is stripped before the check (`foo.py:123-145` and `foo.py:200-220` are the same file and must not share a wave). Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Omit `Depends on:` on any task and execute-plan runs the whole plan sequentially. Omit `Files:` on a task and that task cannot share a wave (unknown overlap). The Review gate needs no `Files:` list.
 
 **Files:**
 - Create: `exact/path/to/file.py`

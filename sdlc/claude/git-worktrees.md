@@ -2,7 +2,7 @@
 
 Ensure work happens in an isolated workspace without disturbing the current
 checkout. Detect first. Consent only when the user invoked this skill
-directly; execute-plan skips it.
+directly; execute-plan skips the consent question, not this skill.
 
 **Announce at start:** "I'm using the git-worktrees skill to set up an isolated workspace."
 
@@ -19,6 +19,9 @@ git worktree list
   prints a path, you are in a submodule, not a worktree — treat as normal repo.
 - `git worktree list` already shows a worktree for this ticket → `cd` into it
   and skip to Step 3. Never create a second one for the same ticket.
+- Current branch already matches this ticket (`git branch --show-current`
+  contains the ticket key) → this checkout is the venue. Skip Step 2.
+  Go to Step 3.
 - `GIT_DIR == GIT_COMMON` and no ticket worktree → normal checkout, continue.
 
 ## Step 2: Create the worktree
@@ -28,9 +31,10 @@ git worktree list
 > "Set up an isolated worktree? It protects your current branch and
 > uncommitted work."
 
-If declined, stop. Do not execute in the current checkout. **Invoked from execute-plan, consent
-is implied and this question is skipped**: that skill executes in a worktree by
-definition, and the user opted in by running it.
+If declined, stop. Do not execute in the current checkout. **Invoked from
+execute-plan, consent is implied and this question is skipped**: execute-plan
+only reaches this skill when the checkout is not already on the ticket
+branch.
 
 Path is `.worktrees/<branch-name>`; branch name follows repo conventions —
 ticket key first, e.g. `PROJ-123-short-description`.
@@ -52,7 +56,7 @@ preference:
 | Does not exist | `git worktree add .worktrees/<branch> -b <branch> <base>` |
 | Exists, not checked out anywhere | `git worktree add .worktrees/<branch> <branch>` |
 | Exists, checked out in another worktree | stop — report which, and either reuse that worktree or pick a different branch |
-| Exists, checked out in the user's own checkout | stop — that checkout must leave the branch (switch it to the default branch) before this worktree can attach. Never execute in the user's checkout |
+| Exists, checked out in this checkout | this checkout is the venue — skip create, go to Step 3. Do not stop. |
 
 `<base>` defaults to the repo's default branch (`origin/HEAD`) for new work;
 use the branch the user names when they name one.
