@@ -48,7 +48,7 @@ Examples:
 
 ## Scope Check
 
-If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during the interview (checklist item 20). If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
 ## File Structure
 
@@ -132,7 +132,7 @@ The **Architecture constraints** block is mandatory: parallel or fresh subagents
 **Implements:** D3, D7 (decision numbers from the spec; "—" only for pure plumbing)
 **Depends on:** Task 2 (or "none")
 
-`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Disjoint means **paths** — a `:line-range` suffix is stripped before the check (`foo.py:123-145` and `foo.py:200-220` are the same file and must not share a wave). Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Omit `Depends on:` on any task and execute-plan runs the whole plan sequentially. Omit `Files:` on a task and that task cannot share a wave (unknown overlap). The Review gate needs no `Files:` list.
+`Depends on:` and `Files:` are what execute-plan schedules on: each wave takes every task whose dependencies are ticked and whose `Files:` are disjoint from its wave-mates. Disjoint means **paths** — a `:line-range` suffix is stripped before the check (`foo.py:123-145` and `foo.py:200-220` are the same file and must not share a wave). Declare real dependencies only — a defensive `Depends on: Task 1` on an independent task silently serializes the plan. Every task must declare `Depends on:` (`none` if independent) — execute-plan owns the omit fallback; do not invent a different one here. Omit `Files:` on a task and that task cannot share a wave (unknown overlap). The Review gate needs no `Files:` list.
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -294,8 +294,10 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 ## Execution Handoff
 
+If invoked from **interview-plan**, skip this message — interview-plan's Audit Pass owns the handoff.
+
 After saving the plan, tell the user:
 
 **"Plan complete and saved to `docs/plans/<TICKET-ID>/<scope>-implementation-plan.md`. Run `/execute-plan` (or say "execute") to implement it. Promote to `docs/features/<TICKET-ID>/` when ready to commit."**
 
-The next step in the workflow is the **execute-plan** skill. Do not start implementing here — writing the plan and executing it are separate phases so the user can review the plan first.
+The next step in the workflow is the **execute-plan** skill. Do not start implementing here — writing the plan and executing it are separate phases so the user can review the plan first. Do not also run `/write-plan` again on the file just written.
