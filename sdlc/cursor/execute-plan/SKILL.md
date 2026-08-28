@@ -1,6 +1,6 @@
 ---
 name: execute-plan
-description: Use when you have a written implementation plan (from write-plan or interview-plan) and the user says "execute" / "implement it". Loads the plan, reviews it critically, executes each task step-by-step running the verifications the plan specifies, and stops to ask when blocked.
+description: Use when you have a written implementation plan (from write-plan or interview-plan) and the user says "execute" / "implement it". Loads the plan, reviews it critically, opens a per-ticket worktree so the user's checkout stays untouched, executes each task step-by-step running the verifications the plan specifies, and stops to ask when blocked.
 ---
 
 # Execute Plan
@@ -21,9 +21,11 @@ verifications the plan specifies, report when complete.
    - `docs/features/<TICKET-ID>/` (tracked — prefer when present)
    - `docs/plans/<TICKET-ID>/` (gitignored WIP)
    - Legacy flat `docs/plans/*.md` or `docs/PLAN_*.md`
-   Infer `<TICKET-ID>` from branch name or ask once.
+   Infer `<TICKET-ID>` from the branch name or ask once.
    If both tiers contain a copy of the plan, diff them; if they diverge, ask
    which is active — never silently prefer the promoted copy over newer WIP.
+   Record the **absolute path of the checkout you read it from** — Step 2
+   copies the gitignored WIP docs from there into the worktree.
 2. **Resume check:** if the plan already has ticked checkboxes (`- [x]`), resume
    from the first unticked task — first reconcile the plan against `git log`:
    a ticked task with no `[T<N>]` commit → untick and redo; a `[T<N>]` commit
@@ -47,26 +49,97 @@ verifications the plan specifies, report when complete.
 4. If concerns: raise them with the user before starting.
 5. If no concerns: create a TodoWrite list (one todo per plan task) and proceed.
 
-### Step 2: Confirm a safe workspace
+### Step 2: Open the worktree (the execution venue)
 
-- Never start implementation on `main` / `master` without explicit user consent.
-- If on a protected branch, ask the user for the feature branch to use (or to
-  confirm creating one). Reference the ticket key from the branch-naming rules
-  when relevant.
-- **Clean tree required** (`git status --porcelain` empty) before the first
-  task — uncommitted user work would mix with task edits and later fail the
-  review gate's own clean-tree check. Dirty → ask the user to commit, stash,
-  or approve an isolated worktree (git-worktrees skill); never start over it.
+**Execution always happens in a dedicated worktree for this `<TICKET-ID>`,
+never in the user's checkout.** The user's checkout is theirs — it may be
+dirty, on any branch, running a dev server; none of that concerns this run.
+One worktree per ticket is also what lets several tickets execute in parallel
+on the same repo.
+
+Do not ask which branch to use, do not offer to switch branches, and do not
+gate on the user's tree being clean — those questions belong to a workflow
+that edits the checkout in place, which this one does not.
+
+1. Run the **git-worktrees** skill with the ticket ID. It detects existing
+   isolation, reuses or creates the worktree at `.worktrees/<branch>` (branch
+   `<TICKET-ID>-<slug>`, per that skill's naming), and runs the project's
+   install + baseline check. Consent is implied by `/execute-plan` — it does
+   not re-ask. Already inside a linked worktree for this ticket → it reports
+   and continues; nothing is created.
+2. **Carry the WIP docs across.** The WIP tiers (`docs/plans/`, `docs/specs/`)
+   are gitignored, so a fresh worktree does **not** contain the plan or spec
+   that Step 1 just read. Copy both from the checkout you loaded them from,
+   preserving their relative paths. Run this **from inside the worktree**:
+
+   ```bash
+   for d in docs/plans/<TICKET-ID> docs/specs/<TICKET-ID>; do
+     [ -d "<origin-checkout>/$d" ] && mkdir -p "$(dirname "$d")" && cp -R "<origin-checkout>/$d" "$d"
+   done
+   ```
+
+   From here the **worktree copy is the live plan** — every checkbox tick,
+   `> Drift:` note, `## Blockers` entry, and `## Review` entry is written
+   there. Never write the origin checkout's copy mid-run; two live plan files
+   is the state-fork this step exists to prevent. A plan already promoted to
+   tracked `docs/features/<TICKET-ID>/` and committed on the branch checks out
+   with it — copy nothing.
+3. Confirm the worktree's own tree is clean (`git status --porcelain` empty)
+   apart from the WIP docs copied in substep 2, which are gitignored and
+   therefore invisible to it. A freshly created worktree is clean by
+   construction; a reused one may not be — dirty means an earlier run left
+   work behind, so reconcile it against `## Blockers` (Step 1 resume check)
+   before the first task.
+
+Report the worktree path before Task 1 so the user knows where the work is
+landing.
 
 ### Step 3: Execute Tasks
 
-**Default: run each task in a fresh subagent when tasks are independent
-(disjoint files) or context-heavy; this session acts as orchestrator.**
-Inline execution is fine for small or tightly coupled plans where one
-context comfortably holds the work — task count alone is not the trigger.
+**Tasks run in waves: every task that legally can run now is dispatched as a
+fresh subagent in one message; this session acts as orchestrator.** Waves are
+the default, not an optimization to opt into — a plan whose tasks are
+independent should finish in as many rounds as its dependency graph is deep,
+not as many rounds as it has tasks. All subagents in a wave share the Step 2
+worktree; isolation between them comes from the disjoint-files rule below, not
+from separate directories.
+
+Inline execution is fine for small or tightly coupled plans where one context
+comfortably holds the work — task count alone is not the trigger.
+
+#### Wave scheduling
+
+Each round, build the **ready set** from the unticked tasks. A task joins the
+current wave only if all four hold:
+
+1. **`Depends on:` satisfied** — every named task is already ticked. A task
+   declaring `none` is ready immediately. **If the plan omits `Depends on:`
+   metadata entirely, treat every task as depending on the one before it** and
+   run the whole plan sequentially — an absent declaration is unknown, not
+   independent.
+2. **`Files:` disjoint** from every other task already in this wave. Two
+   subagents editing one file in one worktree overwrite each other; there is no
+   merge step to catch it.
+3. **Gate commands do not contend** — tasks whose verifications write the same
+   build output, coverage file, fixture database, or bind the same port go in
+   different waves even when their `Files:` are disjoint. Shared *read-only*
+   test infrastructure is fine.
+4. **Not the Review gate task** — see the exception below.
+
+Dispatch the whole ready set in a single message (parallel tool calls), then
+wait for all of them before fanning in. Do not start the next wave early:
+a later task's `Depends on:` is only satisfied once its predecessor is
+**ticked**, which happens in fan-in after the orchestrator's own gate run.
+
+Width is whatever the ready set allows — there is no cap beyond rules 2 and 3.
+Record the wave composition in your progress notes (`wave 1: T1, T3, T5`) so a
+resumed session can tell which tasks were in flight together.
 
 **Subagent contract — the prompt MUST contain all of:**
 
+- the **absolute worktree path** from Step 2, and the instruction to work
+  only inside it — a subagent given a repo-relative path resolves it against
+  the user's checkout and silently edits the wrong tree;
 - the plan file path and the task number (the plan's **Architecture
   constraints** section is the subagent's conventions source — it sees nothing
   else);
@@ -94,7 +167,13 @@ orchestrator executes it itself as Step 4.4 — after the data-path trace,
 full-suite run, and spec promotion — and ticks its checkboxes when the
 `## Review` entry records `Verdict: ship`. Skip over it in the Step 3 loop.
 
-For each task, in order:
+#### Per task
+
+Substeps 1–3 are the task work — done by the subagent in dispatch mode, by
+this session inline. Substeps 4–8 are **always the orchestrator's**, and in a
+wave they run **serially, in task-number order, after every subagent in that
+wave has returned**: the git index and the plan file are single-writer state
+no matter how wide the wave was.
 
 1. Mark the todo `in_progress`.
 2. Follow each step exactly — the plan has bite-sized steps (write failing test
@@ -105,7 +184,8 @@ For each task, in order:
    own success criteria when the plan gave one.
 4. **Before the task's commit step, run substeps 5–6 first** — the commit
    must be able to include synced doc paths, and gate findings are cheaper to
-   fix pre-commit than post-commit.
+   fix pre-commit than post-commit. Apply each returned `> Drift:` note to the
+   plan here too; subagents never write it.
 5. **Per-task check (orchestrator, cheap):** re-run the gate command (see
    above), then skim the task's diff against the plan's Architecture
    constraints — layering respected, canonical helpers used, no hardcoded
@@ -127,14 +207,13 @@ For each task, in order:
    edits dirty the tree and block the review gate. Then mark the todo
    `completed`.
 
-**Parallel dispatch (optional):** tasks whose `Depends on:` is satisfied AND
-whose `Files:` sets are mutually disjoint may run as parallel subagents.
-Anything else runs sequentially — same-file edits and commit races are not
-worth the speedup. If the plan lacks `Depends on:` metadata, execute
-sequentially.
-Subagents never commit or write the plan file regardless of mode (see the
-contract); the orchestrator applies drift notes to the plan, runs each task's
-gate, and commits each task's paths **serially**.
+**When one task in a wave fails.** A blocked or failing subagent does not void
+its siblings. Fan in the tasks that passed their gate normally — commit and
+tick each one — then handle the failure on its own terms: retry within the
+5-attempt cap, or append a `## Blockers` entry and stop. Do not open the next
+wave while a blocker is unresolved; its tasks may depend on the failed one, and
+resuming from a half-applied wave is exactly what the plan file's checkboxes
+exist to prevent.
 
 ### Plan Drift Protocol (plan meets reality)
 
@@ -216,9 +295,13 @@ After all tasks are done and verified:
    was already promoted in substep 3) and commit, or ask the user if
    promotion is premature. Docs-only commits after the reviewed SHA that
    leave spec decisions unchanged do not invalidate the ship verdict.
-6. Report what was implemented, which verifications passed, and anything skipped.
+6. Report what was implemented, which verifications passed, and anything
+   skipped — and state the **worktree path and branch** so the user knows
+   where to look.
 7. Hand back to the user for manual testing. Do not open a PR or merge unless the
-   user asks.
+   user asks. **Leave the worktree in place**: it holds the branch, the
+   as-built plan, and any still-gitignored WIP docs. Removing it is
+   git-worktrees Step 4, run only after merge or on explicit user say-so.
 
 ## When to Stop and Ask for Help
 
@@ -259,10 +342,13 @@ Don't force through blockers — stop and ask.
 
 ## Subagent-driven execution
 
-Subagent-per-task is the **default** for independent or context-heavy tasks
-(see Step 3). Each task gets a fresh context, which prevents context rot on
-long plans; the plan file (checkboxes + `## Blockers`) carries all state
-between tasks, so any session — or a replacement session — can resume from it.
+Subagent-per-task, dispatched in **waves** of everything currently legal to
+run, is the default (see Step 3). Each task gets a fresh context, which
+prevents context rot on long plans; the plan file (checkboxes + `## Blockers`)
+carries all state between tasks, so any session — or a replacement session —
+can resume from it. Because state lives in the plan and the git index, both
+single-writer and both orchestrator-owned, widening a wave never widens the
+blast radius.
 
 A subagent that hits the 5-attempt cap reports the blocker back; the
 orchestrator writes it to the plan file and stops. Inline execution remains
@@ -275,4 +361,7 @@ the work.
 - Follow plan steps exactly; don't skip verifications.
 - Commit with explicit paths only (or the repo's commit helper); never `git add .`.
 - Stop when blocked — don't guess.
-- Never start implementation on main/master without explicit user consent.
+- Execute in the ticket's worktree, never in the user's checkout; the
+  worktree's plan copy is the live one.
+- Dispatch every legal task in a wave; fan in serially — commit, sync docs,
+  tick, one task at a time.
