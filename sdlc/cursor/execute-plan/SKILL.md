@@ -1,6 +1,11 @@
 ---
 name: execute-plan
-description: Use when you have a written implementation plan (from write-plan or interview-plan) and the user says "execute" / "implement it". Loads the plan, reviews it critically, executes in this checkout when already on the ticket branch (otherwise a per-ticket worktree), runs ready tasks in parallel waves, and stops to ask when blocked.
+description: >-
+  Implement a written plan (from write-plan or interview-plan) when the user
+  says execute or implement it. Loads the plan, executes ready tasks in waves
+  in the ticket venue, runs the plan's review gate itself. Do not use while
+  still interviewing or writing the plan.
+disable-model-invocation: true
 ---
 
 # Execute Plan
@@ -33,9 +38,11 @@ run the verifications the plan specifies, report when complete.
    there only when the worktree does not already have the WIP docs.
 2. Review it critically — identify any questions, gaps, or concerns before
    touching code. A plan whose header links a spec but carries no
-   `**Audit:** clean` line may be un-audited interview output (generation
-   interrupted before the Audit Pass) — confirm with the user before
-   executing.
+   `**Audit:** clean` line: if an interview spec exists for this ticket, the
+   Audit Pass was interrupted — confirm before executing. If there was no
+   interview (standalone write-plan), missing audit is expected — still
+   confirm once, then proceed. Do not treat both cases as "interrupted
+   interview".
 3. If concerns: raise them with the user before starting. Resume / stash /
    TodoWrite wait until Step 2 has the live plan.
 
@@ -113,10 +120,11 @@ Each round, build the **ready set** from the unticked tasks. A task joins the
 current wave only if all four hold:
 
 1. **`Depends on:` satisfied** — every named task is already ticked. A task
-   declaring `none` is ready immediately. **If the plan omits `Depends on:`
-   metadata entirely, treat every task as depending on the one before it** and
-   run the whole plan sequentially — an absent declaration is unknown, not
-   independent.
+   declaring `none` is ready immediately. **If every task omits `Depends on:`**,
+   treat each as depending on the one before it and run sequentially — an
+   absent declaration is unknown, not independent. **If some tasks declare
+   `Depends on:` and one omits it, stop and ask** — do not treat the omit as
+   `none` (vacuously ready) and do not silently serialize the whole plan.
 2. **`Files:` disjoint** from every other task already in this wave. Compare
    **paths only** — strip a trailing `:line-range` (e.g. `src/foo.py:123-145`
    → `src/foo.py`) before the check. Two tasks on the same file at different
@@ -167,10 +175,12 @@ expected output. A subagent "done" summary is a claim, not evidence.
 
 **Exception — the Review gate task:** the plan's final Review gate task is
 NEVER dispatched to a task subagent (a task subagent cannot spawn the
-read-only reviewer, and an implementer must not review its own diff). The
-orchestrator executes it itself as Step 4.4 — after the data-path trace,
-full-suite run, and spec promotion — and ticks its checkboxes when the
-`## Review` entry records `Verdict: ship`. Skip over it in the Step 3 loop.
+read-only reviewer, and an implementer must not review its own diff). Skip
+it when building the ready set. **When it is the only remaining unticked
+task, leave Step 3 and go to Step 4** — do not stall on an empty ready set.
+The orchestrator runs the gate as Step 4.4 (after data-path trace, full-suite,
+and spec promotion) and ticks its checkboxes when `## Review` records
+`Verdict: ship`.
 
 #### Per task
 
@@ -374,3 +384,6 @@ the work.
   the ticket worktree. The venue's plan copy is the live one.
 - Dispatch every legal task in a wave; fan in serially — commit, sync docs,
   tick, one task at a time.
+- This skill runs the review gate as Step 4.4. Do not also invoke
+  `/thermo-nuclear-code-quality-review` unless the user edited code after
+  `Verdict: ship`. `/graph-retro` is post-merge, not the next implement step.

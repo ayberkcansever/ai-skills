@@ -386,12 +386,12 @@ written around — API shapes, field names, signatures, paths — must be
 verified during the interview, never deferred here.
 ```
 
-**Spec lifecycle:** the spec is the contract between the three skills — the
-plan (write-plan) links to it in its header, and the review
-(thermo-nuclear-code-quality-review) checks the diff against its numbered
-decisions. When the plan is promoted to `docs/features/<TICKET-ID>/`, promote
-the spec with it (as `design.md`, or merge into an existing `design.md`) so
-the decision record survives the gitignored WIP directory.
+**Spec lifecycle:** the spec is the contract for the whole chain — write-plan
+links it in the plan header, execute-plan and the review skill check the diff
+against its numbered decisions, graph-retro attributes failures against it.
+When the plan is promoted to `docs/features/<TICKET-ID>/`, promote the spec
+with it (as `design.md`, or merge into an existing `design.md`) so the
+decision record survives the gitignored WIP directory.
 
 ### Step 2 — Confirm, then invoke write-plan
 
@@ -512,6 +512,7 @@ file directly under its header, then return:
 > Plan ready at `<absolute path>`
 > Audit: clean.
 > Run `/execute-plan` (or say "execute") to implement it.
+> write-plan already ran — do not re-invoke it on this file.
 
 Do **not** paste the file contents back into chat — the file is the
 deliverable; pasting wastes tokens and forks the source of truth.

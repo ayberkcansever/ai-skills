@@ -1,14 +1,22 @@
 ---
 name: graph-retro
-description: Post-deploy retrospective on the SDLC skill chain (brainstorm → interview-plan → write-plan → execute-plan → review). Reads a shipped ticket's plan + spec artifacts, extracts failure signals (drift notes, blockers, review findings, overridden recommendations), attributes each to the skill that should have prevented it, and proposes human-gated one-line amendments. Use after merge/deploy or when the user says "retro this ticket".
+description: >-
+  Post-merge retrospective on the SDLC skill chain (interview-plan →
+  write-plan → execute-plan → review). Reads one ticket's plan and spec,
+  attributes failure signals to the skill that should have prevented them,
+  and proposes one-line amendments. Use after merge and deploy, when the
+  user says "retro this ticket", or when an escaped defect traces to an old
+  ticket. Do not run as the next step after execute-plan or the review.
+disable-model-invocation: true
 ---
 
 # Graph Retro
 
-Post-deploy retrospective on the SDLC skill chain (brainstorm → interview-plan
-→ write-plan → execute-plan → thermo-nuclear-code-quality-review). Reads one
-ticket's plan + spec artifacts, extracts every failure signal, attributes each
-to the skill that should have prevented it, and proposes one-line amendments.
+Post-deploy retrospective on the SDLC skill chain (interview-plan →
+write-plan → execute-plan → thermo-nuclear-code-quality-review). Optional:
+brainstorm before interview-plan. Reads one ticket's plan + spec artifacts,
+extracts every failure signal, attributes each to the skill that should have
+prevented it, and proposes one-line amendments.
 
 The insight: the chain already **produces** its own improvement telemetry —
 drift notes, blockers, review findings, overridden recommendations — but
@@ -25,9 +33,11 @@ commit whose history answers "why does this rule exist".
 ## When to run
 
 After the ticket is merged and the deploy is verified, or whenever the user
-says "retro this ticket" / invokes `/graph-retro`. Also re-run on an old
-ticket when an escaped defect traces back to it — the defect is an additional
-signal, attributed to the **review** skill (a review lens gap).
+says "retro this ticket" / invokes `/graph-retro`. Not part of the implement
+loop — do not run it as the next command after execute-plan or the review.
+Also re-run on an old ticket when an escaped defect traces back to it — the
+defect is an additional signal, attributed to the **review** skill (a review
+lens gap).
 
 ## Step 1 — Locate artifacts
 
@@ -65,6 +75,9 @@ Classify with this rubric (quote the evidence, name the node):
 
 - Review finding on behavior the spec never mentions → **interview-plan**
   (missed question / scenario axis / checklist gap)
+- Review findings from cycles > 1 on behavior the spec *did* mention →
+  **review** (cycle 1 lens miss); if the plan under-specified the task →
+  **write-plan**
 - Drift on a symbol, signature, path, or field that discovery could have
   read → **write-plan** (unevidenced assertion; should have been grounded or
   in `Verify first`)
@@ -72,13 +85,18 @@ Classify with this rubric (quote the evidence, name the node):
   drift, skip)
 - Blocker from missing preflight (env, credentials, leftover dirty
   worktree, absent dependency) → **execute-plan** (workspace/preflight gap)
+- 5-attempt-cap hit whose command was undrunnable as written → **write-plan**;
+  otherwise → **execute-plan**
+- Audit pass open counts > 0 at first report → **write-plan** (Self-Review
+  miss); if the open was a missing decision or unhandled consumer →
+  **interview-plan**
 - Overridden recommendation → **interview-plan** (recommendation heuristic
   wrong for this domain — capture the user's stated reason)
 - Decision superseded because the chosen *approach* was wrong →
-  **brainstorm** (alternatives explored too narrowly, or the approval gate
-  passed too easily)
+  **brainstorm** if brainstorm ran, else **interview-plan**
 - Decision superseded because a *constraint* surfaced late →
   **interview-plan** (discovery or questioning gap)
+- Escaped production defect on a reviewed ticket → **review** (lens gap)
 - Recurring domain fact (filter semantics, scoping, timezone, idempotency
   quirk) → **quirks doc** (e.g. `docs/quirks.md`), not a skill
 
@@ -118,3 +136,4 @@ quirks / drop. Only then:
   the *process*, not the product.
 - Padding output when the run was clean — "no findings" is success.
 - Skipping the verbatim quote — every proposal must carry its evidence.
+- Running this skill immediately after execute-plan or the review, before merge.

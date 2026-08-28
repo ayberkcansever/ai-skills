@@ -70,41 +70,40 @@ built around a counter:
 
 | Skill | What it does |
 |-------|--------------|
-| `brainstorm` | Turns a fuzzy idea into an approved design through one-question-at-a-time dialogue, 2-3 proposed approaches, and a written spec — with an optional browser-based visual companion for mockups/diagrams. Gates on user approval before any implementation. |
-| `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. |
-| `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. |
-| `execute-plan` | Executes the plan in this checkout when already on the ticket branch, otherwise in a per-ticket worktree, dispatching each wave of independent tasks as parallel subagents, re-running each task's gate itself before ticking it, committing serially as it goes, then running the review gate until the verdict is `ship`. |
+| `brainstorm` | Turns a fuzzy idea into an approved design through one-question-at-a-time dialogue, 2-3 proposed approaches, and a written spec — with an optional browser-based visual companion for mockups/diagrams. Gates on user approval, then hands off to `interview-plan` when a ticket exists (or asks once if there is no ticket). |
+| `interview-plan` | Interviews you one question at a time, reads the codebase first, and produces an **ambiguity-free** spec across business, backward-compat, and technical lenses. Then runs `write-plan` and an Audit Pass — do not also invoke `/write-plan`. |
+| `write-plan` | Turns the spec into a bite-sized, TDD-oriented implementation plan with exact files, code, and verification commands. Nested inside `interview-plan`; use standalone only when there was no interview. |
+| `execute-plan` | Executes the plan in this checkout when already on the ticket branch, otherwise in a per-ticket worktree, dispatching each wave of independent tasks as parallel subagents, re-running each task's gate itself before ticking it, committing serially as it goes, then running the review gate until the verdict is `ship`. Do not also invoke `/thermo-nuclear-code-quality-review` unless you edited code after `ship`. |
 | `git-worktrees` | Sets up an isolated git worktree (detect/reuse → create or attach `.worktrees/<branch>` → baseline check) so a ticket on another branch can execute without touching this checkout. Called by `execute-plan` when the checkout is not already on the ticket branch. |
 | `thermo-nuclear-code-quality-review` | A strict five-lens review — checks the diff against the spec's decisions (conformance/semantic drift), then flags over-engineering, spaghetti growth, architecture violations, and merge risks before the PR merges. |
 | `graph-retro` | Post-deploy retrospective on the skill chain itself — extracts every drift note, blocker, and review finding from a shipped ticket's plan, attributes each to the skill that should have prevented it, and proposes human-gated amendments so the chain improves with every ticket. |
 
 ### Flow
 
-Start with **either** `brainstorm` or `interview-plan` (not both required):
+User-facing path is **interview-plan → execute-plan**, then **graph-retro after merge**. `write-plan` and the review are nested, not extra slash commands.
 
 ```mermaid
 flowchart LR
-    B["/brainstorm<br/><i>fuzzy idea</i>"] --> W["/write-plan"]
-    I["/interview-plan<br/><i>known scope</i>"] --> W
-    W --> E["/execute-plan<br/><i>waves of parallel tasks</i>"]
+    B["/brainstorm<br/><i>fuzzy idea</i>"] --> I
+    I["/interview-plan<br/><i>spec + nested write-plan</i>"] --> E
+    W["/write-plan<br/><i>escape hatch</i>"] --> E
     WT["git-worktrees<br/><i>per-ticket worktree</i>"] --> E
-    E --> R["/thermo-nuclear-<br/>code-quality-review"]
-    R -->|"verdict: ship"| PR(["PR ready"])
-    R -->|"findings → remediation tasks"| E
+    E["/execute-plan<br/><i>waves + nested review</i>"] --> PR(["PR ready"])
+    E -->|"findings → remediation"| E
     PR -.->|"merged + deployed"| G["/graph-retro"]
     G -.->|"approved amendments"| S[("skills repo")]
 ```
 
 Pick the entry point that fits the task:
 
-- **`brainstorm`** — fuzzy idea, no clear scope yet. Shapes it into an approved design.
-- **`interview-plan`** — scope is roughly known. Stress-tests it into an ambiguity-free plan.
-
-Use one, the other, or both (`brainstorm` to shape, then `interview-plan` to harden). `write-plan` onward is the same regardless of entry point.
+- **`brainstorm`** — fuzzy idea, no clear scope yet. Shapes it into an approved design, then hands off to `interview-plan` when a ticket exists.
+- **`interview-plan`** — scope is roughly known. Stress-tests it into an ambiguity-free spec, writes the plan, audits it.
+- **`write-plan`** — standalone only when you already have a spec and skipped the interview.
 
 After merge and deploy, `graph-retro` closes the loop: the chain's own
 artifacts (drift notes, blockers, review findings) become proposals to improve
-the skills themselves — the chain gets better with every ticket it ships.
+the skills themselves — the chain gets better with every ticket it ships. It
+is not the next command after execute-plan.
 
 ### A taste
 
@@ -139,9 +138,10 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 - Task parallelism is driven entirely by the plan's `Depends on:` and `Files:`
   metadata, so `write-plan`'s accuracy there sets your wall-clock time. Compare
   `Files:` as **paths** — strip `:line-range` suffixes or two tasks on the
-  same file at different lines will clobber each other. A plan with no
-  `Depends on:` lines executes sequentially by design — absent metadata
-  is treated as unknown, not independent.
+  same file at different lines will clobber each other. Every task must declare
+  `Depends on:` (`none` if independent). If **every** task omits it, execute-plan
+  runs sequentially. If **some** declare it and one omits it, execute-plan
+  stops and asks — it does not treat the omit as ready.
 - `thermo-nuclear-code-quality-review` pins a dedicated **review model** so the
   reviewer never inherits the implementer session's model. The skill's
   "Pinned review model" section is the source of truth (a model family +
