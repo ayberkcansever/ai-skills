@@ -121,17 +121,17 @@ decision, so the ID must exist before Q1. If the project does not use ticket
 IDs, use a short kebab-case slug for the feature.
 
 **Then read the project quirks doc if one exists** (e.g. `docs/quirks.md` —
-hard-learned domain gotchas). List the entries relevant to this feature so the
-user sees what is already covered. Then ask exactly one calibration question:
+hard-learned domain gotchas) and list the entries relevant to this feature so
+the user sees what is already covered. **Do not ask the user to enumerate
+quirks here.** A cold recall question asked before Discovery has read anything
+is the transcription failure this skill exists to prevent, and it asks for
+negative knowledge — what would a generic reviewer miss? — which nobody can
+produce on demand. Unknown quirks are surfaced as grounded candidates in
+Discovery step 7 instead.
 
-> "I loaded the quirks doc — entries […] look relevant here. Beyond those (or
-> if there is no quirks doc): are there domain quirks for *this* change that a
-> generic reviewer would miss? (Examples: hidden idempotency contracts, filters
-> one layer applies and another doesn't, account/location/tenant scoping rules,
-> timezone gotchas, protected code sections, in-flight migrations.)"
-
-Treat quirks doc + answer as permanent context for the rest of the interview —
-every subsequent question, finding, and alternative is filtered through it.
+Treat the quirks doc entries as permanent context for the rest of the
+interview — every subsequent question, finding, and alternative is filtered
+through them, and step 7's accepted candidates join them.
 
 ## Discovery Phase (always — before Q1)
 
@@ -175,6 +175,24 @@ anything answerable from the repo. Read, then report. Produce a short
    rejected one is recorded as a Non-goal. Presenting zero generated
    scenarios = under-investigation, same failure as finishing with zero
    code-grounded findings.
+7. **Quirk sweep (generative, not confirmatory).** From the code read above,
+   **generate the divergences a generic reviewer would miss** and present them
+   as one batch for accept/reject. Never ask the user to recall quirks from
+   memory — every candidate cites `file:line` and proposes a reading. Mine
+   these axes:
+   - **scope boundary** — account vs location vs user vs tenant enforced in
+     one layer and not another.
+   - **filter / time-window semantics** — two call sites reading the same
+     source with different filters, boundaries, or timezone handling.
+   - **hidden contracts** — idempotency keys, dedup windows, event ordering
+     relied on but not enforced.
+   - **protected sections** — code whose comments, tests, or git history warn
+     against the obvious change; in-flight migrations.
+   Format each as `Found: <file:line> — <the divergence> | quirk (intentional)
+   or bug?` with a recommendation. Zero candidates is a valid outcome — say so
+   explicitly rather than inventing one. Accepted candidates become permanent
+   interview context; the ones that recur across tickets are the quirks doc's
+   input (graph-retro Step 5 routes them there).
 
 Output the Findings as a compact list, then drive questions from it. Each
 finding is either:
@@ -251,8 +269,8 @@ about it".
 16. Domain-specific edge cases — idempotency-on-replay, scope-boundary
     (account vs location vs user vs tenant), time-window/filter-semantics
     mismatches between layers, state drift between subsystems, domain
-    event-ordering races. Use the calibration answer to enumerate the
-    specific quirks for *this* codebase.
+    event-ordering races. Use the Discovery step 7 quirk sweep to enumerate
+    the specific quirks for *this* codebase.
 17. User personas / roles — does behaviour differ by role, tier, app, or
     feature flag.
 18. Operational impact — what support sees, runbook/alert needed, who's
