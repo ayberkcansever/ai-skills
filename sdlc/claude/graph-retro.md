@@ -88,29 +88,53 @@ Classify with this rubric (quote the evidence, name the node):
 - Recurring domain fact (filter semantics, scoping, timezone, idempotency
   quirk) → **quirks doc** (e.g. `docs/quirks.md`), not a skill
 
-## Step 4 — Propose amendments
+## Step 4 — Gate, then recommend
 
-For each attributed signal, one proposal:
+Every attributed signal runs these gates **in order**. First failure ends it —
+that signal is dropped, not written up.
+
+1. **Recurs?** One incident is not a class. It needs repeats across tasks or
+   repos, or a structural reason it must happen again.
+2. **Already ruled?** A skill, a repo rule file, or `AGENTS.md` that already
+   says it means the run *violated* a rule rather than lacked one. Restating it
+   louder changes nothing.
+3. **Already fixed for good?** A committed config or script change that makes
+   recurrence impossible ends the signal.
+4. **Global or repo-local?** One repo's tooling — commit script, test flags,
+   lint config, codegen scripts — belongs in that repo's `AGENTS.md`. Skills
+   carry cross-repo process only.
+5. **Fits an existing clause?** Extending one sentence beats adding a section;
+   a new heading must justify its own token cost.
+
+Zero to three survivors is normal. More than three means the gates were skipped.
+
+Write up **only** survivors, each with the reason it earns its line:
 
 ```
-Signal: <verbatim quote + location>
-Node: <brainstorm | interview-plan | write-plan | execute-plan | review | quirks>
-Amendment: <one sentence, with the target file and section it would land in>
-Generalizes: <the class of future failure it prevents — not just this incident>
+Recommend: apply (<node> skill file → <section>) | repo-fact (<repo>/AGENTS.md → <section>)
+Edit: <the exact line or clause to land, written out>
+Evidence: <verbatim quote + location>
+Prevents: <class of future failure>
 ```
 
-**Filter hard:** an amendment must prevent a *class*, not memorialize an
-incident. Incident-shaped facts go to the repo's quirks doc instead. When
-unsure, quirks — skill files must stay lean; every added line costs tokens on
-every future run.
+Then one drop table so the judgement is auditable without re-arguing each entry:
+
+| Dropped | Gate failed |
+|---|---|
+| <short signal> | already ruled — repo rule already mandates it |
+
+The repo's quirks doc takes recurring **domain** facts only — filter
+semantics, scoping, timezone, idempotency. Never process or tooling. When
+unsure, drop: an unused skill line costs tokens on every future run, a dropped
+one costs nothing.
 
 ## Step 5 — Human gate, then apply
 
-Present all proposals as one compact list. For each, the user says apply /
-quirks / drop. Only then:
+Present the survivors and the drop table. For each survivor, the user says
+apply / repo-fact / drop. Only then:
 
 - Apply approved skill amendments as minimal edits to the named skill file
-  sections.
+  sections; approved repo facts as one line in that repo's `AGENTS.md`.
 - Commit to the skills repo with explicit paths only (never `git add .`),
   message `retro(<TICKET-ID>): <summary>`, and each amendment's evidence
   cited in the commit body.
@@ -120,6 +144,8 @@ quirks / drop. Only then:
 
 - Editing any skill file before explicit per-proposal approval.
 - Proposing an amendment from a single incident that does not generalize.
+- Writing up a signal that failed a Step 4 gate — the drop table is its output.
+- Putting one repo's tooling fact into a global skill instead of its `AGENTS.md`.
 - Re-reviewing the code diff — that was the review skill's job; retro judges
   the *process*, not the product.
 - Padding output when the run was clean — "no findings" is success.
