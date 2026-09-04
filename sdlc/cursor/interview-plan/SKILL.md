@@ -184,6 +184,9 @@ anything answerable from the repo. Read, then report. Produce a short
      double-counting on replay.
    - **lifecycle** — feature toggled off mid-operation, account downgraded,
      entity re-created with the same natural key.
+   - **failed write** — the mutation rejects: does local state revert to the
+     server value, or does the user keep seeing an unsaved value as if it
+     were stored?
    Each accepted scenario becomes a Decision (how it must behave) — propose
    the expected outcome with the batch and confirm it before recording the
    D-number; acceptance without defined behavior is not a decision. Each

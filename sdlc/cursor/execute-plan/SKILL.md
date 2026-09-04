@@ -135,7 +135,10 @@ current wave only if all four hold:
 3. **Gate commands do not contend** — tasks whose verifications write the same
    build output, coverage file, fixture database, or bind the same port go in
    different waves even when their `Files:` are disjoint. Shared *read-only*
-   test infrastructure is fine.
+   test infrastructure is fine, but a gate whose scope is the whole repo
+   (typecheck, compile, lint, full-suite) reads a sibling's half-written files
+   and contends the same way: scope it to the task's own paths, or schedule the
+   task in a later wave.
 4. **Not the Review gate task** — see the exception below.
 
 Dispatch the whole ready set in a single message (parallel tool calls), then
