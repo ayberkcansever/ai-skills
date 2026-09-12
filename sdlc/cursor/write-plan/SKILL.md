@@ -127,6 +127,7 @@ mismatch at execution time.
 - Error handling: [e.g. custom error classes from `src/errors/`, no bare throw]
 - Naming/conventions: [e.g. project base classes, import conventions]
 - Canonical helpers to reuse: [name them with paths — prevents bespoke duplicates]
+- SOLID: one responsibility per unit; add a new case as a new handler/strategy where the codebase dispatches polymorphically, not as a branch in an existing conditional; inject dependencies the way sibling classes do — never instantiate a concrete dependency inside business logic
 - Test setup: [exact test command form, fixture/factory locations]
 
 ---

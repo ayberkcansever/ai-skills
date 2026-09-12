@@ -525,7 +525,9 @@ Audit pass on <path>:
 
 **If any open count > 0**, list each as `section <n>: <one-line gap>` and ask
 the user to resolve. Do not return the path yet. Fold answers in (one rewrite
-pass), re-run Passes 1–4. Repeat until every open count is 0.
+pass), re-run Passes 1–4. Repeat until every open count is 0 — **max 3
+rounds**; leftovers go to the spec's `## Open risks (accepted)` with the
+user's consent, or stop.
 
 **If all open counts are 0**: record `**Audit:** clean @ <date>` in the plan
 file directly under its header, then return:

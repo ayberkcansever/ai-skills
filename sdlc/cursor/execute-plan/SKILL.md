@@ -163,14 +163,16 @@ resumed session can tell which tasks were in flight together.
 - the repo quirks doc path when it exists (e.g. `docs/quirks.md`);
 - the task's gate/verification command(s) verbatim;
 - the 5-attempt cap and the instruction to report a blocker instead of
-  grinding;
+  grinding — an attempt ends at a gate run; ~30 tool calls without one → stop,
+  report a blocker;
 - the Plan Drift Protocol below. **Dispatched subagents return a proposed
   `> Drift:` line; they do not write the plan.** The orchestrator applies it
   at fan-in. Only inline execution amends the plan in place;
 - **edit and test only — never commit, never write the plan file** (git index
   and plan md are orchestrator-owned state, sequential or parallel): skip the
-  task's commit step and return changed paths, drift notes, and gate output
-  instead — the orchestrator commits after its own checks (substeps 5–7).
+  task's commit step and return changed paths, drift notes, and the red and
+  green gate output verbatim instead — the orchestrator commits after its own
+  checks (substeps 5–7).
 
 **Trust but verify:** subagents overclaim. Before ticking a task's checkbox,
 the orchestrator **re-runs the task's gate command itself** and confirms the
@@ -219,8 +221,9 @@ no matter how wide the wave was.
    stage explicit paths (or use the repo's commit helper); never `git add .`.
    Keep the plan's `[T<N>]` task tag in the message.
 8. **Tick the task's checkboxes (`- [x]`) in the plan file** after the
-   orchestrator's own gate run passes — the plan file tracks progress, not the
-   session. If the plan file is tracked (`docs/features/` tier), tick before
+   orchestrator's own gate run passes, and append
+   `> Gate: <cmd> | exit <n> | <one-line result>` under the task — the plan
+   file tracks progress and evidence, not the session. If the plan file is tracked (`docs/features/` tier), tick before
    the step-7 commit and include the plan path in it — uncommitted checkbox
    edits dirty the tree and block the review gate. Then mark the todo
    `completed`.
