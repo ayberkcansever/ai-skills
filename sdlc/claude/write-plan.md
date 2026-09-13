@@ -210,7 +210,7 @@ Every plan ends with a **Test matrix** section: a table mapping each spec decisi
 ```
 
 - A decision with no test row needs either a test or an explicit "not unit-testable because <reason>, verified by <manual step / functional test>".
-- E2E rows (interview checklist item 9) get a task whose gate is env preflight (reachable, creds from env vars) → run → expected result; the row and the spec's `Check:` name the env.
+- E2E rows (interview checklist item 9) are **not tasks** — execute-plan never runs them. List them in a final `## E2E — run with the user after hand-back` block: env, preflight (reachable, creds from env vars), action/command, expected result. The row and the spec's `Check:` name the env; for the review they count as a justified Test-matrix exception.
 - Observability decisions (interview checklist item 8) get a test asserting the emission (captured structured log or metric registry read) in the task that owns the code path; alert/dashboard rows get a task plus activation wiring — a metric nobody scrapes is inert.
 - The plan's coverage task runs the repo's coverage command (e.g. `make test`, `npm test`) so "maximum coverage" is measured, not asserted.
 - If the spec set a performance budget (interview checklist item 11), add a task that measures it (load script, timing assertion, or profiler run) — a budget nobody measures is decoration; if none downstream, mark it Non-goal in the spec instead.

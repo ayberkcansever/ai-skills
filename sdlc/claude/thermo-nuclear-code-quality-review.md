@@ -71,9 +71,8 @@ Net: -N lines possible | Lean already
   semantic nits, Phase 1 cuts, Phase 2 structure). Also the cap when a
   ticket branch has no findable spec/plan, or any decision is `unverifiable`
   (see Phase 0).
-- `ship` — no open accepted findings AND the full test suite — including any
-  e2e the plan scheduled — is green at the reviewed SHA, evidenced by the
-  suite command + result recorded in the
+- `ship` — no open accepted findings AND the full test suite is green at the
+  reviewed SHA, evidenced by the suite command + result recorded in the
   `## Review` entry (the orchestrator re-runs it after the last fix; a
   targeted gate command alone does not qualify). No recorded evidence →
   cap at `fix-first`.

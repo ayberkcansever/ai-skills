@@ -260,8 +260,8 @@ After all tasks are done and verified:
    DB round-trip or emitted-payload assertion), or flag it to the user. A field set
    on a domain object but missing from the writer ships schema defaults (`0`/`null`)
    to production — a silent failure that looks deployed.
-2. Run the full relevant test/lint suite for the touched code, plus any e2e
-   the plan scheduled. Unreachable env → `## Blockers`; never skip it.
+2. Run the full relevant test/lint suite for the touched code. The plan's
+   `## E2E` block is not run here (see substep 7).
 3. **Promote the spec before the review:** copy
    `docs/specs/<TICKET-ID>/spec.md` to
    `docs/features/<TICKET-ID>/design.md` (or merge into an existing one) and
@@ -313,7 +313,9 @@ After all tasks are done and verified:
 6. Report what was implemented, which verifications passed, and anything
    skipped — and state the **venue path and branch** so the user knows
    where to look.
-7. Hand back to the user for manual testing. Do not open a PR or merge unless the
+7. Hand back to the user for manual testing. If the plan has an `## E2E` block,
+   list its steps — they run now, together with the user, never in Step 3 or
+   substep 2. Do not open a PR or merge unless the
    user asks. If the venue is a worktree, **leave it in place**: it holds
    the branch, the as-built plan, and any still-gitignored WIP docs.
    Removing it is git-worktrees Step 4, run only after merge or on explicit
