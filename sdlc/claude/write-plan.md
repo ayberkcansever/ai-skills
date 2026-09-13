@@ -8,6 +8,15 @@ Assume they are a skilled developer, but know almost nothing about the toolset o
 
 **Announce at start:** "I'm using the write-plan skill to create the implementation plan."
 
+## Invariants — read first, re-read after any context compaction
+
+- Exact file paths always
+- Every code step shows code — tests/contracts complete, routine implementation full or focused diff sketch
+- Exact commands with expected output
+- Commits stage explicit paths (or your repo's commit helper), tagged `[T<N>]` — never `git add .` / `git add -A`
+- DRY, YAGNI, TDD, frequent commits
+- If the conversation was summarized mid-plan, re-read this file and the spec before writing further tasks — never author from a summary of either.
+
 **Context:** Plans are written in the user's checkout; they are *executed* in this checkout if already on the ticket branch, otherwise in a per-ticket worktree that execute-plan opens via the `git-worktrees` skill. Keep every path in the plan repo-relative so it resolves in either place.
 
 ## Documentation layout (two tiers)
@@ -101,7 +110,14 @@ mismatch at execution time.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** Use the execute-plan skill to implement this plan. Ready tasks run in parallel waves; the orchestrator commits serially. Steps use checkbox (`- [ ]`) syntax for tracking. Plan code was written before implementation — when reality differs (API mismatch, wrong signature), adapt, update the step in place, and add a `> Drift:` note (see execute-plan's Plan Drift Protocol). The plan file is the as-built source of truth.
+> **For agentic workers:** Use the execute-plan skill to implement this plan. Re-read this block before every wave — it is on disk and survives context compaction; your memory of the skill may not.
+> - Ready tasks run in parallel waves. The orchestrator alone commits, ticks checkboxes (`- [ ]` → `- [x]`), and writes this file; task subagents edit and test only — never commit, never write the plan.
+> - Tick a task only after the orchestrator re-ran its gate command itself and appended `> Gate:` — a subagent's "done" is a claim, not evidence.
+> - Stage explicit paths with `[T<N>]` in the message; never `git add .` / `git add -A`.
+> - `Depends on:` omitted while other tasks declare it → stop and ask; never treat the omit as ready. `Files:` compare as paths (strip `:line-range`).
+> - The venue's copy of this plan is the live one; never write the origin checkout's copy mid-run.
+> - The last task (Review gate) runs in execute-plan Step 4, never via a task subagent; a `ship` verdict is valid only at its recorded SHA.
+> - Plan code was written before implementation — when reality differs (API mismatch, wrong signature), adapt, update the step in place, and add a `> Drift:` note (see execute-plan's Plan Drift Protocol). The plan file is the as-built source of truth.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -265,13 +281,6 @@ on the gate deadlocks the plan):
 - [ ] **Step 2: Verify** — re-run the owning task's gate command; expected PASS
 - [ ] **Step 3: Commit** — `git add <paths> && git commit -m "fix(<scope>): <finding summary> [T<N.k>]"` (or your repo's commit helper)
 ````
-
-## Remember
-- Exact file paths always
-- Every code step shows code — tests/contracts complete, routine implementation full or focused diff sketch
-- Exact commands with expected output
-- Commits stage explicit paths (or your repo's commit helper), tagged `[T<N>]` — never `git add .` / `git add -A`
-- DRY, YAGNI, TDD, frequent commits
 
 ## Self-Review
 

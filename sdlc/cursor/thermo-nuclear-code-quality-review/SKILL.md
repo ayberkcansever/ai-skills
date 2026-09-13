@@ -15,6 +15,8 @@ Review **current branch changes** through five lenses, in order
 in the ticket worktree).
 Phases 0–3 are **review-first**: report findings, change code only if the user says "fix".
 Phase 4 (docs) is **always applied** where a feature-docs flow exists.
+If the conversation was summarized mid-review, re-read this file before
+continuing — never grade from a summary of the lenses.
 
 **Maker/checker is unconditional for agent-authored diffs:** if any part of
 the diff was written by an agent in any session (execute-plan or otherwise —

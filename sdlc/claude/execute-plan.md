@@ -8,6 +8,24 @@ run the verifications the plan specifies, report when complete.
 
 **Announce at start:** "I'm using the execute-plan skill to implement this plan."
 
+## Invariants — read first, re-read after any context compaction
+
+- Review the plan critically first.
+- Follow plan steps exactly; don't skip verifications.
+- Commit with explicit paths only (or the repo's commit helper); never `git add .`.
+- Stop when blocked — don't guess.
+- Execute in this checkout when already on the ticket branch; otherwise in
+  the ticket worktree. The venue's plan copy is the live one.
+- Dispatch every legal task in a wave; fan in serially — commit, sync docs,
+  tick, one task at a time.
+- This skill runs the review gate as Step 4.4. Do not also invoke
+  `/thermo-nuclear-code-quality-review` unless the user edited code after
+  `Verdict: ship`. `/graph-retro` is post-merge, not the next implement step.
+- Long runs get compacted; this file and the plan live on disk. If the
+  conversation was summarized, or you cannot recall a rule verbatim, re-read
+  this file and the plan header's `For agentic workers` block before the next
+  action — never act from a summary of them.
+
 ## The Process
 
 ### Step 1: Load and Review Plan
@@ -106,7 +124,9 @@ comfortably holds the work — task count alone is not the trigger.
 
 #### Wave scheduling
 
-Each round, build the **ready set** from the unticked tasks. A task joins the
+Each round, first re-read the plan header's `For agentic workers` block (it
+carries the orchestrator invariants and is the recency copy that survives
+compaction), then build the **ready set** from the unticked tasks. A task joins the
 current wave only if all four hold:
 
 1. **`Depends on:` satisfied** — every named task is already ticked. A task
@@ -389,17 +409,3 @@ A subagent that hits the 5-attempt cap reports the blocker back; the
 orchestrator writes it to the plan file and stops. Inline execution remains
 fine for small or tightly coupled plans where one context comfortably holds
 the work.
-
-## Remember
-
-- Review the plan critically first.
-- Follow plan steps exactly; don't skip verifications.
-- Commit with explicit paths only (or the repo's commit helper); never `git add .`.
-- Stop when blocked — don't guess.
-- Execute in this checkout when already on the ticket branch; otherwise in
-  the ticket worktree. The venue's plan copy is the live one.
-- Dispatch every legal task in a wave; fan in serially — commit, sync docs,
-  tick, one task at a time.
-- This skill runs the review gate as Step 4.4. Do not also invoke
-  `/thermo-nuclear-code-quality-review` unless the user edited code after
-  `Verdict: ship`. `/graph-retro` is post-merge, not the next implement step.

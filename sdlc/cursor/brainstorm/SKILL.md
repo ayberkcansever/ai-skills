@@ -2,6 +2,8 @@
 name: brainstorm
 description: "Use when the user explicitly asks for brainstorming, pre-ticket discovery, fuzzy product shaping, visual option exploration, or turning an idea into an approved design before implementation planning."
 disable-model-invocation: true
+icon: beaker
+color: purple
 ---
 
 # Brainstorming Ideas Into Designs

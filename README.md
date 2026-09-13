@@ -124,6 +124,23 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 
 ### Notes
 
+- **Run the long ones as a Custom Mode in Cursor.** A `/skill` invocation
+  attaches to one message; when the conversation is summarized (compaction),
+  Cursor folds earlier skills into the summary and the agent can stop applying
+  their steps. `brainstorm`, `interview-plan`, and `execute-plan` routinely run
+  long enough for that. Start them with **Option+Enter** (Mac) / **Alt+Enter**
+  (Windows) from the `/` menu — "Use as Mode" — so the skill stays in context
+  every turn (badge in the input; `icon`/`color` set in their frontmatter). In
+  Claude Code, invoked skills are re-injected after compaction but truncated
+  to ~5k tokens per skill, head first — the skills keep their invariants at
+  the top and their reference lists in `references/` for that reason. Either
+  way the durable state is on disk (`spec.md`, the plan file), and each skill
+  tells the agent to re-read those and itself after a compaction.
+- `interview-plan` ships `references/interview-reference.md` (checklist items,
+  scenario/quirk axes, spec template). For the Claude command install, place
+  it alongside the Cursor skill (`~/.cursor/skills/interview-plan/references/`)
+  or copy the folder next to the command; the body points at it by that
+  relative path.
 - These skills reference generic conventions (e.g. `docs/features/<TICKET-ID>/`,
   `docs/plans/<TICKET-ID>/`, `docs/specs/<TICKET-ID>/`, explicit-path commits).
   Adjust paths, ticket-key format, and commit tooling to match your own repo.
