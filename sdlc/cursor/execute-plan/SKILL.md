@@ -222,7 +222,7 @@ no matter how wide the wave was.
    Keep the plan's `[T<N>]` task tag in the message.
 8. **Tick the task's checkboxes (`- [x]`) in the plan file** after the
    orchestrator's own gate run passes, and append
-   `> Gate: <cmd> | exit <n> | <one-line result>` under the task — the plan
+   `> Gate: <cmd> | exit <n> | attempt <k>/5 | <one-line result>` under the task — the plan
    file tracks progress and evidence, not the session. If the plan file is tracked (`docs/features/` tier), tick before
    the step-7 commit and include the plan path in it — uncommitted checkbox
    edits dirty the tree and block the review gate. Then mark the todo
@@ -270,7 +270,8 @@ After all tasks are done and verified:
    DB round-trip or emitted-payload assertion), or flag it to the user. A field set
    on a domain object but missing from the writer ships schema defaults (`0`/`null`)
    to production — a silent failure that looks deployed.
-2. Run the full relevant test/lint suite for the touched code.
+2. Run the full relevant test/lint suite for the touched code, plus any e2e
+   the plan scheduled. Unreachable env → `## Blockers`; never skip it.
 3. **Promote the spec before the review:** copy
    `docs/specs/<TICKET-ID>/spec.md` to
    `docs/features/<TICKET-ID>/design.md` (or merge into an existing one) and

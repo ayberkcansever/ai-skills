@@ -266,10 +266,23 @@ about it".
 6. Idempotency & retries — idempotency key, dedup window.
 7. Authn / authz — who can call this, required permissions, cross-tenant
    exposure prevention.
-8. Observability — logs, metrics, traces, alerts; what a support engineer
-   sees when this breaks at 3am.
+8. Observability — derived, not brainstormed, from three sources:
+   (a) **the path** — structured info events at entry and outcome, one per
+   external call (status, latency), one per material branch (cache hit/miss,
+   fallback taken, dual-write path), all carrying the correlation/request id
+   so one transaction can be traced end to end in prod logs;
+   (b) **the feature's metrics** — the measurable success from item 15,
+   volume, success rate, latency histogram (11); bounded labels only;
+   (c) **failures** — each accepted scenario, failure mode (2), dedup hit (6),
+   authz denial (7), activation switch (10), pager (18): one signal each.
+   Every signal names the 3am question it answers; no signal without a
+   question, no per-step debug, never PII or tokens. Each becomes a `D<n>`
+   whose `Check:` is a test asserting emission; use the repo's existing
+   logger/metrics helper.
 9. Testing strategy — unit/integration/functional, coverage bar, must-test
-   scenarios.
+   scenarios. **E2E:** none / local / sandbox-dev / prod — which env, what it
+   proves, who runs it. Prod e2e is read-only or synthetic-data unless the
+   user approves mutation per run.
 10. Rollout & rollback — feature flag, staged release, kill switch, order of
     operations across services, revert without data loss. **Activation:** what
     switch makes this take effect (env var wired into the running service,
@@ -500,10 +513,12 @@ gap.
 
 ### Pass 2 — Fresh-eyes review
 
-Re-read the plan **cold**, as a reviewer with zero chat history. Write the
-**three questions** such a reviewer would ask first. Answer each in the plan,
-or surface it as an open gap. This runs the user's own review step *before*
-handoff — it is the pass that catches what they currently catch after.
+Dispatch a **read-only subagent** with only the spec and plan paths — no chat
+history — and ask for the **three questions** a reviewer would ask first.
+Answer each in the plan, or surface it as an open gap. This runs the user's
+own review step *before* handoff — it is the pass that catches what they
+currently catch after. (No subagent available → re-read the plan cold
+yourself.)
 
 ### Pass 3 — Edge-hunt (per task)
 
@@ -545,8 +560,8 @@ pass), re-run Passes 1–4. Repeat until every open count is 0 — **max 3
 rounds**; leftovers go to the spec's `## Open risks (accepted)` with the
 user's consent, or stop.
 
-**If all open counts are 0**: record `**Audit:** clean @ <date>` in the plan
-file directly under its header, then return:
+**If all open counts are 0**: record `**Audit:** clean @ <date> after <r> rounds`
+in the plan file directly under its header, then return:
 
 > Plan ready at `<absolute path>`
 > Audit: clean.

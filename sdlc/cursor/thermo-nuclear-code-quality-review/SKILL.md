@@ -79,9 +79,11 @@ Net: -N lines possible | Lean already
   unapproved `drift` in Phase 0.
 - `fix-first` — no blockers, but accepted findings remain open (Phase 0
   semantic nits, Phase 1 cuts, Phase 2 structure). Also the cap when a
-  ticket branch has no findable spec/plan (see Phase 0).
-- `ship` — no open accepted findings AND the full test suite is green at the
-  reviewed SHA, evidenced by the suite command + result recorded in the
+  ticket branch has no findable spec/plan, or any decision is `unverifiable`
+  (see Phase 0).
+- `ship` — no open accepted findings AND the full test suite — including any
+  e2e the plan scheduled — is green at the reviewed SHA, evidenced by the
+  suite command + result recorded in the
   `## Review` entry (the orchestrator re-runs it after the last fix; a
   targeted gate command alone does not qualify). No recorded evidence →
   cap at `fix-first`.
@@ -139,7 +141,10 @@ Locate the ticket docs for this branch's `<TICKET-ID>`:
   a spec update is a finding.
 
 Output: one line per decision — `D<n> | implemented @ file:line | conforms /
-drift: <one line> / missing`.
+drift: <one line> / missing / unverifiable: <why>`. Never guess `conforms`
+when the behavior cannot be checked from the diff and recorded evidence —
+`unverifiable` caps the verdict at `fix-first` until the user rules or the
+plan adds a check.
 
 ## Phase 1 — Simplify (YAGNI / over-engineering)
 
@@ -177,7 +182,8 @@ Risk tolerance: **low** — override by typing `Risk Tolerance: critical|high|me
 
 - **Production safety** — crashes, data corruption, wrong data rendered, broken auth token.
 - **Scale & resources** — N+1, blocking calls, memory or connection leaks.
-- **Error handling** — swallowed exceptions, missing fallback, observability gaps.
+- **Error handling** — swallowed exceptions, missing fallback.
+- **Observability** — every spec observability decision (path events, feature metrics, failure signals) is in the diff with the correlation id; no signal without a spec decision; no unbounded metric labels.
 - **Backward compatibility** — API signature change, model field removal, renamed contract or translation key, new required field on a deserialized payload.
 - **Test coverage** — missing tests for complex or changed logic.
 - **Security & tenant isolation** — no hardcoded credentials or tenant IDs, no PII or tokens in logs.
@@ -191,7 +197,7 @@ caches, and any protected client/transport settings.
 
 Output:
 
-- **CRITICAL RISKS** (uncapped — report every one; if 7 exist, list 7) — would block merge, or "No critical risks found."
+- **CRITICAL RISKS** (uncapped — report every one; if 7 exist, list 7) — would break behavior, lose or leak data, or breach a spec decision; blocks merge. Or "No critical risks found." Everything else is a SUGGESTION.
 - **SUGGESTIONS** (0–3) — high-ROI, low-effort; no speculative items.
 - **PRAISE** (0–3).
 

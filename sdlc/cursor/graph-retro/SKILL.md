@@ -66,8 +66,13 @@ Scan the artifacts for exactly these, quoting each verbatim with its location:
 | `supersedes D<n>` markers | spec `## Decisions` |
 | 5-attempt-cap hits | plan `## Blockers` |
 
-Zero signals → report "clean run, no retro output" and stop. That is a valid
-result, not a failure.
+End Step 2 with one counts line, read from the same artifacts:
+`metrics(<TICKET-ID>): tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c>
+audit-rounds=<r> drift=<d> blockers=<b> supersedes=<s>` — printed, and
+carried into the Step 5 commit body.
+
+Zero signals → print the counts line, report "clean run, no retro output"
+and stop. That is a valid result, not a failure.
 
 ## Step 3 — Attribute each signal to a node
 
@@ -148,8 +153,8 @@ apply / repo-fact / drop. Only then:
 - Apply approved skill amendments as minimal edits to the named skill file
   sections; approved repo facts as one line in that repo's `AGENTS.md`.
 - Commit to the skills repo with explicit paths only (never `git add .`),
-  message `retro(<TICKET-ID>): <summary>`, and each amendment's evidence
-  cited in the commit body.
+  message `retro(<TICKET-ID>): <summary>`, each amendment's evidence and the
+  Step 2 counts line in the commit body (trend = `git log --grep metrics`).
 - Approved quirks entries → append to the repo's quirks doc per its format.
 
 ## Anti-patterns
