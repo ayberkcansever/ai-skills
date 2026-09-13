@@ -293,8 +293,25 @@ After all tasks are done and verified:
      cycle. This is what the Step 2 resume check looks for; a review that
      leaves no `## Review` entry did not happen.
    - Accepted findings are inserted into the plan as structured remediation
-     tasks **before the review gate task** (write-plan's remediation
-     template); fix them via the same Step 3 loop, then have the reviewer
+     tasks **before the review gate task**, numbered `N.1`, `N.2`, … so the
+     gate keeps its number and stays last (same as write-plan's remediation
+     template — never bare checkboxes):
+
+     ````markdown
+     ### Task N.k: Fix review finding <n>
+
+     **Implements:** review finding <n>, cycle <c> (from `## Review`)
+     **Depends on:** <the task that introduced the finding, or the previous remediation task>
+
+     **Files:**
+     - Modify: `<path from the finding>`
+
+     - [ ] **Step 1: Fix** — <the finding's fix, restated concretely>
+     - [ ] **Step 2: Verify** — re-run the owning task's gate command; expected PASS
+     - [ ] **Step 3: Commit** — `git add <paths> && git commit -m "fix(<scope>): <finding summary> [T<N.k>]"` (or your repo's commit helper)
+     ````
+
+     Fix them via the same Step 3 loop, then have the reviewer
      re-check the changed areas. **Before
      accepting a `ship` verdict after any fix cycle, re-run the full test
      suite at the final HEAD** — targeted gate commands alone do not qualify.

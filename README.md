@@ -154,7 +154,9 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 - `graph-retro` commits approved amendments to your skills directory — keep
   that directory a git repo (e.g. `git init ~/.cursor/skills`) so every skill
   change is a reviewed, revertible commit with its evidence in the message.
-  Amendments land in the *installed* copy; periodically diff it against this
+  It also appends each ticket's drop table to `retro-log.md` there, so a
+  signal dropped once as "single incident" is recognized as recurring next
+  time. Amendments land in the *installed* copy; periodically diff it against this
   repo and upstream the keepers, or the two will drift.
 - `brainstorm` (Cursor variant) ships its **visual companion** — `visual-companion.md`
   plus a `scripts/` folder with a small local Node server for showing mockups in

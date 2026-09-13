@@ -1,12 +1,10 @@
 ---
 name: graph-retro
 description: >-
-  Post-merge retrospective on the SDLC skill chain (interview-plan →
-  write-plan → execute-plan → review). Reads one ticket's plan and spec,
-  attributes failure signals to the skill that should have prevented them,
-  and proposes one-line amendments. Use after merge and deploy, when the
-  user says "retro this ticket", or when an escaped defect traces to an old
-  ticket. Do not run as the next step after execute-plan or the review.
+  Post-merge retrospective on the SDLC skill chain itself, from one ticket's
+  artifacts. Use after merge and deploy, when the user says "retro this
+  ticket", or when an escaped defect traces to an old ticket. Do not run as
+  the next step after execute-plan or the review.
 disable-model-invocation: true
 ---
 
@@ -111,7 +109,10 @@ Every attributed signal runs these gates **in order**. First failure ends it —
 that signal is dropped, not written up.
 
 1. **Recurs?** One incident is not a class. It needs repeats across tasks or
-   repos, or a structural reason it must happen again.
+   repos, or a structural reason it must happen again. Cross-ticket memory is
+   `retro-log.md` in the skills repo (Step 5 appends every drop table there)
+   plus `git log --grep 'retro('` — a matching entry from an earlier ticket
+   makes this incident the second, and the signal passes this gate.
 2. **Already ruled?** A skill, a repo rule file, or `AGENTS.md` that already
    says it means the run *violated* a rule rather than lacked one. Restating it
    louder changes nothing.
@@ -152,9 +153,14 @@ apply / repo-fact / drop. Only then:
 
 - Apply approved skill amendments as minimal edits to the named skill file
   sections; approved repo facts as one line in that repo's `AGENTS.md`.
+- Append the Step 4 drop table to `retro-log.md` in the skills repo as
+  `## <TICKET-ID> — <date>` (create the file if missing) — this is gate 1's
+  memory for the next ticket. A clean run appends its counts line only.
 - Commit to the skills repo with explicit paths only (never `git add .`),
-  message `retro(<TICKET-ID>): <summary>`, each amendment's evidence and the
-  Step 2 counts line in the commit body (trend = `git log --grep metrics`).
+  message `retro(<TICKET-ID>): <summary>`, each amendment's evidence, the
+  Step 2 counts line, and `wc -w` before → after for each amended skill file
+  in the commit body (trend = `git log --grep metrics`; size creep is visible
+  the same way).
 - Approved quirks entries → append to the repo's quirks doc per its format.
 
 ## Anti-patterns

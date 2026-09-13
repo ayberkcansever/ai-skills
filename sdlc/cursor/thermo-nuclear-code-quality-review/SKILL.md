@@ -1,10 +1,10 @@
 ---
 name: thermo-nuclear-code-quality-review
 description: >-
-  Branch-diff review in five lenses — spec conformance, simplify (YAGNI /
-  over-engineering), maintainability, merge safety, then mandatory
-  feature-docs sync. Use /thermo-nuclear-code-quality-review after a dev
-  session, before a PR. Repo-agnostic.
+  Strict branch-diff review against the ticket spec. Use after a dev session,
+  before a PR, or when the user asks to review the branch. execute-plan runs
+  it as its review gate — do not also invoke it unless code changed after
+  `Verdict: ship`.
 disable-model-invocation: true
 ---
 
@@ -21,17 +21,30 @@ the diff was written by an agent in any session (execute-plan or otherwise —
 resumed agent-authored branches included), run the review as a **read-only
 subagent** — the reviewer must not
 share the implementer's context or be able to edit. Manual invocation on a
-human-authored diff may run inline. Number every finding
+human-authored diff may run inline. **No subagent facility in this harness →
+stop and tell the user**; proceed inline only on their explicit say-so, and
+record `reviewer: inline (no subagent — maker/checker not independent)` in the
+`## Review` entry so the degraded review is visible at resume and retro.
+Number every finding
 `N | file:line | severity | problem | fix` so accepted findings can be appended
 to the plan file as structured remediation tasks (see the review loop below).
 
 **Pinned review model:** the reviewer subagent is launched with a **pinned
-review model** — record your chosen slug here (pick the strongest
-reasoning/thinking model available in your tool) — never inherit the
-implementer session's model (auto included). If the slug is unavailable, stop
-and ask the user; never silently substitute. **This section is the single
-source of truth for the slug** — write-plan and execute-plan reference it
-instead of hardcoding it; when the model changes, update it here only.
+review model** — never inherit the implementer session's model (auto
+included). Resolution, in order:
+
+1. `review-model: <slug>` set on the line below → use exactly that slug. If
+   the tool does not offer it, stop and ask the user; never silently
+   substitute.
+2. Not set → pick the strongest reasoning/thinking model in the tool's
+   current model list (newest, highest thinking tier), excluding the
+   session's own model. Record the slug chosen in the `## Review` entry.
+
+`review-model:` (unset — fill to pin a fixed slug)
+
+**This section is the single source of truth for the slug** — write-plan and
+execute-plan reference it instead of hardcoding it; when the model changes,
+update it here only.
 
 **Persist the verdict:** when a plan file exists for the branch, the
 **invoking session (orchestrator)** appends the 3-line rollup, the model used,

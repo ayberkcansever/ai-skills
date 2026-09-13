@@ -1,10 +1,9 @@
 ---
 name: write-plan
 description: >-
-  Write a bite-sized TDD implementation plan from a spec before touching code.
-  Saves under docs/plans/<TICKET-ID>/ (gitignored WIP); promote to
-  docs/features/<TICKET-ID>/ when stable. Use when the user invokes write-plan,
-  or when interview-plan hands off an assembled spec. Do not use to implement.
+  Write an implementation plan from a spec before touching code. Use when the
+  user invokes write-plan with an existing spec and no interview, or when
+  interview-plan hands off an assembled spec. Do not use to implement.
 disable-model-invocation: true
 ---
 

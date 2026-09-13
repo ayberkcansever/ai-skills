@@ -1,16 +1,10 @@
 ---
 name: interview-plan
 description: >-
-  Interview the user one question at a time to produce an ambiguity-free
-  implementation plan across three lenses — business requirements,
-  backward compatibility, and technical. The model actively investigates
-  the codebase first (Discovery Phase), confronts the user with what it
-  found, and pushes back with alternatives — it does not transcribe the
-  user's words. After the interview, it hands the assembled spec to the
-  write-plan skill, which authors the on-disk plan, then runs an Audit Pass
-  over that file so it is self-contained for a fresh model or engineer.
+  Interview the user into an ambiguity-free spec and implementation plan.
   Use only when the user explicitly invokes "interview-plan" or asks to
-  "interview me" / "stress-test the plan" about a plan or design.
+  "interview me" / "stress-test the plan" about a plan or design. Runs
+  write-plan itself — do not also invoke /write-plan.
 disable-model-invocation: true
 ---
 
@@ -124,7 +118,15 @@ this is a **resumed interview**, not a fresh one:
    re-opening. New decisions then flow into the spec **and** a plan
    amendment; never leave the two contradicting.
 
-Only when no spec file exists do you start at Calibration below.
+**No `spec.md` but `docs/specs/<TICKET-ID>/design.md` exists** (brainstorm
+ran): this is a **seeded** interview. Read `design.md`; on the first
+decision, create `spec.md` and carry every approved design decision in as a
+`D<n>` with a `Check:` line (sharpen any that lack one — ask, don't invent).
+Do not re-ask what the design settled; Discovery still runs in full, and a
+finding that contradicts a seeded decision is surfaced under Rule 7, not
+silently overwritten.
+
+Only when neither file exists do you start at Calibration below.
 
 ## First Turn (always) — Calibration
 

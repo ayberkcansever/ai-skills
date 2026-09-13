@@ -1,11 +1,10 @@
 ---
 name: git-worktrees
 description: >-
-  Set up an isolated git worktree so the current checkout stays untouched and
-  several tickets can run at once on one repo. Detects existing isolation and
-  reuses a ticket's worktree, creates or attaches .worktrees/<branch>, verifies
-  setup. Use when the user asks for a worktree; execute-plan calls it when the
-  checkout is not already on the ticket branch (consent implied there).
+  Set up or reuse an isolated git worktree for a ticket so the current
+  checkout stays untouched. Use when the user asks for a worktree;
+  execute-plan calls it when the checkout is not already on the ticket
+  branch (consent implied there).
 ---
 
 # Git Worktrees
