@@ -70,7 +70,7 @@ Fill every `radar-*` tag. An unfilled one is lost state:
 Save `watchlist.json`. Rebuild the library index:
 
 ```bash
-python3 ~/.cursor/skills/learn/scripts/build_index.py
+python3 <learn-skill-folder>/scripts/build_index.py
 ```
 
 Print the saved path plus `open ~/Documents/tech-briefs/radar/<date>.html`.

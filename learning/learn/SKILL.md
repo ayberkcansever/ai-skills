@@ -22,7 +22,7 @@ The skill delivers learning in escalating, optional stages — each stage is ski
 
 Stage 1 always happens. Stages 2-3-4 are offers the user takes or leaves. Muscle comes from 3 and 4; the brief alone is recognition-level knowledge, and the skill should say so when offering the lab.
 
-**Topic discovery:** when the user doesn't have a topic and asks "what should I learn?", that is the sibling **tech-radar** skill (`~/.cursor/skills/tech-radar/`) — it scans the recent landscape, dedupes against this library, and hands ranked topics back to this skill.
+**Topic discovery:** when the user doesn't have a topic and asks "what should I learn?", that is the sibling **tech-radar** skill (the `tech-radar/` folder next to this one) — it scans the recent landscape, dedupes against this library, and hands ranked topics back to this skill.
 
 ## Storage
 
@@ -42,7 +42,7 @@ Every brief is **saved to disk automatically** as a self-contained HTML file, ne
 - `mkdir -p ~/Documents/tech-briefs/<Category>` before writing.
 - Fill the `brief-*` `<meta>` tags in [template.html](template.html) — the index builder reads them.
 - `brief-poc` on first save: `proposed` when PoC suitability is *good fit* or *partial*, `none` when *not practical*. The lab lifecycle later bumps it to `scaffolded` → `completed` (Step 6).
-- **Rebuild the index after every save**: `python3 ~/.cursor/skills/learn/scripts/build_index.py`
+- **Rebuild the index after every save**: `python3 <this-skill-folder>/scripts/build_index.py`
 - Print the saved path plus `open ~/Documents/tech-briefs/<Category>/<topic-slug>.html` and mention `open ~/Documents/tech-briefs/index.html`.
 
 ### Re-running a topic

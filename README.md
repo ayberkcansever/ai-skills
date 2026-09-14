@@ -7,25 +7,31 @@
 [![Made for Claude Code](https://img.shields.io/badge/made%20for-Claude%20Code-d97757.svg)](https://claude.com/product/claude-code)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ayberkcansever/ai-skills/pulls)
 
-Reusable AI agent skills/commands I use day-to-day, organized by category.
-Each category holds the same skills in both **Cursor** and **Claude Code**
-formats so you can drop them into whichever tool you use.
+Reusable AI agent skills I use day-to-day, organized by category.
+Each skill is one folder (`SKILL.md` plus any scripts, references, or
+templates). The same folders install into **Cursor** and **Claude Code**.
 
 ## Quick start
 
-**Cursor** — copy all skills into your skills directory:
+**Cursor:**
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp -r ai-skills/*/cursor/* ~/.cursor/skills/
+cp -r ai-skills/{sdlc,learning}/* ~/.cursor/skills/
 ```
 
-**Claude Code** — copy all commands:
+**Claude Code:**
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp ai-skills/*/claude/*.md ~/.claude/commands/
+mkdir -p ~/.claude/skills
+cp -r ai-skills/{sdlc,learning}/* ~/.claude/skills/
 ```
+
+If you previously copied the old flat `~/.claude/commands/*.md` ports, delete
+those names (`brainstorm`, `interview-plan`, `write-plan`, `execute-plan`,
+`git-worktrees`, `graph-retro`, `thermo-nuclear-code-quality-review`, `learn`,
+`tech-radar`) so slash commands are not duplicated.
 
 Or install a single skill — each category section below lists its skills and
 how they chain together.
@@ -137,10 +143,8 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
   way the durable state is on disk (`spec.md`, the plan file), and each skill
   tells the agent to re-read those and itself after a compaction.
 - `interview-plan` ships `references/interview-reference.md` (checklist items,
-  scenario/quirk axes, spec template). For the Claude command install, place
-  it alongside the Cursor skill (`~/.cursor/skills/interview-plan/references/`)
-  or copy the folder next to the command; the body points at it by that
-  relative path.
+  scenario/quirk axes, spec template) next to `SKILL.md`. Discovery reads it
+  from this skill's folder — no extra copy step.
 - These skills reference generic conventions (e.g. `docs/features/<TICKET-ID>/`,
   `docs/plans/<TICKET-ID>/`, `docs/specs/<TICKET-ID>/`, explicit-path commits).
   Adjust paths, ticket-key format, and commit tooling to match your own repo.
@@ -169,17 +173,19 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 - Examples use Python/`pytest` and a `handler → use case → repository` layering
   purely as illustration — apply them to whatever stack your repo uses.
 - `graph-retro` commits approved amendments to your skills directory — keep
-  that directory a git repo (e.g. `git init ~/.cursor/skills`) so every skill
+  that directory a git repo (e.g. `git init ~/.cursor/skills` or
+  `git init ~/.claude/skills`) so every skill
   change is a reviewed, revertible commit with its evidence in the message.
   It also appends each ticket's drop table to `retro-log.md` there, so a
   signal dropped once as "single incident" is recognized as recurring next
   time. Amendments land in the *installed* copy; periodically diff it against this
   repo and upstream the keepers, or the two will drift.
-- `brainstorm` (Cursor variant) ships its **visual companion** — `visual-companion.md`
+- `brainstorm` ships its **visual companion** — `visual-companion.md`
   plus a `scripts/` folder with a small local Node server for showing mockups in
   the browser. It writes session state under `.superpowers/brainstorm/` in your
   project; add `.superpowers/` to your `.gitignore`. The companion is optional —
-  the skill works text-only without it.
+  the skill works text-only without it. `icon`/`color` in frontmatter are Cursor
+  Custom Mode chrome; Claude Code ignores unknown keys.
 
 ---
 
@@ -232,37 +238,27 @@ flowchart LR
   `feed_health.json`) rather than skipped quietly.
 - Auto-drop rules live in `scripts/scan_feeds.py` and are covered by
   `scripts/test_scan_feeds.py` — change a pattern, run the tests.
-- The Claude variants are text ports — their supporting files
-  (`assets/`, `references/`, `template.html`, `lab-template.html`,
-  `notes-template.html`, `feeds.toml`, `scripts/`) ship in the matching
-  `learning/cursor/<skill>/` folder; install the Cursor variant alongside
-  or adjust the paths.
-- `tech-radar` expects `learn` installed as a sibling
-  (`~/.cursor/skills/learn/`) — install both together.
+- `tech-radar` expects `learn` installed as a sibling in the same skills
+  directory — install both together. Scripts run from this skill's folder,
+  not the project cwd.
 
 ---
 
 ## Layout
 
 ```
-<category>/                 # sdlc/, learning/
-  cursor/<skill>/SKILL.md   # Cursor skill format (+ templates/scripts)
-  claude/<skill>.md         # Claude Code command format
+<category>/<skill>/SKILL.md   # sdlc/, learning/ — plus optional scripts/,
+                              # references/, templates next to SKILL.md
 ```
 
 Adding a category is additive: a new folder, a new README section, a new
 banner — existing categories stay untouched.
 
-## Notes
-
-- The Cursor and Claude variants are kept in sync but may differ slightly in
-  formatting to match each tool's conventions.
-
 ## Credits
 
 The planning/brainstorming skills are adapted from the open-source
 [Superpowers](https://github.com/obra/superpowers) project (MIT). The visual
-companion server scripts under `sdlc/cursor/brainstorm/scripts/` originate there.
+companion server scripts under `sdlc/brainstorm/scripts/` originate there.
 
 ## License
 

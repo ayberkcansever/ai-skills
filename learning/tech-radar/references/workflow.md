@@ -30,7 +30,7 @@ Do **not** read the workspace (`AGENTS.md`, local stack, employer platform) to b
 ## Step 2: Intake crawl
 
 ```bash
-python3 ~/.cursor/skills/tech-radar/scripts/scan_feeds.py
+python3 <this-skill-folder>/scripts/scan_feeds.py
 ```
 
 Window override: add `--window N`. Output dir defaults to `~/Documents/tech-briefs/radar`.
@@ -92,7 +92,7 @@ Write `radar/intake/<date>.triage.json`:
 Then run:
 
 ```bash
-python3 ~/.cursor/skills/tech-radar/scripts/validate_triage.py \
+python3 <this-skill-folder>/scripts/validate_triage.py \
   --intake ~/Documents/tech-briefs/radar/intake/YYYY-MM-DD.json \
   --triage ~/Documents/tech-briefs/radar/intake/YYYY-MM-DD.triage.json
 ```

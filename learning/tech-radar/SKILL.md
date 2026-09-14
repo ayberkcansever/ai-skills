@@ -9,7 +9,7 @@ compatibility: Requires Python 3.11+, network access, and write access to ~/Docu
 
 Goal: answer **"what should I learn next?"** for a principal software + AI engineer — a Thoughtworks-style radar, not a trends listicle. Every candidate lands on one of four **rings** in its quadrant, and the **Learn ring is the answer**. Every placement must survive: *"why this, why now, and why for someone at this level?"*
 
-This skill finds topics; sibling **learn** (`~/.cursor/skills/learn/`) briefs them. Shared library: briefs are this skill's memory; this skill's Learn ring is that skill's input queue.
+This skill finds topics; sibling **learn** (the `learn/` folder next to this one) briefs them. Shared library: briefs are this skill's memory; this skill's Learn ring is that skill's input queue.
 
 ## The role lens
 
@@ -54,7 +54,7 @@ assets/template.html       HTML renderer — fill at Step 8
 
 Crawler pre-drops routine noise; agent judges the rest. Novelty (announcing / GA / x.0 / deprecated / open-sourced / preview) and security (CVE, vulnerability, supply-chain) **never auto-drop**.
 
-Skill root is `~/.cursor/skills/tech-radar/`. Agent cwd is usually a project — run scripts with that prefix (the one allowed absolute).
+Skill root is the folder containing this SKILL.md. Agent cwd is usually a project — run scripts with an absolute prefix to that folder.
 
 ## Storage
 
