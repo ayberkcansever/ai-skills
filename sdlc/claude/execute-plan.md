@@ -312,6 +312,12 @@ After all tasks are done and verified:
      link to the plan file under a `## Review` section — one entry per review
      cycle. This is what the Step 2 resume check looks for; a review that
      leaves no `## Review` entry did not happen.
+   - **Verify the mechanism before accepting a finding:** reproduce what the
+     finding says happens (run the test, hit the branch, read the value) at
+     the reviewed SHA. A finding whose conclusion is right but whose stated
+     mechanism is wrong gets fixed for the *real* mechanism, and the
+     correction is reported back to the reviewer in the next cycle's prompt.
+     The reviewer is a second opinion, not an oracle.
    - Accepted findings are inserted into the plan as structured remediation
      tasks **before the review gate task**, numbered `N.1`, `N.2`, … so the
      gate keeps its number and stays last (same as write-plan's remediation

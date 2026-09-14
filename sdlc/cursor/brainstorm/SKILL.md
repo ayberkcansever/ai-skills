@@ -20,6 +20,17 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
 
+## Short Lane — when the full chain is disproportionate
+
+The design gate above never lifts. What *can* be skipped is the planning chain after it (interview-plan → write-plan). A change takes the **short lane** only when ALL hold:
+
+- Touches at most 2 files and roughly 50 lines; no new module, table, endpoint, or job.
+- No behaviour change observable by users, operators, or downstream systems — no alert text, API shape, schedule, threshold, or default that gates an action.
+- No new decision — the existing spec/design already covers it, or the change is mechanical (typo, rename, dependency bump, a constant whose value was already decided).
+- Not on a production-critical path: money, auth, deploy, data migration, production alerting.
+
+Short lane = design in 2–3 sentences + how it will be verified → user approval → implement → run thermo-nuclear-code-quality-review on the diff → commit with `Lane: short — <reason>` in the body so the lane choice is auditable from `git log`. Any doubt on any bullet → full chain. Choosing the lane is a decision: say it out loud with the reason, never assume it.
+
 ## Checklist
 
 You MUST create a task for each of these items and complete them in order:
@@ -32,9 +43,9 @@ You MUST create a task for each of these items and complete them in order:
 6. **Write design doc** — save WIP to `docs/specs/<TICKET-ID>/design.md` (gitignored). Promote to `docs/features/<TICKET-ID>/design.md` when stable. Do not commit unless the user explicitly asks.
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition** — ticket ID known: invoke interview-plan (it runs write-plan + Audit Pass). No ticket: ask once (interview-plan or write-plan).
+9. **Transition** — short lane (all four bullets hold, stated with reason): implement, then thermo on the diff. Otherwise, ticket ID known: invoke interview-plan (it runs write-plan + Audit Pass). No ticket: ask once (interview-plan or write-plan).
 
-**The terminal state is the planning chain, not implementation.** Ticket ID known: invoke **interview-plan** (it owns discovery, spec.md, write-plan, and the Audit Pass). No ticket: ask once — interview-plan or write-plan. Do NOT invoke frontend-design, mcp-builder, or any implementation skill. Do NOT skip interview-plan for a ticketed change.
+**The terminal state is the planning chain, not implementation.** Ticket ID known: invoke **interview-plan** (it owns discovery, spec.md, write-plan, and the Audit Pass). No ticket: ask once — interview-plan or write-plan. Do NOT invoke frontend-design, mcp-builder, or any implementation skill. Do NOT skip interview-plan for a ticketed change unless the short lane applies and was stated.
 
 ## The Process
 
@@ -103,7 +114,8 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Implementation:**
 
-- Ticket ID on the branch or known: invoke **interview-plan**. It runs write-plan and the Audit Pass. Do not skip it.
+- Short lane declared (see Short Lane): implement, then thermo on the diff, `Lane: short — <reason>` in the commit body.
+- Ticket ID on the branch or known: invoke **interview-plan**. It runs write-plan and the Audit Pass. Do not skip it outside the short lane.
 - No ticket: ask once — interview-plan or write-plan.
 - Do NOT invoke any implementation skill.
 
