@@ -104,8 +104,8 @@ Net: -N lines possible | Lean already
 
 **Review loop (when verdict is not `ship`):** accepted findings are inserted
 into the plan **before the review gate task** as **structured remediation
-tasks** (write-plan's remediation template — Files / fix / gate / commit,
-never bare checkboxes); the executor
+tasks** (execute-plan's "Remediation task template" — Files / fix / gate /
+commit, never bare checkboxes); the executor
 fixes them (execute-plan Step 3 loop); then **re-review only the changed
 areas** — re-run Phase 0 for touched decisions plus the phases that produced
 the findings, not the full battery — except the cycle that grants `ship`,

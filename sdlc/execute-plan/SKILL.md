@@ -329,10 +329,15 @@ After all tasks are done and verified:
      mechanism is wrong gets fixed for the *real* mechanism, and the
      correction is reported back to the reviewer in the next cycle's prompt.
      The reviewer is a second opinion, not an oracle.
-   - Accepted findings are inserted into the plan as structured remediation
-     tasks **before the review gate task**, numbered `N.1`, `N.2`, … so the
-     gate keeps its number and stays last (same as write-plan's remediation
-     template — never bare checkboxes):
+   - **Remediation task template** — accepted findings enter the plan as
+     full tasks, never bare checkboxes (bare checkboxes lose files, gates,
+     and the commit trace). **Insert them immediately before the review gate
+     task**, numbered `N.1`, `N.2`, … so the gate keeps its number and stays
+     last — the gate depends on the fixes, never the reverse (a fix that
+     depends on the gate deadlocks the plan). **This block is the single
+     source of truth for the shape** — write-plan and
+     thermo-nuclear-code-quality-review reference it instead of restating
+     it; when the shape changes, update it here only:
 
      ````markdown
      ### Task N.k: Fix review finding <n>

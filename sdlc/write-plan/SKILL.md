@@ -264,32 +264,19 @@ task subagent. Append it after the coverage task, verbatim structure:
   and `base @ <base SHA>`, and the subagent link to this plan's `## Review`
   section.
 - [ ] **Step 3: Loop until `Verdict: ship`** — accepted findings become
-  remediation tasks inserted before this gate (template below); fix via
+  remediation tasks inserted before this gate as full tasks numbered
+  `N.1`, `N.2`, … (execute-plan's "Remediation task template" is the single
+  source of that shape); fix via
   execute-plan's Step 3 loop, re-run the full test suite, untick this gate's
   Steps 2–3 and re-run the reviewer on changed areas, add one `## Review`
   entry per cycle (max 3 cycles, then escalate).
 ````
 
-**Remediation task template** — accepted review findings enter the plan as
-full tasks, never bare checkboxes (bare checkboxes lose files, gates, and the
-commit trace). **Insert them immediately before the review gate task**,
-numbered `N.1`, `N.2`, … so the gate keeps its number and stays the last
-task — the gate depends on the fixes, never the reverse (a fix that depends
-on the gate deadlocks the plan):
-
-````markdown
-### Task N.k: Fix review finding <n>
-
-**Implements:** review finding <n>, cycle <c> (from `## Review`)
-**Depends on:** <the task that introduced the finding, or the previous remediation task>
-
-**Files:**
-- Modify: `<path from the finding>`
-
-- [ ] **Step 1: Fix** — <the finding's fix, restated concretely>
-- [ ] **Step 2: Verify** — re-run the owning task's gate command; expected PASS
-- [ ] **Step 3: Commit** — `git add <paths> && git commit -m "fix(<scope>): <finding summary> [T<N.k>]"` (or your repo's commit helper)
-````
+**Remediation tasks** are inserted at execution time, never by this skill.
+Their shape (Files / fix / gate / commit, numbered `N.1`, `N.2`, … before
+the gate so the gate stays last) is defined once, in **execute-plan's
+"Remediation task template"** — do not restate it here; when the shape
+changes, change it there only.
 
 ## Self-Review
 

@@ -48,8 +48,14 @@ branch.
 Path is `.worktrees/<branch-name>`; branch name follows repo conventions —
 ticket key first, e.g. `PROJ-123-short-description`.
 
-If your harness offers a native worktree tool, use it and skip the manual
-steps. Otherwise:
+**Native worktree tools never create the worktree.** Harness tools such as
+Claude Code's `EnterWorktree` pick their own path (`.claude/worktrees/<name>`)
+and branch (`worktree-<name>`), which breaks the `.worktrees/<branch>` and
+`<TICKET-ID>-<slug>` contract execute-plan depends on. Always create with the
+`git worktree` commands below. After creating, a harness that can *enter an
+existing* worktree by path (Claude Code: `EnterWorktree` with
+`path: .worktrees/<branch>`) may do so to bind the session's cwd and
+isolation to the venue — that is optional; `cd` is sufficient.
 
 ```bash
 # .worktrees/ must be ignored — check before creating
