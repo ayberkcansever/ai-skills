@@ -254,22 +254,25 @@ task subagent. Append it after the coverage task, verbatim structure:
 **Implements:** — (quality gate)
 **Depends on:** all previous tasks
 
-- [ ] **Step 1: Spawn the reviewer** — read-only subagent running the
+- [ ] **Step 1: Open the `## Review` entry, then spawn the reviewer** —
+  first append `cycle <c> | reviewed @ <HEAD SHA> | base @ <base SHA> |
+  suite: <cmd> → <result>` to this plan's `## Review` section (the
+  reviewer's `ship` evidence — it must exist before the review starts);
+  then launch a read-only subagent running the
   **thermo-nuclear-code-quality-review** skill on the branch diff, model
   pinned per that skill's "Pinned review model" section (the single source of
   truth for the slug — never the session model, even when the session runs
   on auto).
-- [ ] **Step 2: Record the verdict** — append the reviewer's 3-line rollup,
-  the model used, the full-suite command + result, `reviewed @ <HEAD SHA>`
-  and `base @ <base SHA>`, and the subagent link to this plan's `## Review`
-  section.
+- [ ] **Step 2: Record the verdict** — complete that same entry with the
+  reviewer's 3-line rollup, the model used, and the subagent link.
 - [ ] **Step 3: Loop until `Verdict: ship`** — accepted findings become
   remediation tasks inserted before this gate as full tasks numbered
   `N.1`, `N.2`, … (execute-plan's "Remediation task template" is the single
   source of that shape); fix via
   execute-plan's Step 3 loop, re-run the full test suite, untick this gate's
-  Steps 2–3 and re-run the reviewer on changed areas, add one `## Review`
-  entry per cycle (max 3 cycles, then escalate).
+  Steps 1–3 and re-run the reviewer on changed areas (a new cycle opens a
+  new `## Review` line at the new HEAD), one `## Review` entry per cycle
+  (max 3 cycles, then escalate).
 ````
 
 **Remediation tasks** are inserted at execution time, never by this skill.

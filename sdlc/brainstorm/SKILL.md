@@ -29,7 +29,7 @@ The design gate above never lifts. What *can* be skipped is the planning chain a
 - No new decision — the existing spec/design already covers it, or the change is mechanical (typo, rename, dependency bump, a constant whose value was already decided).
 - Not on a production-critical path: money, auth, deploy, data migration, production alerting.
 
-Short lane = design in 2–3 sentences + how it will be verified → user approval → implement → run thermo-nuclear-code-quality-review on the diff → commit with `Lane: short — <reason>` in the body so the lane choice is auditable from `git log`. Any doubt on any bullet → full chain. Choosing the lane is a decision: say it out loud with the reason, never assume it.
+Short lane = design in 2–3 sentences + how it will be verified → user approval → write `docs/specs/<TICKET-ID>/spec.md` holding only a `## Decisions` section with the 1–3 decisions as `D<n>. <one line>` + `Check: <gate command>` (the Spec File Template layout from interview-plan's `references/interview-reference.md`; cite an existing `D<n>` when a spec for this ticket already has it) → implement → **commit** with `Lane: short — <reason>` in the body so the lane choice is auditable from `git log` → run thermo-nuclear-code-quality-review on the committed diff → fix commits until `Verdict: ship`. Commit before review: the review refuses a dirty tree. The review sweeps `spec.md` for `D<n>` lines — a prose `design.md` alone leaves it nothing to check and caps the verdict at `fix-first`. Any doubt on any bullet → full chain. Choosing the lane is a decision: say it out loud with the reason, never assume it.
 
 ## Checklist
 
@@ -43,7 +43,7 @@ You MUST create a task for each of these items and complete them in order:
 6. **Write design doc** — save WIP to `docs/specs/<TICKET-ID>/design.md` (gitignored). Promote to `docs/features/<TICKET-ID>/design.md` when stable. Do not commit unless the user explicitly asks.
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition** — short lane (all four bullets hold, stated with reason): implement, then thermo on the diff. Otherwise, ticket ID known: invoke interview-plan (it runs write-plan + Audit Pass). No ticket: ask once (interview-plan or write-plan).
+9. **Transition** — short lane (all four bullets hold, stated with reason): `spec.md` with `D<n>` + `Check:` lines, implement, commit, then thermo on the committed diff. Otherwise, ticket ID known: invoke interview-plan (it runs write-plan + Audit Pass). No ticket: ask once (interview-plan or write-plan).
 
 **The terminal state is the planning chain, not implementation.** Ticket ID known: invoke **interview-plan** (it owns discovery, spec.md, write-plan, and the Audit Pass). No ticket: ask once — interview-plan or write-plan. Do NOT invoke frontend-design, mcp-builder, or any implementation skill. Do NOT skip interview-plan for a ticketed change unless the short lane applies and was stated.
 
@@ -114,7 +114,7 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Implementation:**
 
-- Short lane declared (see Short Lane): implement, then thermo on the diff, `Lane: short — <reason>` in the commit body.
+- Short lane declared (see Short Lane): `spec.md` with `D<n>` + `Check:` lines, implement, commit with `Lane: short — <reason>` in the body, then thermo on the committed diff until `ship`.
 - Ticket ID on the branch or known: invoke **interview-plan**. It runs write-plan and the Audit Pass. Do not skip it outside the short lane.
 - No ticket: ask once — interview-plan or write-plan.
 - Do NOT invoke any implementation skill.

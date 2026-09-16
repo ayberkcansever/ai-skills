@@ -49,13 +49,19 @@ execute-plan reference it instead of hardcoding it; when the model changes,
 update it here only.
 
 **Persist the verdict:** when a plan file exists for the branch, the
-**invoking session (orchestrator)** appends the 3-line rollup, the model used,
-the full-suite command + result, `reviewed @ <HEAD SHA>` and `base @ <base
-SHA>` (both captured in Step 0), and the reviewer subagent link to the plan
-under a `## Review` section (one entry per cycle) — the reviewer subagent is
-read-only and cannot write the plan; on standalone inline runs the session
-itself appends. A review that leaves no `## Review` entry did not happen —
-execute-plan's resume check depends on it.
+**invoking session (orchestrator)** owns the `## Review` entry, one per cycle,
+written in two halves — the reviewer subagent is read-only and cannot write
+the plan; on standalone inline runs the session itself writes both halves:
+
+1. **Before the reviewer runs:**
+   `cycle <c> | reviewed @ <HEAD SHA> | base @ <base SHA> | suite: <cmd> → <result>`
+   — the full-suite evidence the `ship` rule below reads.
+2. **After the verdict:** the 3-line rollup, the model used, and the
+   reviewer subagent link, appended to that same entry.
+
+A review that leaves no `## Review` entry did not happen — execute-plan's
+resume check depends on it. An entry with no `Verdict:` line is an in-flight
+cycle.
 **A `ship` verdict is valid only for its recorded HEAD and base SHAs** — any
 later commit invalidates it and requires a new cycle, except commits touching
 only `docs/` paths that leave spec decisions unchanged (doc sync, plan/spec
@@ -69,7 +75,8 @@ re-review before merge.
    `Verdict: ship` at the current HEAD (or differing from it only by
    docs-only commits that leave spec decisions unchanged), report "already
    reviewed at this commit" and stop — re-review only if the user explicitly
-   forces it.
+   forces it. A last entry with no `Verdict:` line is the in-flight cycle
+   you are running — proceed.
 2. **Clean tree required:** `git status --porcelain` must be empty. Staged,
    unstaged, and untracked changes are invisible to `git diff <base>...HEAD`
    and would silently escape review. Dirty tree → stop and report; have the
@@ -77,7 +84,7 @@ re-review before merge.
 3. **Quirks doc:** read the project quirks doc when one exists (e.g.
    `docs/quirks.md` — hard-learned domain gotchas) — its entries feed
    Phase 0's semantic-drift sweep and Phase 3.
-4. **Base & anchor:** resolve the base (`git symbolic-ref refs/remotes/origin/HEAD` or `main`/`master`), then capture `git rev-parse HEAD` and `git rev-parse <base>` — both go into the `## Review` entry.
+4. **Base & anchor:** resolve the base (`git symbolic-ref refs/remotes/origin/HEAD` or `main`/`master`), then capture `git rev-parse HEAD` and `git rev-parse <base>` — they must match the current `## Review` line's `reviewed @` / `base @`; a mismatch means the suite evidence is for another commit (see the `ship` rule).
 5. Review `git diff <base>...HEAD`. Lenses below reconcile cleanly: **Phase 0 checks the diff does what was decided; Phase 1 removes what should not exist; Phase 2 restructures what remains.**
 
 **Start the report with a 3-line rollup:**
@@ -97,10 +104,11 @@ Net: -N lines possible | Lean already
   ticket branch has no findable spec/plan, or any decision is `unverifiable`
   (see Phase 0).
 - `ship` — no open accepted findings AND the full test suite is green at the
-  reviewed SHA, evidenced by the suite command + result recorded in the
-  `## Review` entry (the orchestrator re-runs it after the last fix; a
-  targeted gate command alone does not qualify). No recorded evidence →
-  cap at `fix-first`.
+  reviewed SHA, evidenced by the `suite:` field of the current cycle's
+  `## Review` line (written by the orchestrator before this review; a
+  targeted gate command alone does not qualify). No line, no `suite:`
+  field, or its `reviewed @` SHA differs from the HEAD you are reviewing →
+  cap at `fix-first` and say which.
 
 **Review loop (when verdict is not `ship`):** accepted findings are inserted
 into the plan **before the review gate task** as **structured remediation

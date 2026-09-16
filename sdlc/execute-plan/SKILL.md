@@ -317,12 +317,18 @@ After all tasks are done and verified:
      section — that skill is the single source of truth for the slug; do not
      hardcode it here. Never the session's own model (auto included). If the
      slug is unavailable, stop and ask the user — never silently substitute.
-   - **Record evidence:** append the reviewer's 3-line rollup (Verdict / Top
-     issue / Net), the model used, the full-suite command + result at that
-     SHA, `reviewed @ <HEAD SHA>` and `base @ <base SHA>`, and the subagent
-     link to the plan file under a `## Review` section — one entry per review
-     cycle. This is what the Step 2 resume check looks for; a review that
-     leaves no `## Review` entry did not happen.
+   - **Open the entry first:** *before* launching the reviewer, append to
+     the plan's `## Review` section one line —
+     `cycle <c> | reviewed @ <HEAD SHA> | base @ <base SHA> | suite: <cmd> → <result>`
+     — using the full-suite result from substep 2 (or its re-run after the
+     last fix; the SHA must match the current HEAD). This line is the
+     reviewer's `ship` evidence; the review skill caps at `fix-first`
+     without it, so writing it afterwards costs a wasted cycle.
+   - **Close the entry after:** complete that same entry with the reviewer's
+     3-line rollup (Verdict / Top issue / Net), the model used, and the
+     subagent link — one entry per review cycle, never a second entry for
+     the same cycle. This is what the Step 2 resume check looks for; an
+     entry with no `Verdict:` line is an in-flight cycle, not a review.
    - **Verify the mechanism before accepting a finding:** reproduce what the
      finding says happens (run the test, hit the branch, read the value) at
      the reviewed SHA. A finding whose conclusion is right but whose stated
