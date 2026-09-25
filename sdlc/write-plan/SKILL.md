@@ -261,8 +261,8 @@ task subagent. Append it after the coverage task, verbatim structure:
   then launch a read-only subagent running the
   **thermo-nuclear-code-quality-review** skill on the branch diff, model
   pinned per that skill's "Pinned review model" section (the single source of
-  truth for the slug — never the session model, even when the session runs
-  on auto).
+  truth for the slug; the session's own model is allowed — independence comes
+  from the reviewer's fresh read-only context).
 - [ ] **Step 2: Record the verdict** — complete that same entry with the
   reviewer's 3-line rollup, the model used, and the subagent link.
 - [ ] **Step 3: Loop until `Verdict: ship`** — accepted findings become

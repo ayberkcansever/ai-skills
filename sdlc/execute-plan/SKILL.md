@@ -315,8 +315,10 @@ After all tasks are done and verified:
    - **Pinned review model:** launch the reviewer subagent with the model
      named in thermo-nuclear-code-quality-review's "Pinned review model"
      section — that skill is the single source of truth for the slug; do not
-     hardcode it here. Never the session's own model (auto included). If the
-     slug is unavailable, stop and ask the user — never silently substitute.
+     hardcode it here. The session's own model is allowed — independence
+     comes from the reviewer's fresh read-only context, not a different
+     model. If a pinned slug is unavailable, stop and ask the user — never
+     silently substitute.
    - **Open the entry first:** *before* launching the reviewer, append to
      the plan's `## Review` section one line —
      `cycle <c> | reviewed @ <HEAD SHA> | base @ <base SHA> | suite: <cmd> → <result>`

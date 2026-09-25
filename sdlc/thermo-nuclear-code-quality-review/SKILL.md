@@ -32,15 +32,19 @@ Number every finding
 to the plan file as structured remediation tasks (see the review loop below).
 
 **Pinned review model:** the reviewer subagent is launched with a **pinned
-review model** — never inherit the implementer session's model (auto
-included). Resolution, in order:
+review model**. Independence comes from the reviewer's **fresh, read-only
+context** (maker/checker above), not from running a different model — the
+reviewer may use the implementer session's own model. Never drop to a weaker
+model just to differ from it. Resolution, in order:
 
 1. `review-model: <slug>` set on the line below → use exactly that slug. If
    the tool does not offer it, stop and ask the user; never silently
    substitute.
-2. Not set → pick the strongest reasoning/thinking model in the tool's
-   current model list (newest, highest thinking tier), excluding the
-   session's own model. Record the slug chosen in the `## Review` entry.
+2. Not set → pick the strongest reasoning/thinking model the tool can
+   actually launch (newest, highest thinking tier), the session's own model
+   included. If that model is listed but fails to launch (quota, credits,
+   rate limit), take the next strongest and say so. Record the slug chosen,
+   and whether it matches the implementer's model, in the `## Review` entry.
 
 `review-model:` (unset — fill to pin a fixed slug)
 

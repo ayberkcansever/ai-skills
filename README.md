@@ -163,8 +163,10 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
   `Depends on:` (`none` if independent). If **every** task omits it, execute-plan
   runs sequentially. If **some** declare it and one omits it, execute-plan
   stops and asks — it does not treat the omit as ready.
-- `thermo-nuclear-code-quality-review` pins a dedicated **review model** so the
-  reviewer never inherits the implementer session's model. The skill's
+- `thermo-nuclear-code-quality-review` runs the review in a **fresh,
+  read-only subagent** — that fresh context is what makes it independent of
+  the implementer, so it may use the implementer's own model and never drops
+  to a weaker one just to differ. The skill's
   "Pinned review model" section is the source of truth (a model family +
   latest, not a slug to paste here). write-plan and execute-plan reference
   that section instead of hardcoding a slug. Execute-plan launches the
