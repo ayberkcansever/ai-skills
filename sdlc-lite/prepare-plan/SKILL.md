@@ -4,151 +4,219 @@ description: >-
   Turn an idea or ticket into a decision spec and a task plan, grounded in the
   codebase. Use when the user invokes prepare-plan or asks to plan or spec a
   change (sdlc-lite chain). Do not use to implement.
+argument-hint: "[TICKET-ID] [ticket link or idea]"
 disable-model-invocation: true
 ---
 
 # Prepare Plan
 
-Produce two files, then stop for approval:
+Interview the user into a spec of provable decisions, then write a plan
+implement-plan can schedule. Stop for approval after each.
 
-- `docs/specs/<TICKET-ID>/spec.md` — numbered decisions, each provable.
-- `docs/plans/<TICKET-ID>/implementation-plan.md` — tasks implement-plan can schedule.
+Input: $ARGUMENTS
 
-Both are gitignored WIP. `<TICKET-ID>` comes from the branch
-(`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`); no match → ask once;
-no tracker → short kebab-case slug.
+**Reads:** the ticket and its linked docs, the code, `docs/quirks.md`, any
+existing spec or plan for the ticket.
+**Writes:** `docs/specs/<TICKET-ID>/spec.md` and
+`docs/plans/<TICKET-ID>/implementation-plan.md`.
+
+Later skills and resumed sessions see only these files, never this chat —
+whatever they need goes in a file. `<TICKET-ID>` comes from the input, else
+the branch (`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`); no match
+→ ask once; no tracker → short kebab-case slug. Both files are WIP: unless
+already ignored, add `docs/specs/` and `docs/plans/` to `.git/info/exclude`
+(review-build refuses untracked files; `.gitignore` is tracked).
 
 ## Invariants
 
-- Read the code before asking. Never ask what the repo answers; ask about intent.
-- Every question carries a recommendation and a one-line reason.
-- "Probably", "sure", "we'll see" are not decisions — re-ask with a sharper
-  recommendation and force a yes / no.
+- Read the ticket and the code before asking. Never ask what they answer; ask
+  only what would change the plan.
+- Ask through `AskUserQuestion`: up to 4 questions per call whose answers
+  don't depend on each other — a question that reshapes the others goes
+  alone. Each question names its tag and the `Found:` fact behind it; each
+  has 2–4 concrete options, the recommended one first and labelled
+  `(Recommended)`, with its one-line reason in the description. Free-form
+  answers arrive through the built-in "Other".
+- An unanswered question stays open. "Probably", "sure", "we'll see" are not
+  decisions — re-ask with a sharper recommendation and force a yes / no.
 - Every decision has a `Check:` — runnable command, named test, or
-  `manual QA: <step>`. Cannot write one → the decision is too vague; sharpen it.
-- Backward compatibility is closed from grep results, never from memory.
-- Every symbol, path, field, route, or env var the plan names cites `file:line`
-  or was verified during planning. Never guess a name.
-- Append decisions to `spec.md` the moment they are made. After a context
-  compaction, re-read this file and `spec.md` — the files are the truth.
-- No plan until the user approves the spec (short lane: one approval for
-  both); no code until they approve the plan.
+  `manual QA: <step>`. Every `[product]` decision also has an `Example:` with
+  real values, an edge value included. Cannot write them → the decision is too
+  vague; sharpen it.
+- Backward compatibility is closed from grep results, never from memory. Every
+  symbol, path, field, route, or env var the plan names cites `file:line` or
+  was verified during planning. Never guess a name.
+- Write to `spec.md` the moment something is decided, assumed, or asked.
+  Decisions are append-only: a change is a new `D<n>` marked
+  `supersedes D<m>`, with the old one struck.
+- Approvals live in the spec's `**Status:**` line. No plan before
+  `spec-approved` (short lane: one approval for both); no code before
+  `plan-approved`.
+- After a context compaction, re-read the spec and plan — the files are the
+  truth.
 
-## 1. Discover
+## 1. Start or resume
 
-If `spec.md` exists, this is a resume: report decided / open items (Decisions,
-Consumers, Coverage) and continue from the first open one. If only
-`design.md` exists, carry its decisions in as `D<n>` with `Check:` lines.
+- A spec exists (`docs/specs/<TICKET-ID>/spec.md`, or a promoted
+  `docs/features/<TICKET-ID>/design.md`; both → ask which is live): resume.
+  Report Status, open questions, and open Coverage items, and continue from the
+  first. Run `git log <baseline>..HEAD -- <touched paths>` and refresh findings
+  the code has outdated. A plan with ticked tasks is amended, never rewritten.
+- Only a v1 `design.md` without a Status line → carry its decisions in as
+  `D<n>` with `Check:` lines.
+- Otherwise read the ticket (tracker CLI or connector when available) and its
+  linked docs and designs.
 
-Idea spans independent subsystems → propose the split and plan the first
-piece only. Read, then post a compact Findings list:
+## 2. Frame and pick the lane
 
-- Files the change touches and their patterns (layering, errors, naming).
-- Every consumer of each touched function, field, route, event, or contract,
-  with `repo:file:line`, across every repo that consumes it. When a field is
-  removed or no longer written, include readers that derive behaviour from it
-  (audit diffs, logs, cache keys) — they break silently.
-- Stored and in-flight data written under the old contract.
-- Tests that pin current behaviour.
-- README, adjacent `docs/features/` entries, and the `docs/quirks.md` entries
-  relevant here — they filter every later question.
-
-Findings must include at least one code-grounded pushback (simpler design,
-broken consumer, hidden risk) with `file:line`, and a batch of edge scenarios
-the user did not mention — concurrent mutation, entity deleted mid-flow, retry
-after success, wrong tenant or role, limits / rounding / double counting,
-feature toggled off mid-operation, failed write leaving stale local state —
-each with a proposed behaviour to accept or reject. Zero findings means you
-did not look.
-
-Also post a quirk batch: divergences a generic reviewer would miss, as
-`Found: file:line — <divergence> | quirk or bug? Recommend: <reading>`. Mine
-scope enforced in one layer but not another (account / location / user /
-tenant), two call sites reading one source with different filters, time
-windows, or timezones, hidden contracts (idempotency keys, dedup, event
-ordering), and code whose comments, tests, or history warn against the
-obvious change. Zero candidates is valid — say so. Accepted quirks become
-decisions or findings.
-
-A real design choice → present 2–3 approaches with tradeoffs, recommended
-first, before step 3.
-
-## 2. Pick the lane
+Restate in a few lines: problem, who it affects, trigger, desired outcome, how
+success is measured. Ask the intent questions the ticket leaves open before
+reading deeply — discovery aimed at the wrong problem is wasted. Independent
+subsystems → propose the split and plan the first piece only.
 
 State the lane and why; the user may override.
 
 - **short** — ≤2 files, ~50 lines, no new decision, no observable behaviour
-  change, not money / auth / deploy / migration / alerting. Spec holds 1–3
-  decisions and one batch-confirmed Coverage line; plan is one task plus the
-  review gate.
-- **standard** — default.
-- **full** — changes a contract or persisted data, touches money or auth, or
-  spans repos.
+  change, not money / auth / deploy / migration / alerting. Skips step 4 and
+  the step-8 subagent. Spec holds 1–3 decisions and one batch-confirmed
+  Coverage line; plan is one task plus the review gate.
+- **standard** — everything else.
 
-## 3. Resolve decisions
+A decision that later hits a short-lane exclusion moves the work to standard;
+say so.
 
-Ask related questions in small batches (≤4), dependencies first. Tag each
+## 3. Discover
+
+Read, then post a compact Findings list:
+
+- Files the change touches and their patterns (layering, errors, naming).
+- Every reader and writer of each touched function, field, route, event,
+  table, or contract, as `repo:file:line`, across every repo that uses it.
+  Include readers that derive behaviour from a field (audit diffs, logs, cache
+  keys) — they break silently — and writers off the main path (admin tools,
+  imports, jobs, migrations, other services) — they bypass new rules.
+- Stored and in-flight data written under the old contract, and existing
+  records in each state the change touches.
+- Tests that pin current behaviour.
+- README, adjacent `docs/features/` entries, and relevant `docs/quirks.md`
+  entries — they filter every later question.
+
+Push back wherever the code supports it — simpler design, broken consumer,
+hidden risk — with `file:line`; if nothing warrants it, say so. A real design
+choice → 2–3 approaches with tradeoffs, recommended first; settle it before
+step 4, because the scenarios depend on it.
+
+## 4. Scenarios and quirks
+
+One batch each, for the chosen approach:
+
+- **Edge scenarios** the user did not raise, drawn from actor, entity state,
+  timing (concurrent change, retry after success, deleted mid-flow), money and
+  counting, lifecycle (flag off mid-operation, downgrade), and failure
+  (partial write, stale local state after a rejected write). Only those that
+  apply here, each with a proposed behaviour to accept or reject. Accepted →
+  `D<n>`; rejected → `NG<n>`.
+- **Quirks** a generic reviewer would miss, as
+  `Found: file:line — <divergence> | quirk or bug? Recommend: <reading>`:
+  scope enforced in one layer only, call sites reading one source with
+  different filters or time windows, hidden contracts (idempotency, dedup,
+  ordering), code whose comments or history warn against the obvious change.
+  Zero is a valid answer. Accepted quirks become decisions or findings.
+
+## 5. Resolve decisions
+
+Ask in batches as the invariants describe, dependencies first, each tagged
 `[product]`, `[technical]`, `[compat]`, or `[scope]`:
 
 ```
-Q3 [compat]: Break sales, migrate it, or dual-write `legacyTarget` for one release?
-Found: sales/x.ts:42 reads `legacyTarget`, which this change removes.
-Recommend: dual-write one release. Why: sales deploys on a different cadence.
+header: Compat
+question: [compat] Found: sales/x.ts:42 reads `legacyTarget`, which this
+  change removes. Break sales, migrate it, or dual-write for one release?
+options:
+  - Dual-write one release (Recommended) — sales deploys on a different cadence
+  - Migrate sales in this change — one coordinated deploy across both repos
+  - Break sales — acceptable only if sales is being retired
 ```
 
 - Override → record `(overrides recommendation: <user's reason>)`; no reason
   given → ask once.
-- New decision contradicts an old one → surface both, ask, then mark the
-  winner `supersedes D<n>` and strike the loser.
-- Silent-log what the code makes obvious; batch-confirm clear non-goals.
+- A new decision contradicts an old one → surface both, ask, then supersede.
+- A fact the code makes obvious needs no question; if it shapes behaviour, log
+  it under `## Assumptions` so the user sees it at approval.
+- Only someone else can answer (PM, another team, production config) → log it
+  under `## Open questions` as `[external: <who>]`. No plan while one is
+  load-bearing.
+- The user says "enough" with items open → name each one; it becomes an
+  accepted risk only on an explicit yes.
 
-Done when every consumer is Decided / Non-goal / Accepted risk, and each of
-these is decided or a non-goal: business intent with measurable success and
-why the simpler option lost; behaviour by role, tier, or flag; behaviour and
-failure modes; data/schema (the actual writer carries each new field);
-contract and compat; authz and tenant scope; idempotency and retries;
-observability (each signal answers a real on-call question); operational
-impact (what support sees, who is paged, manual recovery); PII, retention,
-audit trail; performance and volume; UX, accessibility, i18n; new
-dependencies and their failure mode; docs and runbook; rollout, activation
-switch, rollback; testing including the E2E environment; scope and phasing
-(ask once, explicitly). Track each in the spec's `## Coverage Checklist
-status`. Nothing reads "TBD".
+Done when every Consumers row is Decided / Non-goal / Accepted risk,
+`## Open questions` is empty, and each Coverage item is decided, a non-goal,
+or an accepted risk — nothing reads "TBD":
 
-## 4. Write the files
+1. Business intent: problem, measurable success, why the simpler option lost.
+2. Behaviour by role, tier, or flag.
+3. Behaviour and failure modes, accepted scenarios included.
+4. Data and schema: the actual writer carries each new field; existing
+   records backfilled or deliberately left as-is.
+5. Contract and compatibility, every Consumers row.
+6. Authz and tenant scope.
+7. Idempotency and retries.
+8. Observability: each signal answers a named on-call question.
+9. Operations: what support sees, who is paged, manual recovery.
+10. PII, retention, audit trail.
+11. Performance, volume, cost.
+12. UX, accessibility, i18n; user-visible text (errors, emails, empty states)
+    decided verbatim or owned by a named person.
+13. New dependencies and their failure mode.
+14. Docs and runbook.
+15. Rollout: activation switch, deploy order, rollback, and when temporary
+    code (dual-write, flag) is removed.
+16. Testing, including the E2E environment.
+17. Scope and phasing (ask once, explicitly).
 
-Finish `spec.md` first, then post its summary — goal, decisions, non-goals,
-accepted risks — and ask: *write the plan? (yes / keep going / edit spec)*.
-Write the plan only on yes; otherwise return to step 3. Short lane skips this
-stop — step 6 approves both files at once.
+## 6. Approve the spec
 
-`spec.md` (same layout the v1 chain uses, so either reviewer can read it):
+Post its summary — goal, decisions, non-goals, accepted risks, every
+`## Assumptions` entry, and Coverage items closed as non-goals — and ask:
+*write the plan? (yes / keep going / edit spec)*. On yes set
+`**Status:** spec-approved <date>`; otherwise return to step 5. Short lane
+skips this stop — step 9 approves both files at once.
+
+`spec.md` (the v1 layout plus Status, Assumptions, and Open questions, so
+either chain's reviewer can read it):
 
 ```markdown
 # <TICKET-ID> — <one-line goal>
+**Status:** draft | spec-approved <date> | plan-approved <date>
 ## Goal & business intent
 ## Decisions
 D1. <one line>
+    Example: <input> → <outcome>          ([product] decisions)
     Check: <command / test / manual QA: step>
 ## Non-goals
 NG1. <one line — rejected scenarios land here>
+## Assumptions
+A1. <inferred without asking> — <evidence>
+## Open questions
+Q<n> [<tag>] <question> — asked <date> [external: <who>]
 ## Consumers
-| # | repo:file:line | contract touched | Decided Dn / Non-goal / Accepted risk |
+| # | repo:file:line | reads / writes | contract touched | Decided Dn / Non-goal / Accepted risk |
 ## Coverage Checklist status
-<done-list item> | D<n> / NG<n> / accepted risk / open
+<n>. <item> | D<n> / NG<n> / accepted risk / open
 ## Discovery findings
 Baseline: <repo> @ <short SHA>
 ## Open risks (accepted)
+<risk> — accepted by <who> on <date>
 ```
 
-`implementation-plan.md`:
+## 7. Write the plan
 
 ```markdown
 # <TICKET-ID> — <goal> Implementation Plan
 **Spec:** docs/specs/<TICKET-ID>/spec.md
-**Lane:** short | standard | full — <reason>
+**Lane:** short | standard — <reason>
 **Architecture constraints:** layering, error handling, canonical helpers
-(with paths), test command form — subagents see only this file.
+(with paths), test command form — subagents see only this file and the spec.
 
 ### Task 1: <name>
 **Implements:** D1, D3
@@ -169,7 +237,11 @@ Baseline: <repo> @ <short SHA>
 | Decision / scenario | Test | Task |
 ## E2E — run with the user after hand-back
 <step> | <env> | pass / fail: <observed>
+## Release
+<step: deploy order, activation, signal to watch, rollback> | <owner> | <result>
+Follow-ups: <ticket removing temporary code>
 ## Review
+## Deferred suggestions
 ## Blockers
 ```
 
@@ -179,36 +251,39 @@ Task rules:
   dependency serializes the plan. `Files:` as paths — tasks sharing a file
   never run in parallel.
 - No implementation code. Specify what the executor cannot guess: test cases
-  (input → expected), exact contract / schema shapes, files, gate.
+  (input → expected, the decision's `Example:` among them), exact contract /
+  schema shapes, files, gate.
 - Data that reaches a sink (DB, queue, HTTP response, file): one task changes
   the actual writer, and one test reaches the sink without mocking it.
   Activation (env var, flag, index, subscription, IaC) gets its own task.
 - Every `D<n>` and accepted scenario has a Test matrix row, or a stated reason
   plus manual / E2E check. E2E steps run with the user after build, never by
   the agent.
+- `## Release` comes from the rollout decisions; implement-plan reports it and
+  never runs it.
 - The last task is always the Review gate.
 
-## 5. Check the written files
+## 8. Check the written files
 
-Re-read both files, do not trust memory: every decision maps to a task; every
-task maps to a decision (or `—` with reason); every consumer is handled; no
-task implements a non-goal; no placeholders; dependencies acyclic; no
-Coverage item left `open`.
+Re-read both files, do not trust memory: every decision maps to a task and a
+Test matrix row; every task maps to a decision (or `—` with reason); every
+Consumers row is handled; no task implements a non-goal; no placeholders;
+dependencies acyclic; no Coverage item left `open`. A question you skipped for
+a reason weaker than "non-goal" or "obvious from code" → ask it now.
 
-Then critique yourself; each miss becomes one more question, not a buried gap:
-the question you almost asked but skipped for a reason weaker than "non-goal"
-or "obvious from code"; the most likely review flag not yet raised; what you
-would have designed differently from scratch, not yet surfaced as pushback.
+**Standard lane:** dispatch an Agent-tool subagent, told to read only, given
+only the two paths — none of this conversation. Ask
+for the first questions an engineering reviewer, the product owner, and the
+on-call engineer would raise, and for any decision whose `Example:` or
+`Check:` it could not act on. Answer each in the files or put it to the user —
+a fresh context catches what self-review misses.
 
-**Standard and full lanes:** dispatch a read-only subagent given only the two
-paths and ask for the three questions a reviewer would ask first. Answer each
-in the plan or put it to the user.
-
-## 6. Hand off
+## 9. Hand off
 
 Post a short summary — lane, decision count, tasks, expected waves — and ask
-for approval. On yes:
+for approval. On yes set `**Status:** plan-approved <date>` and say:
 
-> Plan ready at `<absolute path>`. Run `/implement-plan`.
+> Plan ready at `<absolute path>`. Run `/implement-plan` — a fresh session
+> works; the files carry everything.
 
 Do not paste the files into chat.
