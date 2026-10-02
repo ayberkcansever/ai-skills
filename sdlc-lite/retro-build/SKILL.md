@@ -5,7 +5,7 @@ description: >-
   artifacts; proposes amendments and deletions to the skills. Use after merge
   and deploy, or when an escaped defect traces to a ticket. Not the next step
   after implement-plan.
-argument-hint: "[TICKET-ID]"
+argument-hint: "[plan name]"
 disable-model-invocation: true
 ---
 
@@ -18,21 +18,21 @@ approval. The skills live in `${CLAUDE_SKILL_DIR}/..`; it must be inside a
 git repo so every change is a revertible commit with its evidence — a copied
 install is not, so ask for the skills repo path.
 
-**Reads:** the ticket's spec and plan, `retro-log.md`, `git log --grep 'retro('`.
+**Reads:** the plan's spec and plan, `retro-log.md`, `git log --grep 'retro('`.
 **Writes:** approved skill edits, `retro-log.md`, and repo facts into
 `docs/quirks.md` or `AGENTS.md`.
 
 ## 1. Collect
 
-Read the plan and spec (`docs/features/<TICKET-ID>/`, else the WIP tier).
-Missing both → "nothing to retro", stop. Quote each signal verbatim with its
-location: `> Drift:` notes, `## Blockers` entries, `R` findings from
+Read the plan and spec in `docs/plans/<plan>/` (named in the input, or the
+plan from this session). Missing both → "nothing to retro", stop. Quote each
+signal verbatim with its location: `> Drift:` notes, `## Blockers` entries, `R` findings from
 cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, `## E2E`
 fails, `## Assumptions` entries proven wrong, accepted risks that
 materialized, failed `## Release` steps, and any escaped production defect.
 Print:
 
-`metrics(<TICKET-ID>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s> e2e-fail=<e> assumed-wrong=<a>`
+`metrics(<plan>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s> e2e-fail=<e> assumed-wrong=<a>`
 
 ## 2. Attribute
 
@@ -85,8 +85,8 @@ plus a drop table (`signal | gate failed`). Ask per item through
 `AskUserQuestion` — apply / repo-fact / drop, recommended option first. Then:
 
 - Apply minimal edits; append the drop table and metrics line to
-  `retro-log.md` in the skills repo under `## <TICKET-ID> — <date>`.
-- Commit explicit paths: `retro(<TICKET-ID>): <summary>` (add `retro-prune`
+  `retro-log.md` in the skills repo under `## <plan> — <date>`.
+- Commit explicit paths: `retro(<plan>): <summary>` (add `retro-prune`
   when it deletes), with evidence, the metrics line, and `wc -w` before → after
   per skill file in the body.
 

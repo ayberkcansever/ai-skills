@@ -4,7 +4,7 @@ description: >-
   Strict review of the branch diff against the ticket spec. implement-plan
   runs it as the review gate; invoke directly after a dev session or before a
   PR (sdlc-lite chain).
-argument-hint: "[TICKET-ID]"
+argument-hint: "[plan name]"
 disable-model-invocation: true
 ---
 
@@ -31,12 +31,14 @@ records them.
   changes escape the diff. Dirty → stop and report.
 - **Diff:** base = `git symbolic-ref refs/remotes/origin/HEAD` (else
   `main`); review `git diff <base>...HEAD`.
-- **Context:** spec at `docs/specs/<TICKET-ID>/spec.md` or
-  `docs/features/<TICKET-ID>/design.md`; plan likewise; `docs/quirks.md` and
+- **Context:** the spec and plan paths given, else `docs/plans/<plan>/` for
+  the plan named in the input or used earlier in this session, else the
+  branch's ticket key; `docs/quirks.md` and
   the repo's `AGENTS.md` / `CLAUDE.md` when present. Earlier `## Review`
   cycles: confirm each prior `R` finding's fix removed its cause.
 - **Re-run guard:** last `## Review` entry already says `Verdict: ship` at
-  this HEAD (or only docs commits since, with no decision edits) → report
+  this HEAD (or only docs-only commits since) and no spec decision changed
+  since → report
   "already reviewed" and stop.
 - **Standalone, no plan:** run the full suite yourself; it stands in for the
   `## Review` line in the `ship` rule. Report in chat.
@@ -85,14 +87,14 @@ required / advisory split does the filtering, not omission.
 - **block** — data loss or corruption, security hole, compat break, or a
   decision missing or drifted. The orchestrator stops for the user before
   fixing.
-- **fix-first** — required findings remain; or the ticket branch has no
-  findable spec; or any decision is `unverifiable`.
+- **fix-first** — required findings remain; or no spec can be found for a
+  plan-driven branch; or any decision is `unverifiable`.
 - **ship** — no required findings, and the current `## Review` line shows a
   green `suite:` at the HEAD you reviewed. Missing or mismatched → fix-first,
   and say which.
 
-A `ship` verdict holds only at its reviewed SHA. Any later non-docs commit, or
-a docs commit that edits decisions, reopens the review. Follow-up cycles
+A `ship` verdict holds only at its reviewed SHA. Any later commit other than
+a docs-only one, or a change to the spec's decisions, reopens the review. Follow-up cycles
 re-check the changed areas and touched decisions; the cycle that grants `ship`
 re-runs the full conformance sweep.
 

@@ -4,7 +4,7 @@ description: >-
   Turn an idea or ticket into a decision spec and a task plan, grounded in the
   codebase. Use when the user invokes prepare-plan or asks to plan or spec a
   change (sdlc-lite chain). Do not use to implement.
-argument-hint: "[TICKET-ID] [ticket link or idea]"
+argument-hint: "[plan name or TICKET-ID] [ticket link or idea]"
 disable-model-invocation: true
 ---
 
@@ -17,15 +17,17 @@ Input: $ARGUMENTS
 
 **Reads:** the ticket and its linked docs, the code, `docs/quirks.md`, any
 existing spec or plan for the ticket.
-**Writes:** `docs/specs/<TICKET-ID>/spec.md` and
-`docs/plans/<TICKET-ID>/implementation-plan.md`.
+**Writes:** `docs/plans/<plan>/spec.md` and `docs/plans/<plan>/plan.md`.
 
 Later skills and resumed sessions see only these files, never this chat —
-whatever they need goes in a file. `<TICKET-ID>` comes from the input, else
-the branch (`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`); no match
-→ ask once; no tracker → short kebab-case slug. Both files are WIP: unless
-already ignored, add `docs/specs/` and `docs/plans/` to `.git/info/exclude`
-(review-build refuses untracked files; `.gitignore` is tracked).
+whatever they need goes in a file. `<plan>` is the plan's name: the name or
+ticket key in the input, else the branch's ticket key
+(`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`), else a short
+kebab-case name you propose and the user confirms. Announce it once set:
+`/implement-plan` and `/review-build` later in this session use it without
+arguments. The folder is never committed: unless already ignored, add
+`docs/plans/` to `.git/info/exclude` (review-build refuses untracked files;
+`.gitignore` is tracked).
 
 ## Invariants
 
@@ -57,12 +59,11 @@ already ignored, add `docs/specs/` and `docs/plans/` to `.git/info/exclude`
 
 ## 1. Start or resume
 
-- A spec exists (`docs/specs/<TICKET-ID>/spec.md`, or a promoted
-  `docs/features/<TICKET-ID>/design.md`; both → ask which is live): resume.
+- `docs/plans/<plan>/spec.md` exists: resume.
   Report Status, open questions, and open Coverage items, and continue from the
   first. Run `git log <baseline>..HEAD -- <touched paths>` and refresh findings
   the code has outdated. A plan with ticked tasks is amended, never rewritten.
-- Only a v1 `design.md` without a Status line → carry its decisions in as
+- Only a v1 `docs/specs/<plan>/design.md` → carry its decisions in as
   `D<n>` with `Check:` lines.
 - Otherwise read the ticket (tracker CLI or connector when available) and its
   linked docs and designs.
@@ -186,7 +187,7 @@ skips this stop — step 9 approves both files at once.
 either chain's reviewer can read it):
 
 ```markdown
-# <TICKET-ID> — <one-line goal>
+# <plan> — <one-line goal>
 **Status:** draft | spec-approved <date> | plan-approved <date>
 ## Goal & business intent
 ## Decisions
@@ -212,8 +213,8 @@ Baseline: <repo> @ <short SHA>
 ## 7. Write the plan
 
 ```markdown
-# <TICKET-ID> — <goal> Implementation Plan
-**Spec:** docs/specs/<TICKET-ID>/spec.md
+# <plan> — <goal> Implementation Plan
+**Spec:** docs/plans/<plan>/spec.md
 **Lane:** short | standard — <reason>
 **Architecture constraints:** layering, error handling, canonical helpers
 (with paths), test command form — subagents see only this file and the spec.
@@ -283,7 +284,8 @@ a fresh context catches what self-review misses.
 Post a short summary — lane, decision count, tasks, expected waves — and ask
 for approval. On yes set `**Status:** plan-approved <date>` and say:
 
-> Plan ready at `<absolute path>`. Run `/implement-plan` — a fresh session
-> works; the files carry everything.
+> Plan `<plan>` ready at `<absolute folder path>`. Run `/implement-plan`
+> here, or `/implement-plan <plan>` in a fresh session — the files carry
+> everything.
 
 Do not paste the files into chat.

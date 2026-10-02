@@ -224,18 +224,20 @@ folders instead of copying them:
 Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
 after merge**.
 
-**State lives in two files, not the chat.** Each skill opens with what it
-reads and writes. Everything a later skill needs — answers, assumptions, open
-questions, approvals (`**Status:**`), review findings (`R<c>.<n>`), release
-steps — is in `spec.md` or the plan, so any phase can resume in a fresh
-session.
+**State lives in one gitignored folder, not the chat.** prepare-plan names
+the plan (ticket key or a short name) and writes `docs/plans/<name>/spec.md`
+and `plan.md`; the folder is added to `.git/info/exclude` and never
+committed. In the same session `/implement-plan` and `/review-build` pick the
+plan up without arguments; elsewhere pass the name. Everything a later skill
+needs — answers, assumptions, open questions, approvals (`**Status:**`),
+review findings (`R<c>.<n>`), release steps — is in those two files.
 
 **Which chain?** On Claude Code start with `sdlc-lite/`; on Cursor use
 `sdlc/`. Also use `sdlc/` when you need the
 visual companion (`/brainstorm`), the full one-question interview and audit,
-or when a lite run shows gaps on a ticket. Both write the same artifacts
-(`docs/specs/<ID>/spec.md`, the plan's `## Review`), so v1's review can
-cross-check a lite build. Don't mix chains on one ticket otherwise. The v1
+or when a lite run shows gaps on a ticket. The spec keeps v1's layout, so
+v1's review can cross-check a lite build when given the spec and plan paths.
+Don't mix chains on one ticket otherwise. The v1
 chain is also frozen at the `sdlc-v1` git tag.
 
 ---
