@@ -117,9 +117,7 @@ artifacts (drift notes, blockers, review findings) become proposals to improve
 the skills themselves — the chain gets better with every ticket it ships. It
 is not the next command after execute-plan.
 
-### A taste
-
-`interview-plan` doesn't ask generic questions — every question is grounded in
+**A taste.** `interview-plan` doesn't ask generic questions — every question is grounded in
 something it actually read in your codebase, always with a recommendation:
 
 ```
@@ -199,32 +197,59 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 
 ## `sdlc-lite/` — the same chain for stronger models
 
+![sdlc-lite — the same chain in four skills](assets/banner-sdlc-lite.png)
+
 `sdlc/` spells out procedure step by step, which weaker models needed. Strong
 models (e.g. Opus 5.5) follow goals and constraints without it, and the extra
 procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
 keeps the mechanisms that are structural — read-only fresh-context reviewer,
 orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
 disjoint-file waves, discovery before questions — and drops the rest. Four
-skills, ~730 lines total versus ~2,000; each skill fits whole in the
+skills, ~740 lines total versus ~2,000; each skill fits whole in the
 post-compaction re-injection budget.
 
 **Claude Code only.** The skills use `AskUserQuestion` for every interview
 batch, `$ARGUMENTS` (`/prepare-plan PROJ-123`, `/implement-plan <plan>`),
 `${CLAUDE_SKILL_DIR}` to find sibling skills, and Agent-tool subagents for
-waves and the reviewer. Install by symlinking the folders, not copying them
-(see Quick start): `retro-build` resolves the links back to this repo so it
-can commit skill edits with their evidence.
+waves and the reviewer.
 
-| Skill | Replaces | What it does |
-|-------|----------|--------------|
-| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery (code, consumers, domain states), edge scenarios asked one by one plus a pre-mortem, quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, **backward compatible by default** (expand → migrate → contract; mixed-version and rollback safe), task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
-| `implement-plan` | execute-plan + git-worktrees | One worktree per plan at `.worktrees/<plan>` under the main checkout (never the main checkout itself, so plans run in parallel; found again by that path on resume), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs and per-task commits, then the review loop. |
-| `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer in a clean context (`context: fork`, `Plan` agent): spec conformance, simplify, design, merge safety (compat, rollback, migrations, performance). `ship` pinned to the reviewed SHA. |
-| `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. Each retro appends to `sdlc-lite/retro-log.md` and commits approved edits as `retro(<plan>)`. |
+### Skills
 
-Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
-after merge**. Remove the plan's worktree after merge
-(`git worktree remove .worktrees/<plan>`); the plan folder stays for the retro.
+| Skill | What it does |
+|-------|--------------|
+| `prepare-plan` | Replaces brainstorm + interview-plan + write-plan. Discovery (code, consumers, domain states), edge scenarios asked one by one plus a pre-mortem, quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, **backward compatible by default** (expand → migrate → contract; mixed-version and rollback safe), task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
+| `implement-plan` | Replaces execute-plan + git-worktrees. One worktree per plan at `.worktrees/<plan>` under the main checkout (never the main checkout itself, so plans run in parallel; found again by that path on resume), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs and per-task commits, then the review loop. |
+| `review-build` | Replaces thermo-nuclear-code-quality-review. Read-only reviewer in a clean context (`context: fork`, `Plan` agent): spec conformance, simplify, design, merge safety (compat, rollback, migrations, performance). `ship` pinned to the reviewed SHA. |
+| `retro-build` | Replaces graph-retro. Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. Each retro appends to `sdlc-lite/retro-log.md` and commits approved edits as `retro(<plan>)`. |
+
+### Flow
+
+User-facing path is **prepare-plan → implement-plan**, then **retro-build
+after merge**. `review-build` is nested in implement-plan, not an extra slash
+command.
+
+```mermaid
+flowchart LR
+    P["/prepare-plan<br/><i>spec + plan, no code</i>"] -->|"plan-approved<br/>then /clear"| I
+    I["/implement-plan<br/><i>.worktrees/#lt;plan#gt;, waves</i>"] --> R["review-build<br/><i>fresh read-only context</i>"]
+    R -->|"fix-first → R tasks"| I
+    R -->|"ship @ SHA"| PR(["PR ready"])
+    PR -.->|"merged + deployed"| T["/retro-build"]
+    T -.->|"approved amendments + deletions"| S[("sdlc-lite repo")]
+    P -->|"writes"| D[("docs/plans/#lt;plan#gt;/<br/>spec.md · plan.md")]
+    D -.->|"read by every skill"| I
+```
+
+Pick the entry point that fits the task:
+
+- **`prepare-plan`** — any change, from a ticket key or a one-line idea. Picks
+  the short or standard lane and stops for approval after the spec and again
+  after the plan.
+- **`implement-plan`** — a `plan-approved` plan, in a fresh session. Re-run it
+  with the same name to resume; it reconciles the plan's checkboxes with
+  `git log`.
+- **`review-build`** — standalone only after a manual dev session or before a
+  PR; implement-plan already runs it until `ship`.
 
 **State lives in one gitignored folder, not the chat.** prepare-plan names
 the plan (ticket key or a short name) and writes `docs/plans/<name>/spec.md`
@@ -236,13 +261,37 @@ to the plan used in this session, then the branch name. Everything a later skill
 needs — answers, assumptions, open questions, approvals (`**Status:**`),
 review findings (`R<c>.<n>`), release steps — is in those two files.
 
-**Which chain?** On Claude Code start with `sdlc-lite/`; on Cursor use
-`sdlc/`. Also use `sdlc/` when you need the
-visual companion (`/brainstorm`), the full one-question interview and audit,
-or when a lite run shows gaps on a ticket. The spec keeps v1's layout, so
-v1's review can cross-check a lite build when given the spec and plan paths.
-Don't mix chains on one ticket otherwise. The v1
-chain is also frozen at the `sdlc-v1` git tag.
+After merge and deploy, remove the plan's worktree
+(`git worktree remove .worktrees/<plan>`) and run `/retro-build <plan>`; the
+plan folder stays for the retro. It is not the next command after
+implement-plan.
+
+### Notes
+
+- **Install by symlink, not copy** (see Quick start). `retro-build` resolves
+  the links back to this repo so every approved edit is a revertible commit
+  with its evidence; a copied install makes it ask for the repo path.
+- **Which chain?** On Claude Code start with `sdlc-lite/`; on Cursor use
+  `sdlc/`. Also use `sdlc/` when you need the visual companion
+  (`/brainstorm`), the full one-question interview and audit, or when a lite
+  run shows gaps on a ticket. The spec keeps v1's layout, so v1's review can
+  cross-check a lite build when given the spec and plan paths. Don't mix
+  chains on one ticket otherwise. The v1 chain is also frozen at the
+  `sdlc-v1` git tag.
+- implement-plan adds `.worktrees/` and prepare-plan adds `docs/plans/` to
+  `.git/info/exclude` — nothing to add to `.gitignore`.
+- implement-plan copies untracked build inputs (`.env`) into the worktree.
+  Keep them gitignored: review-build refuses to review a dirty tree.
+- In a Claude desktop worktree session (`.claude/worktrees/<name>`), the plan
+  folder and `.worktrees/<plan>` sit under the main checkout, outside the
+  session's directory, so edits there may prompt for permission. Run the
+  chain from the main checkout, or `/add-dir` the main checkout.
+- review-build uses the strongest model the Agent tool offers; pin one with
+  its `review-model:` line. Independence comes from the fresh context, not a
+  different model.
+- `retro-build` proposes deleting rules with no signal in the last five
+  retros. Deletions are trials committed with `retro-prune`; if the signal
+  comes back, revert that commit.
 
 ---
 
