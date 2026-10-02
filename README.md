@@ -358,7 +358,8 @@ flowchart LR
 ```
 
 Adding a category is additive: a new folder, a new README section, a new
-banner — existing categories stay untouched.
+banner — existing categories stay untouched. The sdlc-lite banner is
+generated: edit and run `python3 assets/banner-sdlc-lite.py`.
 
 ## Credits
 
