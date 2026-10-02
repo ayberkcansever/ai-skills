@@ -217,7 +217,7 @@ folders instead of copying them:
 | Skill | Replaces | What it does |
 |-------|----------|--------------|
 | `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery with edge-scenario and quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
-| `implement-plan` | execute-plan + git-worktrees | Venue (this checkout or a ticket worktree), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
+| `implement-plan` | execute-plan + git-worktrees | One worktree per plan (never the main checkout, so plans run in parallel), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
 | `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer: spec conformance, simplify, merge safety. `ship` pinned to the reviewed SHA. |
 | `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
 

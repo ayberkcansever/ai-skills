@@ -50,23 +50,30 @@ unapproved. Raise gaps or concerns before touching code.
 
 ## 2. Venue
 
-- Current branch contains `<plan>` → work in this checkout.
-- Otherwise reuse the ticket's worktree if `git worktree list` shows one, or
-  create it (never two per ticket):
+Every plan runs in its own worktree, never in the main checkout, so plans can
+be implemented in parallel without touching each other or the user's tree.
+
+- `git worktree list` shows a worktree on the plan's branch → reuse it (one
+  per plan).
+- Otherwise create it under the main checkout:
 
   ```bash
-  git fetch origin
-  git check-ignore -q .worktrees || echo ".worktrees/" >> "$(git rev-parse --git-common-dir)/info/exclude"
-  git worktree add .worktrees/<plan> -b <plan> origin/HEAD   # bare ticket key → append -<slug>
-  # branch already exists: git worktree add .worktrees/<branch> <branch>
+  common="$(git rev-parse --path-format=absolute --git-common-dir)"
+  root="$(dirname "$common")"
+  git -C "$root" fetch origin
+  git -C "$root" check-ignore -q .worktrees || echo ".worktrees/" >> "$common/info/exclude"
+  git -C "$root" worktree add ".worktrees/<plan>" -b <plan> origin/HEAD   # bare ticket key → append -<slug>
+  # branch already exists: git -C "$root" worktree add ".worktrees/<branch>" <branch>
   ```
 
-  `EnterWorktree` may enter that path, never create it.
-  The worktree gets code only — subagents and the reviewer read the plan
-  folder by its absolute path, so it survives worktree removal. Copy
-  untracked build inputs (`.env`).
+  Git refuses a branch checked out elsewhere: if the main checkout is on the
+  plan's branch, ask the user to switch it — never switch it yourself.
 
-In either venue: install and run the baseline suite (red → stop). Then compare
+`EnterWorktree` may enter that path, never create it. The worktree gets code
+only — subagents and the reviewer read the plan folder by its absolute path,
+so it survives worktree removal. Copy untracked build inputs (`.env`).
+
+In the worktree: install and run the baseline suite (red → stop). Then compare
 with the spec's `Baseline:` SHA: if `git diff --stat <baseline> HEAD -- <the
 plan's Files>` shows changes, re-check the plan's `file:line` references
 against the current code and record differences as `> Drift:` before Task 1.

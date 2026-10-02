@@ -27,6 +27,9 @@ records them.
 - **Model:** the Agent tool's strongest offered model, unless pinned here:
   `review-model:` (unset). A pinned model that cannot launch → ask, never
   substitute silently.
+- **Venue:** the plan's worktree (`git worktree list`, branch `<plan>`) when
+  a plan is named or was used earlier in this session; otherwise the current
+  checkout. Run every git command there.
 - **Clean tree:** `git status --porcelain` must be empty — uncommitted
   changes escape the diff. Dirty → stop and report.
 - **Diff:** base = `git symbolic-ref refs/remotes/origin/HEAD` (else
