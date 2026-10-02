@@ -36,9 +36,12 @@ disable-model-invocation: true
    `D<n> | file:line | conforms / drift: <how> / missing / unverifiable: <why>`.
    Unchanged code that already satisfies a decision counts. Semantic drift —
    wrong default, wrong scope, a filter applied in one layer but not another —
-   is the most valuable finding here. Also: each accepted edge scenario is
-   implemented and tested; no non-goal is implemented; every `> Drift:` note
-   is behaviour-neutral.
+   is the most valuable finding here. A decision whose test would still pass
+   with the behaviour broken (hardcoded value, asserts only on mocks) is
+   drift. Also: one `Goal | …` line — every decision can conform while the
+   spec's goal and measurable success are still missed; each accepted edge
+   scenario and quirk is implemented and tested; no non-goal is implemented;
+   every `> Drift:` note is behaviour-neutral.
 2. **Simplify** — dead code, hand-rolled stdlib or platform features,
    single-use abstractions, config nobody sets, longer-than-needed code. Never
    flag trust-boundary validation, error handling that prevents data loss,

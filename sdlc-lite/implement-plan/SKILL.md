@@ -114,3 +114,7 @@ Park partial work: `git stash push -u -m "T<N>-blocked" -- <paths>` and record
    path and branch. List the `## E2E` steps to run with the user. No PR or
    merge unless asked. Leave the worktree; remove it only after merge
    (`git worktree remove <path>`).
+7. **E2E:** as the user runs each step, record `<step> | <env> | pass / fail:
+   <observed>` under `## E2E` and commit. A fail is a finding: reproduce it,
+   add task `N.x` before the gate, run it through step 3, and reopen the
+   review loop.

@@ -19,10 +19,10 @@ revertible commit with its evidence.
 Read the plan and spec (`docs/features/<TICKET-ID>/`, else the WIP tier).
 Missing both → "nothing to retro", stop. Quote each signal verbatim with its
 location: `> Drift:` notes, `## Blockers` entries, review findings from
-cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, and any
-escaped production defect. Print:
+cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, `## E2E`
+fails, and any escaped production defect. Print:
 
-`metrics(<TICKET-ID>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s>`
+`metrics(<TICKET-ID>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s> e2e-fail=<e>`
 
 ## 2. Attribute
 
@@ -32,6 +32,8 @@ escaped production defect. Print:
 - Preflight or environment blocker, or a gate cap hit on a runnable command
   → **implement-plan**.
 - Finding first caught in cycle > 1, or an escaped defect → **review-build**.
+- E2E fail → **prepare-plan** if no decision covered the behaviour, else
+  **review-build**.
 - Genuinely unknowable environment state → no node, skip.
 - Recurring domain fact (filter semantics, scoping, timezone, idempotency) →
   the repo's quirks doc. Repo tooling → that repo's `AGENTS.md`.

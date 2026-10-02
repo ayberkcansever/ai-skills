@@ -203,12 +203,12 @@ procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
 keeps the mechanisms that are structural — read-only fresh-context reviewer,
 orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
 disjoint-file waves, discovery before questions — and drops the rest. Four
-skills, ~450 lines total versus ~2,000; each skill fits whole in the
+skills, ~500 lines total versus ~2,000; each skill fits whole in the
 post-compaction re-injection budget.
 
 | Skill | Replaces | What it does |
 |-------|----------|--------------|
-| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery, batched questions with recommendations, `spec.md` with provable decisions, task plan **without pre-written code**. Lanes: short / standard / full (full adds a fresh-eyes check). |
+| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery with edge-scenario and quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, task plan **without pre-written code**. Lanes: short / standard / full (standard and full add a fresh-eyes check). |
 | `implement-plan` | execute-plan + git-worktrees | Venue (this checkout or a ticket worktree), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
 | `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer: spec conformance, simplify, merge safety. `ship` pinned to the reviewed SHA. |
 | `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
