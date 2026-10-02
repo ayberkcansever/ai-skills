@@ -9,7 +9,8 @@
 
 Reusable AI agent skills I use day-to-day, organized by category.
 Each skill is one folder (`SKILL.md` plus any scripts, references, or
-templates). The same folders install into **Cursor** and **Claude Code**.
+templates). The same folders install into **Cursor** and **Claude Code** —
+except `sdlc-lite/`, which is Claude Code only.
 
 ## Quick start
 
@@ -17,7 +18,7 @@ templates). The same folders install into **Cursor** and **Claude Code**.
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp -r ai-skills/{sdlc,sdlc-lite,learning}/* ~/.cursor/skills/
+cp -r ai-skills/{sdlc,learning}/* ~/.cursor/skills/   # sdlc-lite is Claude Code only
 ```
 
 **Claude Code:**
@@ -44,7 +45,7 @@ how they chain together.
 | Category | What it covers |
 |----------|----------------|
 | [`sdlc/`](#sdlc--software-development-lifecycle) | From fuzzy idea to merged, maintainable code — plan, execute, review, retro. |
-| [`sdlc-lite/`](#sdlc-lite--the-same-chain-for-stronger-models) | The same chain in four short skills, for stronger models (e.g. Opus 5.5). |
+| [`sdlc-lite/`](#sdlc-lite--the-same-chain-for-stronger-models) | The same chain in four short skills, for stronger models (e.g. Opus 5.5). Claude Code only. |
 | [`learning/`](#learning--continuous-learning-loop) | Decide what to learn next, then actually learn it — radar scans feeding topic briefs. |
 
 ---
@@ -203,12 +204,19 @@ procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
 keeps the mechanisms that are structural — read-only fresh-context reviewer,
 orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
 disjoint-file waves, discovery before questions — and drops the rest. Four
-skills, ~500 lines total versus ~2,000; each skill fits whole in the
+skills, ~600 lines total versus ~2,000; each skill fits whole in the
 post-compaction re-injection budget.
+
+**Claude Code only.** The skills use `AskUserQuestion` for every interview
+batch, `$ARGUMENTS` (`/prepare-plan PROJ-123`, `/implement-plan <plan>`),
+`${CLAUDE_SKILL_DIR}` to find sibling skills, and Agent-tool subagents for
+waves and the reviewer. To let `retro-build` commit skill edits, symlink the
+folders instead of copying them:
+`ln -s "$PWD"/ai-skills/sdlc-lite/* ~/.claude/skills/`.
 
 | Skill | Replaces | What it does |
 |-------|----------|--------------|
-| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery with edge-scenario and quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, task plan **without pre-written code**. Lanes: short / standard / full (standard and full add a fresh-eyes check). |
+| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery with edge-scenario and quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
 | `implement-plan` | execute-plan + git-worktrees | Venue (this checkout or a ticket worktree), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
 | `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer: spec conformance, simplify, merge safety. `ship` pinned to the reviewed SHA. |
 | `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
@@ -216,7 +224,14 @@ post-compaction re-injection budget.
 Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
 after merge**.
 
-**Which chain?** Start with `sdlc-lite/`. Use `sdlc/` when you need the
+**State lives in two files, not the chat.** Each skill opens with what it
+reads and writes. Everything a later skill needs — answers, assumptions, open
+questions, approvals (`**Status:**`), review findings (`R<c>.<n>`), release
+steps — is in `spec.md` or the plan, so any phase can resume in a fresh
+session.
+
+**Which chain?** On Claude Code start with `sdlc-lite/`; on Cursor use
+`sdlc/`. Also use `sdlc/` when you need the
 visual companion (`/brainstorm`), the full one-question interview and audit,
 or when a lite run shows gaps on a ticket. Both write the same artifacts
 (`docs/specs/<ID>/spec.md`, the plan's `## Review`), so v1's review can
