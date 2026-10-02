@@ -6,6 +6,8 @@ description: >-
   PR (sdlc-lite chain).
 argument-hint: "[plan name]"
 disable-model-invocation: true
+context: fork
+agent: Plan
 ---
 
 # Review Build
@@ -19,32 +21,38 @@ records them.
 
 ## Setup
 
-- **Independence:** any agent-written diff is reviewed by an Agent-tool
-  subagent with fresh context, told to read only — it never shares the
-  implementer's context and never edits. The same model is fine; independence
-  comes from the context. Invoked directly as `/review-build` → spawn that
-  subagent yourself, pointing it at `${CLAUDE_SKILL_DIR}/SKILL.md`.
+- **Independence:** you run in a fresh, read-only context — `/review-build`
+  forks into a `Plan` subagent (frontmatter), and implement-plan launches a
+  fresh `Plan` subagent on this file. You see no implementer conversation
+  and never edit. The same model is fine; independence comes from the
+  context.
 - **Model:** the Agent tool's strongest offered model, unless pinned here:
-  `review-model:` (unset). A pinned model that cannot launch → ask, never
-  substitute silently.
+  `review-model:` (unset). A pinned model that cannot launch → the launcher
+  asks the user, never substitutes silently.
+- **Plan:** the spec and plan absolute paths given; else
+  `<root>/docs/plans/<plan>/` (`<root>` = the main checkout,
+  `dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) for
+  the plan named in the input, else the current branch name or its ticket
+  key. A branch that looks plan-driven but matches no folder → list
+  `<root>/docs/plans/` and stop, asking to be re-run with a name.
 - **Venue:** the plan's worktree (`git worktree list`, branch `<plan>`) when
-  a plan is named or was used earlier in this session; otherwise the current
-  checkout. Run every git command there.
+  a plan resolved; otherwise the current checkout. Run every git command
+  there.
 - **Clean tree:** `git status --porcelain` must be empty — uncommitted
   changes escape the diff. Dirty → stop and report.
 - **Diff:** base = `git symbolic-ref refs/remotes/origin/HEAD` (else
   `main`); review `git diff <base>...HEAD`.
-- **Context:** the spec and plan paths given, else `docs/plans/<plan>/` for
-  the plan named in the input or used earlier in this session, else the
-  branch's ticket key; `docs/quirks.md` and
-  the repo's `AGENTS.md` / `CLAUDE.md` when present. Earlier `## Review`
-  cycles: confirm each prior `R` finding's fix removed its cause.
+- **Context:** the spec and plan, `docs/quirks.md`, and the repo's
+  `AGENTS.md` / `CLAUDE.md` when present. Earlier `## Review` cycles: confirm
+  each prior `R` finding's fix removed its cause.
 - **Re-run guard:** last `## Review` entry already says `Verdict: ship` at
   this HEAD (or only docs-only commits since) and no spec decision changed
   since → report
   "already reviewed" and stop.
-- **Standalone, no plan:** run the full suite yourself; it stands in for the
-  `## Review` line in the `ship` rule. Report in chat.
+- **Standalone** (no `## Review` line for this HEAD): run the full suite
+  yourself; it stands in for that line in the `ship` rule. With a plan, end
+  the report with `Record under ## Review in <plan.md absolute path>:` and the
+  cycle line plus findings to append — the invoking session writes them.
 
 ## Lenses
 
@@ -64,10 +72,20 @@ records them.
    single-use abstractions, config nobody sets, longer-than-needed code. Never
    flag trust-boundary validation, error handling that prevents data loss,
    security, or accessibility.
-3. **Merge safety** — crashes, data corruption, N+1 / leaks / blocking calls,
-   swallowed errors, backward compatibility (signatures, removed fields, new
-   required payload fields), missing tests for changed logic, authz and tenant
-   isolation, secrets or PII in logs, observability decisions present.
+3. **Design** — the plan's Architecture constraints and the neighbouring
+   code: layering and dependency direction, dependencies instantiated where
+   siblings inject them, a second responsibility added to a unit, a case
+   bolted onto a conditional where the codebase dispatches polymorphically,
+   a file pushed past ~700 lines, edits outside every task's `Files:`.
+4. **Merge safety** — crashes, data corruption, swallowed errors, missing
+   tests for changed logic, authz and tenant isolation, secrets or PII in
+   logs, observability decisions present. Backward compatibility: signatures,
+   removed or renamed fields, new required payload fields; old and new
+   versions running side by side; rollback over data the new code wrote;
+   migrations additive, re-runnable, and lock-safe on large tables; changed
+   behaviour behind the decided switch and default. Performance: N+1,
+   unbounded queries, a new query without an index, blocking calls on hot
+   paths, leaks.
 
 If the repo has a feature-docs sync flow, report doc drift as `docs:`
 findings; the orchestrator applies them in a separate docs commit.
@@ -85,8 +103,8 @@ Then the conformance lines, then findings:
 the open `## Review` cycle (standalone: 1). Report every real finding — the
 required / advisory split does the filtering, not omission.
 
-- **required** — merge-safety risks and conformance `missing` / `drift`.
-  Everything else is advisory.
+- **required** — merge-safety risks, conformance `missing` / `drift`, and a
+  broken Architecture constraint. Everything else is advisory.
 - **block** — data loss or corruption, security hole, compat break, or a
   decision missing or drifted. The orchestrator stops for the user before
   fixing.

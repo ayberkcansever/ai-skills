@@ -24,7 +24,8 @@ install is not, so ask for the skills repo path.
 
 ## 1. Collect
 
-Read the plan and spec in `docs/plans/<plan>/` (named in the input, or the
+Read the plan and spec in `<root>/docs/plans/<plan>/` (`<root>` = the main
+checkout; the plan named in the input, or the
 plan from this session). Missing both → "nothing to retro", stop. Quote each
 signal verbatim with its location: `> Drift:` notes, `## Blockers` entries, `R` findings from
 cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, `## E2E`

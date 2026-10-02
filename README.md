@@ -204,7 +204,7 @@ procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
 keeps the mechanisms that are structural — read-only fresh-context reviewer,
 orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
 disjoint-file waves, discovery before questions — and drops the rest. Four
-skills, ~600 lines total versus ~2,000; each skill fits whole in the
+skills, ~730 lines total versus ~2,000; each skill fits whole in the
 post-compaction re-injection budget.
 
 **Claude Code only.** The skills use `AskUserQuestion` for every interview
@@ -216,9 +216,9 @@ folders instead of copying them:
 
 | Skill | Replaces | What it does |
 |-------|----------|--------------|
-| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery with edge-scenario and quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
-| `implement-plan` | execute-plan + git-worktrees | One worktree per plan (never the main checkout, so plans run in parallel), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
-| `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer: spec conformance, simplify, merge safety. `ship` pinned to the reviewed SHA. |
+| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery (code, consumers, domain states), edge scenarios asked one by one plus a pre-mortem, quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, **backward compatible by default** (expand → migrate → contract; mixed-version and rollback safe), task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
+| `implement-plan` | execute-plan + git-worktrees | One worktree per plan (never the main checkout, so plans run in parallel), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs and per-task commits, then the review loop. |
+| `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer in a clean context (`context: fork`, `Plan` agent): spec conformance, simplify, design, merge safety (compat, rollback, migrations, performance). `ship` pinned to the reviewed SHA. |
 | `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
 
 Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
@@ -226,9 +226,11 @@ after merge**.
 
 **State lives in one gitignored folder, not the chat.** prepare-plan names
 the plan (ticket key or a short name) and writes `docs/plans/<name>/spec.md`
-and `plan.md`; the folder is added to `.git/info/exclude` and never
-committed. In the same session `/implement-plan` and `/review-build` pick the
-plan up without arguments; elsewhere pass the name. Everything a later skill
+and `plan.md` under the **main checkout** (even from a linked worktree, so
+the folder outlives worktree cleanup); the folder is added to
+`.git/info/exclude` and never committed. After planning, start a fresh
+session and run `/implement-plan <name>`; without a name the skills fall back
+to the plan used in this session, then the branch name. Everything a later skill
 needs — answers, assumptions, open questions, approvals (`**Status:**`),
 review findings (`R<c>.<n>`), release steps — is in those two files.
 

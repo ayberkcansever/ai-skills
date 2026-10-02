@@ -17,7 +17,7 @@ Input: $ARGUMENTS
 
 **Reads:** the ticket and its linked docs, the code, `docs/quirks.md`, any
 existing spec or plan for the ticket.
-**Writes:** `docs/plans/<plan>/spec.md` and `docs/plans/<plan>/plan.md`.
+**Writes:** `<root>/docs/plans/<plan>/spec.md` and `plan.md`.
 
 Later skills and resumed sessions see only these files, never this chat —
 whatever they need goes in a file. `<plan>` is the plan's name: the name or
@@ -25,9 +25,13 @@ ticket key in the input, else the branch's ticket key
 (`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`), else a short
 kebab-case name you propose and the user confirms. Announce it once set:
 `/implement-plan` and `/review-build` later in this session use it without
-arguments. The folder is never committed: unless already ignored, add
-`docs/plans/` to `.git/info/exclude` (review-build refuses untracked files;
-`.gitignore` is tracked).
+arguments. `<root>` is the main checkout,
+`root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`,
+even when this session runs in a linked worktree — every skill finds the
+folder there and it outlives worktree removal. The folder is never
+committed: unless already ignored, add `docs/plans/` to
+`"$(git rev-parse --git-common-dir)/info/exclude"` (review-build refuses
+untracked files; `.gitignore` is tracked).
 
 ## Invariants
 
@@ -48,6 +52,12 @@ arguments. The folder is never committed: unless already ignored, add
 - Backward compatibility is closed from grep results, never from memory. Every
   symbol, path, field, route, or env var the plan names cites `file:line` or
   was verified during planning. Never guess a name.
+- Backward compatible by default. During a rolling deploy old and new code
+  run side by side, and a rollback runs old code over data the new code
+  wrote — both must keep working. Schema and contract changes are additive
+  (expand), readers move next, removals (contract) ship later as a
+  `## Release` follow-up. Anything else is a `[compat]` decision the user
+  approves explicitly, marked `(breaking — approved <date>)`.
 - Write to `spec.md` the moment something is decided, assumed, or asked.
   Decisions are append-only: a change is a new `D<n>` marked
   `supersedes D<m>`, with the old one struck.
@@ -59,7 +69,7 @@ arguments. The folder is never committed: unless already ignored, add
 
 ## 1. Start or resume
 
-- `docs/plans/<plan>/spec.md` exists: resume.
+- `<root>/docs/plans/<plan>/spec.md` exists: resume.
   Report Status, open questions, and open Coverage items, and continue from the
   first. Run `git log <baseline>..HEAD -- <touched paths>` and refresh findings
   the code has outdated. A plan with ticked tasks is amended, never rewritten.
@@ -98,6 +108,9 @@ Read, then post a compact Findings list:
   imports, jobs, migrations, other services) — they bypass new rules.
 - Stored and in-flight data written under the old contract, and existing
   records in each state the change touches.
+- Domain: what each term the ticket uses means in the code (a term with two
+  meanings is a question), and each touched entity's states, transitions,
+  and the invariants the code enforces on them.
 - Tests that pin current behaviour.
 - README, adjacent `docs/features/` entries, and relevant `docs/quirks.md`
   entries — they filter every later question.
@@ -109,20 +122,28 @@ step 4, because the scenarios depend on it.
 
 ## 4. Scenarios and quirks
 
-One batch each, for the chosen approach:
+For the chosen approach:
 
-- **Edge scenarios** the user did not raise, drawn from actor, entity state,
-  timing (concurrent change, retry after success, deleted mid-flow), money and
-  counting, lifecycle (flag off mid-operation, downgrade), and failure
-  (partial write, stale local state after a rejected write). Only those that
-  apply here, each with a proposed behaviour to accept or reject. Accepted →
-  `D<n>`; rejected → `NG<n>`.
+- **Edge scenarios** the user did not raise, generated from: actor (role,
+  tenant, abuse — repeated, oversized, out-of-order calls); entity state
+  (each Discovery state × each action the change adds); timing (concurrent
+  change, retry after success, deleted mid-flow, replay); data (empty, one,
+  max, duplicate, legacy-format record); money and counting (rounding,
+  currency, limits off by one); time (timezone, DST, period boundaries);
+  lifecycle (flag off mid-operation, downgrade, re-created with the same key);
+  failure (partial write, dependency slow or down, stale local state after a
+  rejected write). Then a pre-mortem: *it shipped, and a month later it
+  caused an incident or a support ticket — what happened?* Keep those that
+  apply; expect 5–10 and say why if fewer. Each is its own `AskUserQuestion`
+  question — proposed behaviour (Recommended), the strongest alternative,
+  out of scope. A behaviour → `D<n>`; out of scope → `NG<n>`.
 - **Quirks** a generic reviewer would miss, as
   `Found: file:line — <divergence> | quirk or bug? Recommend: <reading>`:
   scope enforced in one layer only, call sites reading one source with
   different filters or time windows, hidden contracts (idempotency, dedup,
   ordering), code whose comments or history warn against the obvious change.
-  Zero is a valid answer. Accepted quirks become decisions or findings.
+  Zero is a valid answer; present them as one list, asked in batches. Accepted
+  quirks become decisions or findings.
 
 ## 5. Resolve decisions
 
@@ -159,25 +180,37 @@ or an accepted risk — nothing reads "TBD":
 3. Behaviour and failure modes, accepted scenarios included.
 4. Data and schema: the actual writer carries each new field; existing
    records backfilled or deliberately left as-is.
-5. Contract and compatibility, every Consumers row.
+5. Contract and compatibility, every Consumers row: the mixed-version
+   window, rollback over data the new code wrote, clients and messages that
+   outlive the deploy.
 6. Authz and tenant scope.
 7. Idempotency and retries.
 8. Observability: each signal answers a named on-call question.
 9. Operations: what support sees, who is paged, manual recovery.
 10. PII, retention, audit trail.
-11. Performance, volume, cost.
+11. Performance, volume, cost: expected numbers and a budget; hot paths,
+    queries and their indexes, migration locks and backfill time on the
+    largest table.
 12. UX, accessibility, i18n; user-visible text (errors, emails, empty states)
     decided verbatim or owned by a named person.
 13. New dependencies and their failure mode.
 14. Docs and runbook.
-15. Rollout: activation switch, deploy order, rollback, and when temporary
+15. Rollout: activation switch and its default, deploy order, who sees it
+    first, the signal that says it is broken, rollback, and when temporary
     code (dual-write, flag) is removed.
 16. Testing, including the E2E environment.
-17. Scope and phasing (ask once, explicitly).
+17. Scope and phasing (ask once, explicitly), including what a stakeholder
+    might assume is bundled — each confirmed as a non-goal.
 
 ## 6. Approve the spec
 
-Post its summary — goal, decisions, non-goals, accepted risks, every
+First critique the spec cold, from the file: the three questions you almost
+asked but skipped (a reason weaker than "non-goal" or "obvious from code" →
+ask now), any soft answer still recorded as a decision, and the first thing
+a reviewer or the on-call engineer would raise. Each becomes a question,
+not a note.
+
+Then post its summary — goal, decisions, non-goals, accepted risks, every
 `## Assumptions` entry, and Coverage items closed as non-goals — and ask:
 *write the plan? (yes / keep going / edit spec)*. On yes set
 `**Status:** spec-approved <date>`; otherwise return to step 5. Short lane
@@ -214,10 +247,11 @@ Baseline: <repo> @ <short SHA>
 
 ```markdown
 # <plan> — <goal> Implementation Plan
-**Spec:** docs/plans/<plan>/spec.md
+**Spec:** <root>/docs/plans/<plan>/spec.md (absolute)
 **Lane:** short | standard — <reason>
-**Architecture constraints:** layering, error handling, canonical helpers
-(with paths), test command form — subagents see only this file and the spec.
+**Architecture constraints:** layering, dependency injection, error handling,
+canonical helpers (with paths), test command form — from the touched files'
+neighbours; subagents see only this file and the spec.
 
 ### Task 1: <name>
 **Implements:** D1, D3
@@ -257,6 +291,9 @@ Task rules:
 - Data that reaches a sink (DB, queue, HTTP response, file): one task changes
   the actual writer, and one test reaches the sink without mocking it.
   Activation (env var, flag, index, subscription, IaC) gets its own task.
+- A migration or backfill is its own task: additive, safe to re-run, and
+  deployable before the code that reads it. A performance budget gets a task
+  or `Check:` that measures it.
 - Every `D<n>` and accepted scenario has a Test matrix row, or a stated reason
   plus manual / E2E check. E2E steps run with the user after build, never by
   the agent.
@@ -269,11 +306,11 @@ Task rules:
 Re-read both files, do not trust memory: every decision maps to a task and a
 Test matrix row; every task maps to a decision (or `—` with reason); every
 Consumers row is handled; no task implements a non-goal; no placeholders;
-dependencies acyclic; no Coverage item left `open`. A question you skipped for
-a reason weaker than "non-goal" or "obvious from code" → ask it now.
+dependencies acyclic; no Coverage item left `open`.
 
-**Standard lane:** dispatch an Agent-tool subagent, told to read only, given
-only the two paths — none of this conversation. Ask
+**Standard lane:** dispatch a fresh Agent-tool subagent
+(`subagent_type: Plan` — read-only; never a fork of this conversation) given
+only the two absolute paths. Ask
 for the first questions an engineering reviewer, the product owner, and the
 on-call engineer would raise, and for any decision whose `Example:` or
 `Check:` it could not act on. Answer each in the files or put it to the user —
@@ -281,11 +318,12 @@ a fresh context catches what self-review misses.
 
 ## 9. Hand off
 
-Post a short summary — lane, decision count, tasks, expected waves — and ask
-for approval. On yes set `**Status:** plan-approved <date>` and say:
+Post a short summary — lane, decision count (naming any added or superseded
+since spec approval), tasks, expected waves — and ask for approval. On yes
+set `**Status:** plan-approved <date>` and say:
 
-> Plan `<plan>` ready at `<absolute folder path>`. Run `/implement-plan`
-> here, or `/implement-plan <plan>` in a fresh session — the files carry
-> everything.
+> Plan `<plan>` ready at `<absolute folder path>`. Start a fresh session
+> (`/clear`) and run `/implement-plan <plan>` — the files carry everything,
+> and implementation runs best on a clean context.
 
 Do not paste the files into chat.
