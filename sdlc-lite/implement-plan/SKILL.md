@@ -58,8 +58,9 @@ touching code.
 Every plan runs in its own worktree, never in the main checkout, so plans can
 be implemented in parallel without touching each other or the user's tree.
 
-- `git worktree list` shows a worktree on the plan's branch → reuse it (one
-  per plan).
+- `git worktree list` shows `$root/.worktrees/<plan>` → reuse it (one per
+  plan). Look it up by this path, not by branch — the branch may carry a
+  slug.
 - Otherwise create it under the main checkout:
 
   ```bash
@@ -68,7 +69,7 @@ be implemented in parallel without touching each other or the user's tree.
   git -C "$root" fetch origin    # no origin/HEAD → git -C "$root" remote set-head origin -a
   git -C "$root" check-ignore -q .worktrees || echo ".worktrees/" >> "$common/info/exclude"
   git -C "$root" worktree add ".worktrees/<plan>" -b <plan> origin/HEAD   # bare ticket key → append -<slug>
-  # branch already exists: git -C "$root" worktree add ".worktrees/<branch>" <branch>
+  # branch already exists: git -C "$root" worktree add ".worktrees/<plan>" <branch>
   ```
 
   Git refuses a branch checked out elsewhere: if the main checkout is on the

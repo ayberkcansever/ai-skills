@@ -35,9 +35,9 @@ records them.
   the plan named in the input, else the current branch name or its ticket
   key. A branch that looks plan-driven but matches no folder → list
   `<root>/docs/plans/` and stop, asking to be re-run with a name.
-- **Venue:** the plan's worktree (`git worktree list`, branch `<plan>`) when
-  a plan resolved; otherwise the current checkout. Run every git command
-  there.
+- **Venue:** the plan's worktree, `<root>/.worktrees/<plan>` (by path, not
+  branch — the branch may carry a slug), when a plan resolved; otherwise the
+  current checkout. Run every git command there.
 - **Clean tree:** `git status --porcelain` must be empty — uncommitted
   changes escape the diff. Dirty → stop and report.
 - **Diff:** base = `git symbolic-ref refs/remotes/origin/HEAD` (else

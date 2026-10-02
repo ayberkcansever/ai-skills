@@ -14,9 +14,12 @@ disable-model-invocation: true
 Input: $ARGUMENTS
 
 Judge the process, not the code. Never edit a skill file without per-item
-approval. The skills live in `${CLAUDE_SKILL_DIR}/..`; it must be inside a
-git repo so every change is a revertible commit with its evidence — a copied
-install is not, so ask for the skills repo path.
+approval. The skills live in `<skills>` =
+`$(cd -P "${CLAUDE_SKILL_DIR}/.." && pwd)` — resolved, because the install
+is per-folder symlinks. It must be inside a git repo so every change is a
+revertible commit with its evidence — a copied install is not, so ask for
+the skills repo path. `retro-log.md` is `<skills>/retro-log.md`; create it
+on the first retro.
 
 **Reads:** the plan's spec and plan, `retro-log.md`, `git log --grep 'retro('`.
 **Writes:** approved skill edits, `retro-log.md`, and repo facts into
@@ -86,7 +89,7 @@ plus a drop table (`signal | gate failed`). Ask per item through
 `AskUserQuestion` — apply / repo-fact / drop, recommended option first. Then:
 
 - Apply minimal edits; append the drop table and metrics line to
-  `retro-log.md` in the skills repo under `## <plan> — <date>`.
+  `retro-log.md` under `## <plan> — <date>`.
 - Commit explicit paths: `retro(<plan>): <summary>` (add `retro-prune`
   when it deletes), with evidence, the metrics line, and `wc -w` before → after
   per skill file in the body.
