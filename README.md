@@ -17,7 +17,7 @@ templates). The same folders install into **Cursor** and **Claude Code**.
 
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
-cp -r ai-skills/{sdlc,learning}/* ~/.cursor/skills/
+cp -r ai-skills/{sdlc,sdlc-lite,learning}/* ~/.cursor/skills/
 ```
 
 **Claude Code:**
@@ -25,13 +25,16 @@ cp -r ai-skills/{sdlc,learning}/* ~/.cursor/skills/
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
 mkdir -p ~/.claude/skills
-cp -r ai-skills/{sdlc,learning}/* ~/.claude/skills/
+cp -r ai-skills/{sdlc,sdlc-lite,learning}/* ~/.claude/skills/
 ```
 
 If you previously copied the old flat `~/.claude/commands/*.md` ports, delete
 those names (`brainstorm`, `interview-plan`, `write-plan`, `execute-plan`,
 `git-worktrees`, `graph-retro`, `thermo-nuclear-code-quality-review`, `learn`,
 `tech-radar`) so slash commands are not duplicated.
+
+`sdlc/` and `sdlc-lite/` use different skill names, so both can be installed
+side by side — drop either folder from the `cp` to install one chain only.
 
 Or install a single skill — each category section below lists its skills and
 how they chain together.
@@ -41,6 +44,7 @@ how they chain together.
 | Category | What it covers |
 |----------|----------------|
 | [`sdlc/`](#sdlc--software-development-lifecycle) | From fuzzy idea to merged, maintainable code — plan, execute, review, retro. |
+| [`sdlc-lite/`](#sdlc-lite--the-same-chain-for-stronger-models) | The same chain in four short skills, for stronger models (e.g. Opus 5.5). |
 | [`learning/`](#learning--continuous-learning-loop) | Decide what to learn next, then actually learn it — radar scans feeding topic briefs. |
 
 ---
@@ -191,6 +195,36 @@ commit carries a `[T<N>]` tag — a traceability chain from decision to diff.
 
 ---
 
+## `sdlc-lite/` — the same chain for stronger models
+
+`sdlc/` spells out procedure step by step, which weaker models needed. Strong
+models (e.g. Opus 5.5) follow goals and constraints without it, and the extra
+procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
+keeps the mechanisms that are structural — read-only fresh-context reviewer,
+orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
+disjoint-file waves, discovery before questions — and drops the rest. Four
+skills, ~450 lines total versus ~2,000; each skill fits whole in the
+post-compaction re-injection budget.
+
+| Skill | Replaces | What it does |
+|-------|----------|--------------|
+| `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery, batched questions with recommendations, `spec.md` with provable decisions, task plan **without pre-written code**. Lanes: short / standard / full (full adds a fresh-eyes check). |
+| `implement-plan` | execute-plan + git-worktrees | Venue (this checkout or a ticket worktree), parallel waves, orchestrator gate re-runs and per-task commits, then the review loop. |
+| `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer: spec conformance, simplify, merge safety. `ship` pinned to the reviewed SHA. |
+| `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
+
+Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
+after merge**.
+
+**Which chain?** Start with `sdlc-lite/`. Use `sdlc/` when you need the
+visual companion (`/brainstorm`), the full one-question interview and audit,
+or when a lite run shows gaps on a ticket. Both write the same artifacts
+(`docs/specs/<ID>/spec.md`, the plan's `## Review`), so v1's review can
+cross-check a lite build. Don't mix chains on one ticket otherwise. The v1
+chain is also frozen at the `sdlc-v1` git tag.
+
+---
+
 ## `learning/` — continuous learning loop
 
 ![learning — continuous learning loop](assets/banner-learning.png)
@@ -249,7 +283,7 @@ flowchart LR
 ## Layout
 
 ```
-<category>/<skill>/SKILL.md   # sdlc/, learning/ — plus optional scripts/,
+<category>/<skill>/SKILL.md   # sdlc/, sdlc-lite/, learning/ — plus optional scripts/,
                               # references/, templates next to SKILL.md
 ```
 
