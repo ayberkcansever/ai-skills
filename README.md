@@ -26,7 +26,8 @@ cp -r ai-skills/{sdlc,learning}/* ~/.cursor/skills/   # sdlc-lite is Claude Code
 ```bash
 git clone https://github.com/ayberkcansever/ai-skills.git
 mkdir -p ~/.claude/skills
-cp -r ai-skills/{sdlc,sdlc-lite,learning}/* ~/.claude/skills/
+cp -r ai-skills/{sdlc,learning}/* ~/.claude/skills/
+ln -s "$PWD"/ai-skills/sdlc-lite/* ~/.claude/skills/   # symlinked so retro-build can commit skill edits
 ```
 
 If you previously copied the old flat `~/.claude/commands/*.md` ports, delete
@@ -35,7 +36,7 @@ those names (`brainstorm`, `interview-plan`, `write-plan`, `execute-plan`,
 `tech-radar`) so slash commands are not duplicated.
 
 `sdlc/` and `sdlc-lite/` use different skill names, so both can be installed
-side by side — drop either folder from the `cp` to install one chain only.
+side by side — drop either line to install one chain only.
 
 Or install a single skill — each category section below lists its skills and
 how they chain together.
@@ -210,19 +211,20 @@ post-compaction re-injection budget.
 **Claude Code only.** The skills use `AskUserQuestion` for every interview
 batch, `$ARGUMENTS` (`/prepare-plan PROJ-123`, `/implement-plan <plan>`),
 `${CLAUDE_SKILL_DIR}` to find sibling skills, and Agent-tool subagents for
-waves and the reviewer. To let `retro-build` commit skill edits, symlink the
-folders instead of copying them:
-`ln -s "$PWD"/ai-skills/sdlc-lite/* ~/.claude/skills/`.
+waves and the reviewer. Install by symlinking the folders, not copying them
+(see Quick start): `retro-build` resolves the links back to this repo so it
+can commit skill edits with their evidence.
 
 | Skill | Replaces | What it does |
 |-------|----------|--------------|
 | `prepare-plan` | brainstorm + interview-plan + write-plan | Discovery (code, consumers, domain states), edge scenarios asked one by one plus a pre-mortem, quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, **backward compatible by default** (expand → migrate → contract; mixed-version and rollback safe), task plan **without pre-written code**. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
-| `implement-plan` | execute-plan + git-worktrees | One worktree per plan (never the main checkout, so plans run in parallel), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs and per-task commits, then the review loop. |
+| `implement-plan` | execute-plan + git-worktrees | One worktree per plan at `.worktrees/<plan>` under the main checkout (never the main checkout itself, so plans run in parallel; found again by that path on resume), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs and per-task commits, then the review loop. |
 | `review-build` | thermo-nuclear-code-quality-review | Read-only reviewer in a clean context (`context: fork`, `Plan` agent): spec conformance, simplify, design, merge safety (compat, rollback, migrations, performance). `ship` pinned to the reviewed SHA. |
-| `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. |
+| `retro-build` | graph-retro | Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. Each retro appends to `sdlc-lite/retro-log.md` and commits approved edits as `retro(<plan>)`. |
 
 Flow: **prepare-plan → implement-plan** (review nested), then **retro-build
-after merge**.
+after merge**. Remove the plan's worktree after merge
+(`git worktree remove .worktrees/<plan>`); the plan folder stays for the retro.
 
 **State lives in one gitignored folder, not the chat.** prepare-plan names
 the plan (ticket key or a short name) and writes `docs/plans/<name>/spec.md`
