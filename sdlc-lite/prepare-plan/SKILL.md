@@ -31,7 +31,8 @@ no tracker → short kebab-case slug.
   or was verified during planning. Never guess a name.
 - Append decisions to `spec.md` the moment they are made. After a context
   compaction, re-read this file and `spec.md` — the files are the truth.
-- No code until the user approves the plan.
+- No plan until the user approves the spec (short lane: one approval for
+  both); no code until they approve the plan.
 
 ## 1. Discover
 
@@ -115,6 +116,11 @@ switch, rollback; testing including the E2E environment; scope and phasing
 status`. Nothing reads "TBD".
 
 ## 4. Write the files
+
+Finish `spec.md` first, then post its summary — goal, decisions, non-goals,
+accepted risks — and ask: *write the plan? (yes / keep going / edit spec)*.
+Write the plan only on yes; otherwise return to step 3. Short lane skips this
+stop — step 6 approves both files at once.
 
 `spec.md` (same layout the v1 chain uses, so either reviewer can read it):
 
