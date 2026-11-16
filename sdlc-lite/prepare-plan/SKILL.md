@@ -37,12 +37,10 @@ untracked files; `.gitignore` is tracked).
 
 - Read the ticket and the code before asking. Never ask what they answer; ask
   only what would change the plan.
-- Ask through `AskUserQuestion`: up to 4 questions per call whose answers
-  don't depend on each other — a question that reshapes the others goes
-  alone. Each question names its tag and the `Found:` fact behind it; each
-  has 2–4 concrete options, the recommended one first and labelled
-  `(Recommended)`, with its one-line reason in the description. Free-form
-  answers arrive through the built-in "Other".
+- Ask through `AskUserQuestion`, written as *Asking* below: up to 4
+  questions per call whose answers don't depend on each other — a question
+  that reshapes the others goes alone. Free-form answers arrive through the
+  built-in "Other".
 - An unanswered question stays open. "Probably", "sure", "we'll see" are not
   decisions — re-ask with a sharper recommendation and force a yes / no.
 - Every decision has a `Check:` — runnable command, named test, or
@@ -66,6 +64,78 @@ untracked files; `.gitignore` is tracked).
   `plan-approved`.
 - After a context compaction, re-read the spec and plan — the files are the
   truth.
+
+## Asking
+
+The user should get each question on the first read, and does not read the
+code. The dialog can hide the chat, so a question stands on its own. The
+code trail (tag, `file:line`, symbols) goes in the spec, never in the
+dialog; the dialog carries only what the user needs to decide.
+
+- **question** — two parts, in this order:
+  1. The situation in plain words: what happens today, or would after the
+     change, who it affects and when. Behaviour, not code: say "the sales
+     service's old target field", not `legacyTarget`.
+  2. One decision, asked directly, ending in `?`. Don't list the options in
+     it; the buttons do that.
+  Under ~40 words. No file paths, no code symbols, no `[tag]`, no `D<n>` /
+  `NG<n>` / `Q<n>` ids, no `|` or `→` as grammar. Explain a term the user
+  may not share (dual-write, idempotent, expand/contract) or don't use it.
+- **header** — the topic in plain words, ≤12 chars (`Old field`,
+  `Double pay`). Never the tag.
+- **options** — 2–4. Label: the outcome the user is picking, 2–5 words, not
+  how it's built. Description: what happens and what it costs. Recommended
+  first, labelled `(Recommended)`, and its description says why.
+- Before sending, reread each question as someone who skipped Discovery. If
+  it takes a second read, cut code detail or split it in two.
+
+A decision (step 5):
+
+```
+header: Old field
+question: The sales service still uses the old target field, which this
+  change removes, and sales deploys on its own schedule. What should
+  happen to sales?
+options:
+  - Keep both fields one release (Recommended) — write old and new, drop
+    the old one once sales has moved; nothing breaks mid-deploy
+  - Update sales in this change — both repos must deploy together
+  - Let sales break — only if sales is being retired
+```
+
+Not: `[compat] Found: sales/x.ts:42 reads legacyTarget, which this change
+removes. Break sales, migrate it, or dual-write for one release?` The
+tag, file path and code name come before the question, and the options are
+crammed into the question itself.
+
+An edge scenario (step 4), `Today <what happens when trigger>. What should
+happen?`:
+
+```
+header: Double pay
+question: Today, if someone presses Pay twice before the first request
+  finishes, they are charged twice. What should happen instead?
+options:
+  - Charge once (Recommended) — the second press returns the first
+    payment's result
+  - Disable the button while paying — simpler, but a retry after a
+    timeout still charges twice
+  - Out of scope for now
+```
+
+A quirk (step 4), `<A> does X but <B> does Y. Is that on purpose?`:
+
+```
+header: Order dates
+question: The dashboard counts orders by the day they were created, the CSV
+  export by the day they were paid, so the totals differ. Is that on
+  purpose?
+options:
+  - On purpose, keep both (Recommended) — finance reconciles the export
+    by payment date
+  - Bug, fix it here — use one date in both
+  - Bug, fix it later — log it as a follow-up
+```
 
 ## 1. Start or resume
 
@@ -98,7 +168,8 @@ say so.
 
 ## 3. Discover
 
-Read, then post a compact Findings list:
+Read, then write the findings under the spec's `## Discovery findings`,
+with `file:line` for each — later steps and reviewers need the trail:
 
 - Files the change touches and their patterns (layering, errors, naming).
 - Every reader and writer of each touched function, field, route, event,
@@ -115,10 +186,21 @@ Read, then post a compact Findings list:
 - README, adjacent `docs/features/` entries, and relevant `docs/quirks.md`
   entries — they filter every later question.
 
+Then post a short summary in chat, in the same plain language as *Asking*
+— no file paths or code names; the user does not read the code:
+
+- What the change touches, as behaviour (checkout, the nightly export).
+- Who else depends on it: services, teams, jobs, admin tools — and what
+  would happen to each.
+- Existing data the change has to live with (old records, in-flight work).
+- Anything surprising: a term that means two things, a rule the code
+  enforces that the ticket doesn't mention.
+
 Push back wherever the code supports it — simpler design, broken consumer,
-hidden risk — with `file:line`; if nothing warrants it, say so. A real design
-choice → 2–3 approaches with tradeoffs, recommended first; settle it before
-step 4, because the scenarios depend on it.
+hidden risk — saying what you found and why it matters, in those same plain
+words; the `file:line` goes in the spec. If nothing warrants it, say so. A
+real design choice → 2–3 approaches with tradeoffs, recommended first;
+settle it before step 4, because the scenarios depend on it.
 
 ## 4. Scenarios and quirks
 
@@ -134,31 +216,23 @@ For the chosen approach:
   failure (partial write, dependency slow or down, stale local state after a
   rejected write). Then a pre-mortem: *it shipped, and a month later it
   caused an incident or a support ticket — what happened?* Keep those that
-  apply; expect 5–10 and say why if fewer. Each is its own `AskUserQuestion`
-  question — proposed behaviour (Recommended), the strongest alternative,
-  out of scope. A behaviour → `D<n>`; out of scope → `NG<n>`.
-- **Quirks** a generic reviewer would miss, as
-  `Found: file:line — <divergence> | quirk or bug? Recommend: <reading>`:
-  scope enforced in one layer only, call sites reading one source with
-  different filters or time windows, hidden contracts (idempotency, dedup,
-  ordering), code whose comments or history warn against the obvious change.
-  Zero is a valid answer; present them as one list, asked in batches. Accepted
-  quirks become decisions or findings.
+  apply; expect 5–10 and say why if fewer. Each is its own question in the
+  edge-scenario shape (*Asking*) — proposed behaviour (Recommended), the
+  strongest alternative, out of scope. A behaviour → `D<n>`; out of scope →
+  `NG<n>`.
+- **Quirks** a generic reviewer would miss, each a divergence found at a
+  `file:line` with your reading of it: scope enforced in one layer only, call
+  sites reading one source with different filters or time windows, hidden
+  contracts (idempotency, dedup, ordering), code whose comments or history
+  warn against the obvious change. Zero is a valid answer. Record each with
+  its `file:line` under `## Discovery findings`, then ask them in batches in
+  the quirk shape (*Asking*). Accepted quirks become decisions or findings.
 
 ## 5. Resolve decisions
 
-Ask in batches as the invariants describe, dependencies first, each tagged
-`[product]`, `[technical]`, `[compat]`, or `[scope]`:
-
-```
-header: Compat
-question: [compat] Found: sales/x.ts:42 reads `legacyTarget`, which this
-  change removes. Break sales, migrate it, or dual-write for one release?
-options:
-  - Dual-write one release (Recommended) — sales deploys on a different cadence
-  - Migrate sales in this change — one coordinated deploy across both repos
-  - Break sales — acceptable only if sales is being retired
-```
+Ask in batches as the invariants describe, dependencies first, in the
+decision shape (*Asking*). Tag each in the spec — `[product]`,
+`[technical]`, `[compat]`, or `[scope]` — not in the question.
 
 - Override → record `(overrides recommendation: <user's reason>)`; no reason
   given → ask once.
@@ -211,7 +285,8 @@ a reviewer or the on-call engineer would raise. Each becomes a question,
 not a note.
 
 Then post its summary — goal, decisions, non-goals, accepted risks, every
-`## Assumptions` entry, and Coverage items closed as non-goals — and ask:
+`## Assumptions` entry, and Coverage items closed as non-goals, in plain
+language without file paths or code names — and ask:
 *write the plan? (yes / keep going / edit spec)*. On yes set
 `**Status:** spec-approved <date>`; otherwise return to step 5. Short lane
 skips this stop — step 9 approves both files at once.
