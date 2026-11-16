@@ -33,7 +33,8 @@ plan from this session). Missing both → "nothing to retro", stop. Quote each
 signal verbatim with its location: `> Drift:` notes, `## Blockers` entries, `R` findings from
 cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, `## E2E`
 fails, `## Assumptions` entries proven wrong, accepted risks that
-materialized, failed `## Release` steps, and any escaped production defect.
+materialized, failed `## Release` steps (ask the user how each went), and
+any escaped production defect.
 Print:
 
 `metrics(<plan>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s> e2e-fail=<e> assumed-wrong=<a>`

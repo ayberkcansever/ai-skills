@@ -25,18 +25,19 @@ lines, and new spec decisions the user approves.
   is never committed, copied, or moved — one live copy, read by absolute path.
 - Every subagent is a fresh Agent-tool subagent given only paths and its
   task — never a fork of this conversation, which would carry its context in.
-- The plan file is the state: checkboxes, `> Gate:`, `> Drift:`,
-  `> Baseline:`, `## Review`, `## Blockers`, `## E2E`. After a context
-  compaction, re-read the plan and spec; resume from them, never from memory.
+- The plan file is the state: checkboxes, `> Gate:`, `> Drift:`, `## Review`,
+  `## Blockers`, `## E2E`. After a context compaction, re-read the plan and
+  spec; resume from them, never from memory.
 - Only you commit, tick checkboxes, and write the plan and spec. Subagents
   edit and test.
 - Tick a task only after you re-ran its gate yourself. A subagent's "done" is
   a claim, not evidence.
-- Commit only the task's paths: `git add -- <paths>`, then
+- Commit only the paths the task changed: `git add -- <paths>`, then
   `git commit -m "[T<N>] <summary>" -- <paths>`, then check
-  `git show --stat HEAD` lists only those paths. A plain `git commit` takes
-  the whole index, including a wave-mate's staged `git rm`. Never
-  `git add .` / `-A` — it sweeps in unrelated files such as a copied `.env`.
+  `git show --name-only --format= HEAD` lists only those. A plain
+  `git commit` takes the whole index, including a wave-mate's staged
+  `git rm`. Never `git add .` / `-A` — it sweeps in unrelated files such as
+  a copied `.env`.
 - Never weaken a gate or flip an assertion to go green.
 - Run to the end. Stop for the user only on a blocker, behaviour the spec does
   not decide, drift that changes a decision, contract, or later task, a
@@ -71,30 +72,32 @@ be implemented in parallel without touching each other or the user's tree.
   root="$(dirname "$common")"
   git -C "$root" fetch origin    # no origin/HEAD → git -C "$root" remote set-head origin -a
   git -C "$root" check-ignore -q .worktrees || echo ".worktrees/" >> "$common/info/exclude"
-  git -C "$root" worktree add ".worktrees/<plan>" -b <plan> origin/HEAD   # bare ticket key → append -<slug>
+  git -C "$root" worktree add ".worktrees/<plan>" -b <plan> --no-track origin/HEAD   # bare ticket key → append -<slug>
   # branch already exists: git -C "$root" worktree add ".worktrees/<plan>" <branch>
   ```
 
   Git refuses a branch checked out elsewhere: if the main checkout is on the
   plan's branch, ask the user to switch it — never switch it yourself.
 
-`EnterWorktree` may enter that path, never create it. The worktree gets code
-only — subagents and the reviewer read the plan folder by its absolute path,
-so it survives worktree removal. Copy untracked build inputs (`.env`).
+Work in the venue by absolute path and `git -C`. `EnterWorktree` may enter
+that path, never create it, and refuses when the session already sits in
+another worktree. The worktree gets code only — subagents and the reviewer
+read the plan folder by its absolute path, so it survives worktree removal.
+Copy untracked build inputs (`.env`).
 
-In the worktree: install and run the baseline suite (red → stop). Find the
-CI checks — read the CI config (`.github/workflows/`, `.gitlab-ci.yml`, …)
-for its lint, typecheck, format-check, and build commands — and run them
-too; record each pre-existing failure above Task 1 as
-`> Baseline: <check> — <failure>` — not yours to fix, not a blocker. Then compare
+First run only (the branch has no `[T` commit yet): install and run the
+baseline suite (red → stop). Afterwards `git status --porcelain` must be
+empty — add copied or generated files to `$common/info/exclude`. Then compare
 with the spec's `Baseline:` SHA: if `git diff --stat <baseline> HEAD -- <the
 plan's Files>` shows changes, re-check the plan's `file:line` references
 against the current code and record differences as `> Drift:` before Task 1.
 
-Report the venue path. On resume, reconcile with `git log`: ticked without a
-`[T<N>]` commit → redo; commit without a tick → re-run the gate and tick. A
-`wip(T<N>)` commit named in `## Blockers` → continue from it and mark the
-entry resolved.
+Report the venue path. On resume, reconcile with
+`git log origin/HEAD..HEAD`: ticked without a `[T<N>]` commit → redo; commit
+without a tick → re-run the gate and tick; an unticked task with uncommitted
+changes → once no subagent is still working on it, fan it in if its gate
+passes, else discard its changes and re-dispatch. A `wip(T<N>)` commit named
+in `## Blockers` → continue from it and mark the entry resolved.
 
 ## 3. Run tasks in waves
 
@@ -105,8 +108,8 @@ Each round, the ready set is every unticked task where:
 2. its `Files:` paths are disjoint from the rest of the wave (strip
    `:line-range` first);
 3. its gate does not share mutable outputs with a wave-mate — port, build dir,
-   test DB, coverage file. Repo-wide typecheck / lint reads siblings'
-   half-written files: scope it to the task's paths or use a later wave;
+   test DB, coverage file. A repo-wide gate (typecheck, lint) reads siblings'
+   half-written files: that task runs in a wave of its own;
 4. it is not the Review gate.
 
 Dispatch the whole ready set as parallel Agent-tool calls
@@ -124,18 +127,16 @@ path (work only there), the absolute plan and spec paths, the task number,
   (network, other services, clock, randomness); never the unit under test or
   its own collaborators. Deterministic: frozen clock, seeded randomness, no
   sleeps, no dependence on test order.
-- Never delete, skip, or loosen an existing test or assertion. One the task
-  must change → change it and report it as `> Drift:` with the reason.
+- Never delete, skip, or loosen an existing test or assertion, except those
+  the task's `Tests:` names. Another one that must change → change it and
+  report it as `> Drift:` with the reason.
 - Follow the Architecture constraints and the neighbouring code — layering,
   injected dependencies, error types, naming; reuse the named helpers; no
   dependency the plan does not name.
 - Simple over clever: no abstraction, parameter, or config for a single use;
   extract only at the third duplicate; one responsibility per unit; extend
   through the codebase's existing dispatch (new handler, strategy), not a
-  growing conditional. A new implementation of an existing interface keeps
-  its contract — no `NotImplemented`, no stricter inputs, no weaker
-  outputs. Don't add a method to a shared interface that only one
-  implementation needs.
+  growing conditional.
 - Stay inside the task's `Files:`; no drive-by refactors. Handle only failure
   modes you can name; never swallow an error.
 - Keep old callers, readers, and stored data working: never remove or rename
@@ -149,45 +150,34 @@ path (work only there), the absolute plan and spec paths, the task number,
 
 Small or tightly coupled plans may run inline under the same rules.
 
-Fan in after the whole wave returns. First, for the wave:
-`git status --porcelain` lists only paths in the wave's `Files:`. Any other
-path → find the task that made it: a file the plan missed (lockfile, route
-or DI registration, snapshot) is drift; anything else is reverted. Two
-tasks touched the same unlisted file → re-check both edits survived.
+Fan in after the whole wave returns. First `git status --porcelain -uall`
+must list only paths in the wave's `Files:`. Any other path → find the task
+that made it: a file the plan missed (lockfile, registration, snapshot) is
+drift — add it to that task's `Files:` with a `> Drift:` note; anything
+else is reverted.
 
 Then serially, in task order:
 
-1. Re-run the gate. Skim the diff against the plan's Architecture constraints.
-   A task changing a contract or persisted data gets this skim from a fresh
+1. Check the new tests bite: break the line each one protects, run it, see
+   it fail, restore the line. Still green → the test is too weak;
+   re-dispatch the task with that result. Then re-run the gate and append
+   `> Gate: <cmd> | exit <n> | <one-line result>` — for every run, failed
+   ones too.
+2. Skim the diff against the plan's Architecture constraints. A task
+   changing a contract or persisted data gets this skim from a fresh
    read-only subagent instead.
-2. **The tests bite:** take the task's non-test paths out and run the task's
-   new tests — they must fail, on an assertion wherever the task changed
-   existing code (`$tmp` is a scratch directory outside the venue):
-
-   ```bash
-   git add -N -- <non-test paths>           # new files show in the diff
-   git diff -- <non-test paths> > "$tmp/T<N>.patch"
-   git apply -R "$tmp/T<N>.patch"           # → run the new tests: must fail
-   git apply "$tmp/T<N>.patch"              # → re-run the gate: green again
-   ```
-
-   Still green with the code out → the test is too weak: re-dispatch the
-   task with that result. A task that adds no tests (activation, docs,
-   config) records `bites: n/a`.
-3. Check existing tests in the diff: a removed, skipped, or loosened
-   assertion is drift that narrows an assertion (next step).
-4. Write drift notes under the task. A `> Undecided:` case, or drift that
-   changes a decision, a contract, or a later task, or narrows an existing
-   assertion, is not drift: ask the user, record the answer in the spec as a
-   new `D<n>` (`supersedes D<m>` when it replaces one) with its Test matrix
-   row, then continue.
-5. Commit the task's paths as the invariants say, tick it, append
-   `> Gate: <cmd> | exit <n> | <one-line result> | bites: yes / n/a`.
+3. Write drift notes under the task. A `> Undecided:` case, or drift that
+   changes a decision, a contract, or a later task, or loosens an existing
+   assertion the task's `Tests:` does not name, is not drift: ask the user,
+   record the answer in the spec as a new `D<n>` in prepare-plan's format
+   (the one it supersedes struck) with its Test matrix row, then re-dispatch
+   the task with it.
+4. Commit the task's paths as the invariants say and tick it.
 
 After the wave's commits, run the full suite before the next wave (over ~10
 minutes → the tests covering the wave's files, full suite at finish). Red →
-find the commit that broke it and fix it now, as a task `N.x` before the
-gate; later waves must not build on a regression.
+fix it before the next wave, as a task `N.x` ahead of the Review gate
+(`N` is the gate's number; `x` keeps counting up across waves and cycles).
 
 A failed task does not void its siblings: commit the passing ones, then retry
 once with the failure in the prompt, else record a `## Blockers` entry and
@@ -200,32 +190,33 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
 1. **Data path:** for each field that is persisted or transmitted, open the
    real writer (insert / build / publish) and confirm the field is there.
    Confirm a test reaches the sink without mocking it, or flag it.
-2. Run the full suite and the CI checks found in step 2; all green, with no
-   failure beyond the recorded `> Baseline:` ones. Tree clean.
+2. Run the full suite and what CI runs — lint, typecheck, format check,
+   build, read from the CI config. All green and the tree clean. A failure
+   the base branch already has is not yours: confirm it there, name it in
+   the report, leave it.
 3. **Review loop** (max 3 cycles):
    - Append `cycle <c> | reviewed @ <HEAD> | base @ <base> | suite: <cmd> →
      <result>` to `## Review`.
-   - Launch fresh Agent-tool subagents (`subagent_type: Plan` — read-only
-     tools), each told to read and follow
+   - Launch a fresh Agent-tool subagent (`subagent_type: Plan` — read-only
+     tools) told to read and follow
      `${CLAUDE_SKILL_DIR}/../review-build/SKILL.md`, to work only in the
      absolute venue path, with the spec and plan absolute paths, on the model
-     that skill names. Standard lane: two in parallel, in one message, one
-     with `focus: conformance`, one with `focus: safety`. Short lane: one,
-     no focus. The cycle's verdict is the stricter one; `ship` needs every
-     reviewer to say `ship`. Under the cycle line, append each reviewer's
-     verdict lines and model, and each required finding as
-     `R<c>.<n> | file:line | problem | fix`, numbered across both reviewers —
-     the next cycle and retro-build read them there.
+     that skill names. Under the cycle line, append its verdict lines, the
+     model used, and each required finding as
+     `R<c>.<n> | file:line | problem | fix` — the next cycle and retro-build
+     read them there.
    - Before accepting a finding, reproduce its mechanism; fix the real cause
      and note a corrected mechanism on its `R` line. Cannot reproduce it →
      keep it open as `R<c>.<n> | disputed: <evidence>`; the next cycle's
      reviewer upholds or withdraws it. Never drop a finding silently.
    - `block` → stop and ask before fixing: data loss, security holes, and
      compat breaks usually need a decision first.
-   - Required findings become tasks `N.1`, `N.2`, … (`Implements: R<c>.<n>`)
-     inserted before the gate, same shape as other tasks; run them through
-     step 3, re-run the full suite, open a new cycle. Advisory findings go to
+   - Required findings become tasks `N.x` (`Implements: R<c>.<n>`) inserted
+     before the gate, same shape as other tasks; run them as waves
+     (section 3), repeat item 2, open a new cycle. Advisory findings go to
      `## Deferred suggestions` for the user.
+   - `ship` → tick the Review gate. It has no commit: on resume, a ticked
+     gate whose last verdict is `ship` at HEAD skips this loop.
    - Third non-ship verdict → `## Blockers`, escalate to the user.
 4. Report, leading with the outcome. Claim only what a `> Gate:` line, a suite
    run, or a `## Review` entry shows, and name what was skipped. Give the
@@ -234,6 +225,6 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
    merge unless asked. Leave the worktree; remove it only after merge
    (`git worktree remove <path>`). After deploy: `/retro-build <plan>`.
 5. **E2E:** as the user runs each step, record `<step> | <env> | pass / fail:
-   <observed>` under `## E2E`. A fail is a finding: reproduce it,
-   add task `N.x` before the gate, run it through step 3, and reopen the
-   review loop.
+   <observed>` under `## E2E`. A fail is a finding: reproduce it, add task
+   `N.x` before the gate, run it as a wave (section 3), untick the gate, and
+   reopen the review loop.

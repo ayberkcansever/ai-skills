@@ -42,14 +42,11 @@ records them.
   changes escape the diff. Dirty → stop and report.
 - **Diff:** base = `git symbolic-ref refs/remotes/origin/HEAD` (else
   `main`); review `git diff <base>...HEAD`.
-- **Focus:** given `focus: conformance` → lenses 1–3; `focus: safety` →
-  lens 4; none → all four. Each lens gets your full attention for its
-  pass — read the diff once per lens, not once for all.
 - **Context:** the spec and plan, `docs/quirks.md`, and the repo's
   `AGENTS.md` / `CLAUDE.md` when present. Earlier `## Review` cycles: confirm
   each prior `R` finding's fix removed its cause, and rule on each
-  `disputed` one in your focus — upheld (required again, with the evidence
-  that answers the dispute) or withdrawn (say why).
+  `disputed` one — upheld (required again, with the evidence that answers
+  the dispute) or withdrawn (say why).
 - **Re-run guard:** last `## Review` entry already says `Verdict: ship` at
   this HEAD (or only docs-only commits since) and no spec decision changed
   since → report
@@ -60,6 +57,8 @@ records them.
   cycle line plus findings to append — the invoking session writes them.
 
 ## Lenses
+
+Read the diff once per lens, not once for all four.
 
 1. **Conformance** — one line per decision:
    `D<n> | file:line | conforms / drift: <how> / missing / unverifiable: <why>`.
@@ -81,10 +80,7 @@ records them.
    code: layering and dependency direction, dependencies instantiated where
    siblings inject them, a second responsibility added to a unit, a case
    bolted onto a conditional where the codebase dispatches polymorphically,
-   a file pushed past ~700 lines, edits outside every task's `Files:`. A new
-   implementation that breaks its interface's contract (throws
-   `NotImplemented`, demands more, promises less); a method added to a
-   shared interface that only one implementation needs.
+   a file pushed past ~700 lines, edits outside every task's `Files:`.
 4. **Merge safety** — crashes, data corruption, swallowed errors, missing
    tests for changed logic, authz and tenant isolation, secrets or PII in
    logs, observability decisions present. Backward compatibility: signatures,
@@ -95,19 +91,18 @@ records them.
    unbounded queries, a new query without an index, blocking calls on hot
    paths, leaks.
 
-If the repo has a feature-docs sync flow, report doc drift as `docs:`
-findings; the orchestrator applies them in a separate docs commit.
+If the repo has a feature-docs sync flow, report doc drift as advisory
+`docs:` findings.
 
 ## Output
 
 ```
 Verdict: ship | fix-first | block
-Focus: conformance | safety | all
 Top issue: <one line, or none>
 Net: -N lines possible | lean
 ```
 
-Then the conformance lines (not under `focus: safety`), then findings:
+Then the conformance lines, then findings:
 `R<c>.<n> | file:line | required or advisory | problem | fix`, where `<c>` is
 the open `## Review` cycle (standalone: 1). Report every real finding — the
 required / advisory split does the filtering, not omission.

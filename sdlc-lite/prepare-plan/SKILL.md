@@ -24,8 +24,8 @@ whatever they need goes in a file. `<plan>` is the plan's name: the name or
 ticket key in the input, else the branch's ticket key
 (`git branch --show-current | grep -oE '[A-Z]+-[0-9]+'`), else a short
 kebab-case name you propose and the user confirms. Announce it once set:
-`/implement-plan` and `/review-build` later in this session use it without
-arguments. `<root>` is the main checkout,
+`/implement-plan` later in this session uses it without arguments. `<root>`
+is the main checkout,
 `root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`,
 even when this session runs in a linked worktree — every skill finds the
 folder there and it outlives worktree removal. The folder is never
@@ -35,8 +35,8 @@ untracked files; `.gitignore` is tracked).
 
 ## Invariants
 
-- Read the ticket and the code before asking. Never ask what they answer; ask
-  only what would change the plan.
+- Read the ticket before asking anything, and the code before asking anything
+  it could answer. Ask only what would change the plan.
 - Ask through `AskUserQuestion`, written as *Asking* below: up to 4
   questions per call whose answers don't depend on each other — a question
   that reshapes the others goes alone. Free-form answers arrive through the
@@ -61,7 +61,8 @@ untracked files; `.gitignore` is tracked).
   `supersedes D<m>`, with the old one struck.
 - Approvals live in the spec's `**Status:**` line. No plan before
   `spec-approved` (short lane: one approval for both); no code before
-  `plan-approved`.
+  `plan-approved`. Changing a decision after an approval sets it back to
+  `draft`.
 - After a context compaction, re-read the spec and plan — the files are the
   truth.
 
@@ -70,7 +71,7 @@ untracked files; `.gitignore` is tracked).
 The user should get each question on the first read, and does not read the
 code. The dialog can hide the chat, so a question stands on its own. The
 code trail (tag, `file:line`, symbols) goes in the spec, never in the
-dialog; the dialog carries only what the user needs to decide.
+dialog.
 
 - **question** — two parts, in this order:
   1. The situation in plain words: what happens today, or would after the
@@ -85,7 +86,9 @@ dialog; the dialog carries only what the user needs to decide.
   `Double pay`). Never the tag.
 - **options** — 2–4. Label: the outcome the user is picking, 2–5 words, not
   how it's built. Description: what happens and what it costs. Recommended
-  first, labelled `(Recommended)`, and its description says why.
+  first, labelled `(Recommended)`, and its description says why and what it
+  assumes about the business. If you would be guessing, recommend none and
+  say so.
 - Before sending, reread each question as someone who skipped Discovery. If
   it takes a second read, cut code detail or split it in two.
 
@@ -104,38 +107,18 @@ options:
 ```
 
 Not: `[compat] Found: sales/x.ts:42 reads legacyTarget, which this change
-removes. Break sales, migrate it, or dual-write for one release?` The
-tag, file path and code name come before the question, and the options are
-crammed into the question itself.
+removes. Break sales, migrate it, or dual-write for one release?`
 
-An edge scenario (step 4), `Today <what happens when trigger>. What should
-happen?`:
+The other two shapes follow the same rules:
 
-```
-header: Double pay
-question: Today, if someone presses Pay twice before the first request
-  finishes, they are charged twice. What should happen instead?
-options:
-  - Charge once (Recommended) — the second press returns the first
-    payment's result
-  - Disable the button while paying — simpler, but a retry after a
-    timeout still charges twice
-  - Out of scope for now
-```
-
-A quirk (step 4), `<A> does X but <B> does Y. Is that on purpose?`:
-
-```
-header: Order dates
-question: The dashboard counts orders by the day they were created, the CSV
-  export by the day they were paid, so the totals differ. Is that on
-  purpose?
-options:
-  - On purpose, keep both (Recommended) — finance reconciles the export
-    by payment date
-  - Bug, fix it here — use one date in both
-  - Bug, fix it later — log it as a follow-up
-```
+- An edge scenario (step 4): "Today, if someone presses Pay twice before the
+  first request finishes, they are charged twice. What should happen
+  instead?" — Charge once (Recommended) / Disable the button while paying /
+  Out of scope for now.
+- A quirk (step 4): "The dashboard counts orders by the day they were
+  created, the CSV export by the day they were paid, so the totals differ.
+  Is that on purpose?" — On purpose, keep both (Recommended) / Bug, fix it
+  here / Bug, fix it later.
 
 ## 1. Start or resume
 
@@ -151,16 +134,21 @@ options:
 ## 2. Frame and pick the lane
 
 Restate in a few lines: problem, who it affects, trigger, desired outcome, how
-success is measured. Ask the intent questions the ticket leaves open before
-reading deeply — discovery aimed at the wrong problem is wasted. Independent
-subsystems → propose the split and plan the first piece only.
+success is measured. Then, unless it is a plain fix, challenge it as
+questions before reading deeply — discovery aimed at the wrong problem is
+wasted: the intent the ticket leaves open, what happens if nothing is built,
+the smallest version that still delivers the outcome, and the number,
+measured where, that shows it worked. Independent subsystems → propose the
+split and plan the first piece only.
 
-State the lane and why; the user may override.
+State the lane and why, and record it in the spec's `**Lane:**`; the user
+may override.
 
-- **short** — ≤2 files, ~50 lines, no new decision, no observable behaviour
-  change, not money / auth / deploy / migration / alerting. Skips step 4 and
-  the step-8 subagent. Spec holds 1–3 decisions and one batch-confirmed
-  Coverage line; plan is one task plus the review gate.
+- **short** — ≤2 files, ~50 lines, nothing for the user to decide beyond
+  confirming the fix, behaviour changes only back to what the spec, docs, or
+  tests already define, not money / auth / deploy / migration / alerting.
+  Skips step 4 and the step-8 subagent. Spec holds 1–3 decisions and one
+  batch-confirmed Coverage line; plan is one task plus the review gate.
 - **standard** — everything else.
 
 A decision that later hits a short-lane exclusion moves the work to standard;
@@ -187,14 +175,9 @@ with `file:line` for each — later steps and reviewers need the trail:
   entries — they filter every later question.
 
 Then post a short summary in chat, in the same plain language as *Asking*
-— no file paths or code names; the user does not read the code:
-
-- What the change touches, as behaviour (checkout, the nightly export).
-- Who else depends on it: services, teams, jobs, admin tools — and what
-  would happen to each.
-- Existing data the change has to live with (old records, in-flight work).
-- Anything surprising: a term that means two things, a rule the code
-  enforces that the ticket doesn't mention.
+— no file paths or code names: what the change touches, as behaviour; who
+else depends on it (services, teams, jobs, admin tools) and what would
+happen to each; existing data it has to live with; and anything surprising.
 
 Push back wherever the code supports it — simpler design, broken consumer,
 hidden risk — saying what you found and why it matters, in those same plain
@@ -232,7 +215,9 @@ For the chosen approach:
 
 Ask in batches as the invariants describe, dependencies first, in the
 decision shape (*Asking*). Tag each in the spec — `[product]`,
-`[technical]`, `[compat]`, or `[scope]` — not in the question.
+`[technical]`, `[compat]`, or `[scope]` — not in the question. After each
+batch, play back what you recorded — each decision in one plain line with
+its example — and ask what the answers opened up before moving on.
 
 - Override → record `(overrides recommendation: <user's reason>)`; no reason
   given → ask once.
@@ -240,8 +225,8 @@ decision shape (*Asking*). Tag each in the spec — `[product]`,
 - A fact the code makes obvious needs no question; if it shapes behaviour, log
   it under `## Assumptions` so the user sees it at approval.
 - Only someone else can answer (PM, another team, production config) → log it
-  under `## Open questions` as `[external: <who>]`. No plan while one is
-  load-bearing.
+  under `## Open questions` as `[external: <who>]`. Before approval it is
+  answered, or becomes an accepted risk on an explicit yes.
 - The user says "enough" with items open → name each one; it becomes an
   accepted risk only on an explicit yes.
 
@@ -297,9 +282,10 @@ either chain's reviewer can read it):
 ```markdown
 # <plan> — <one-line goal>
 **Status:** draft | spec-approved <date> | plan-approved <date>
+**Lane:** short | standard — <reason>
 ## Goal & business intent
 ## Decisions
-D1. <one line>
+D1 [<tag>]. <one line>
     Example: <input> → <outcome>          ([product] decisions)
     Check: <command / test / manual QA: step>
 ## Non-goals
@@ -323,7 +309,6 @@ Baseline: <repo> @ <short SHA>
 ```markdown
 # <plan> — <goal> Implementation Plan
 **Spec:** <root>/docs/plans/<plan>/spec.md (absolute)
-**Lane:** short | standard — <reason>
 **Architecture constraints:** layering, dependency injection, error handling,
 canonical helpers (with paths), test command form — from the touched files'
 neighbours; subagents see only this file and the spec.
@@ -332,7 +317,7 @@ neighbours; subagents see only this file and the spec.
 **Implements:** D1, D3
 **Depends on:** none
 **Files:** `src/a.py`, `tests/test_a.py`
-**Tests:** `test_x` — <input> → <expected>
+**Tests:** `test_x` — <input> → <expected>; existing `test_y` changes: <old> → <new> (D<n>)
 **Contract:** <exact shape, when the task defines one>
 **Gate:** `pytest tests/test_a.py -q` → passes
 **Edges:** <what breaks it, unstated precondition, how to reverse it>
@@ -361,8 +346,8 @@ Task rules:
   dependency serializes the plan. `Files:` as paths — tasks sharing a file
   never run in parallel.
 - No implementation code. Specify what the executor cannot guess: test cases
-  (input → expected, the decision's `Example:` among them), exact contract /
-  schema shapes, files, gate.
+  (input → expected, the decision's `Example:` among them), existing tests a
+  decision changes, exact contract / schema shapes, files, gate.
 - Data that reaches a sink (DB, queue, HTTP response, file): one task changes
   the actual writer, and one test reaches the sink without mocking it.
   Activation (env var, flag, index, subscription, IaC) gets its own task.
