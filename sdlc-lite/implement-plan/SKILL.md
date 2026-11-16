@@ -116,37 +116,45 @@ Dispatch the whole ready set as parallel Agent-tool calls
 (`general-purpose`) in one message; they run in the background, so fan in
 only after every one has reported. Each prompt contains: the absolute venue
 path (work only there), the absolute plan and spec paths, the task number,
-`docs/quirks.md` if present, the gate command verbatim, and these rules:
+`docs/quirks.md` if present, the gate command verbatim, and the two lists
+below.
+
+How to build it — direction, not a checklist. Follow the intent; where the
+case calls for something else, do that and say why in your report:
 
 - Test first: write the task's tests, watch them fail for the stated reason,
   then write the least code that passes. Minimal means general — no
   hardcoded expected values or branches on test input; a test a constant
   would pass is too weak.
-- Tests assert on what the code produces — return value, output, stored
-  state — not on calls to mocks. Mock only what crosses a process boundary
-  (network, other services, clock, randomness); never the unit under test or
-  its own collaborators. Deterministic: frozen clock, seeded randomness, no
-  sleeps, no dependence on test order.
+- Tests prove behaviour: assert on what the code produces — return value,
+  output, stored state — not on calls to mocks, and keep the real code in
+  the path; a test that still passes with the behaviour removed proves
+  nothing. Keep them deterministic: no real clock, randomness, sleeps, or
+  dependence on test order.
+- Follow the Architecture constraints and the neighbouring code — layering,
+  injected dependencies, error types, naming; reuse the named helpers.
+- Simple over clever: the simplest code that fits its neighbours. Add an
+  abstraction, parameter, or config when this task needs it, not in case a
+  later one does; give each unit one job; extend the way the codebase
+  already does (a new handler or strategy) rather than growing a conditional.
+- Handle the failure modes you can name; never swallow an error.
+
+Hard limits — the tree, the plan, and the data are shared:
+
+- Stay inside the task's `Files:`; wave-mates are editing the rest of the
+  tree. No drive-by refactors, and no dependency the plan does not name.
 - Never delete, skip, or loosen an existing test or assertion, except those
   the task's `Tests:` names. Another one that must change → change it and
   report it as `> Drift:` with the reason.
-- Follow the Architecture constraints and the neighbouring code — layering,
-  injected dependencies, error types, naming; reuse the named helpers; no
-  dependency the plan does not name.
-- Simple over clever: no abstraction, parameter, or config for a single use;
-  extract only at the third duplicate; one responsibility per unit; extend
-  through the codebase's existing dispatch (new handler, strategy), not a
-  growing conditional.
-- Stay inside the task's `Files:`; no drive-by refactors. Handle only failure
-  modes you can name; never swallow an error.
 - Keep old callers, readers, and stored data working: never remove or rename
   a field, column, route, or event the spec does not decide.
 - Edit and test only — never commit, never stage (no `git add` / `git rm` /
-  `git mv`; delete with plain `rm`), never edit the plan or spec. Return changed
-  paths, red and green gate output, any mismatch with the plan as
-  `> Drift: <what and why>`, and any case the spec does not decide as
-  `> Undecided: <case>` instead of picking a behaviour. After ~5 failing gate
-  runs or ~30 tool calls without one, stop and report a blocker.
+  `git mv`; delete with plain `rm`), never edit the plan or spec.
+- Return changed paths, red and green gate output, any mismatch with the plan
+  as `> Drift: <what and why>`, and any case the spec does not decide as
+  `> Undecided: <case>` instead of picking a behaviour. Stop and report a
+  blocker when you are no longer making progress — around five failed gate
+  runs, or a long stretch without running the gate.
 
 Small or tightly coupled plans may run inline under the same rules.
 

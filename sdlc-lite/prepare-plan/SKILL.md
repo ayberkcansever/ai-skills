@@ -79,9 +79,10 @@ dialog.
      service's old target field", not `legacyTarget`.
   2. One decision, asked directly, ending in `?`. Don't list the options in
      it; the buttons do that.
-  Under ~40 words. No file paths, no code symbols, no `[tag]`, no `D<n>` /
-  `NG<n>` / `Q<n>` ids, no `|` or `→` as grammar. Explain a term the user
-  may not share (dual-write, idempotent, expand/contract) or don't use it.
+  Short enough to take in at one read, about 40 words. No file paths, no
+  code symbols, no `[tag]`, no `D<n>` / `NG<n>` / `Q<n>` ids, no `|` or `→`
+  as grammar. Explain a term the user may not share (dual-write, idempotent,
+  expand/contract) or don't use it.
 - **header** — the topic in plain words, ≤12 chars (`Old field`,
   `Double pay`). Never the tag.
 - **options** — 2–4. Label: the outcome the user is picking, 2–5 words, not
@@ -144,9 +145,10 @@ split and plan the first piece only.
 State the lane and why, and record it in the spec's `**Lane:**`; the user
 may override.
 
-- **short** — ≤2 files, ~50 lines, nothing for the user to decide beyond
-  confirming the fix, behaviour changes only back to what the spec, docs, or
-  tests already define, not money / auth / deploy / migration / alerting.
+- **short** — small (about two files, ~50 lines), nothing for the user to
+  decide beyond confirming the fix, behaviour changes only back to what the
+  spec, docs, or tests already define, not money / auth / deploy / migration
+  / alerting.
   Skips step 4 and the step-8 subagent. Spec holds 1–3 decisions and one
   batch-confirmed Coverage line; plan is one task plus the review gate.
 - **standard** — everything else.
@@ -182,8 +184,8 @@ happen to each; existing data it has to live with; and anything surprising.
 Push back wherever the code supports it — simpler design, broken consumer,
 hidden risk — saying what you found and why it matters, in those same plain
 words; the `file:line` goes in the spec. If nothing warrants it, say so. A
-real design choice → 2–3 approaches with tradeoffs, recommended first;
-settle it before step 4, because the scenarios depend on it.
+real design choice → the realistic approaches with tradeoffs, recommended
+first; settle it before step 4, because the scenarios depend on it.
 
 ## 4. Scenarios and quirks
 
@@ -199,10 +201,10 @@ For the chosen approach:
   failure (partial write, dependency slow or down, stale local state after a
   rejected write). Then a pre-mortem: *it shipped, and a month later it
   caused an incident or a support ticket — what happened?* Keep those that
-  apply; expect 5–10 and say why if fewer. Each is its own question in the
-  edge-scenario shape (*Asking*) — proposed behaviour (Recommended), the
-  strongest alternative, out of scope. A behaviour → `D<n>`; out of scope →
-  `NG<n>`.
+  really apply — a standard change usually has several; if you find few, say
+  why. Each is its own question in the edge-scenario shape (*Asking*) —
+  proposed behaviour (Recommended), the strongest alternative, out of scope.
+  A behaviour → `D<n>`; out of scope → `NG<n>`.
 - **Quirks** a generic reviewer would miss, each a divergence found at a
   `file:line` with your reading of it: scope enforced in one layer only, call
   sites reading one source with different filters or time windows, hidden
@@ -232,7 +234,8 @@ its example — and ask what the answers opened up before moving on.
 
 Done when every Consumers row is Decided / Non-goal / Accepted risk,
 `## Open questions` is empty, and each Coverage item is decided, a non-goal,
-or an accepted risk — nothing reads "TBD":
+or an accepted risk — nothing reads "TBD". The list is the floor, not the
+whole interview — raise whatever else this change needs:
 
 1. Business intent: problem, measurable success, why the simpler option lost.
 2. Behaviour by role, tier, or flag.
@@ -263,7 +266,7 @@ or an accepted risk — nothing reads "TBD":
 
 ## 6. Approve the spec
 
-First critique the spec cold, from the file: the three questions you almost
+First critique the spec cold, from the file: the questions you almost
 asked but skipped (a reason weaker than "non-goal" or "obvious from code" →
 ask now), any soft answer still recorded as a decision, and the first thing
 a reviewer or the on-call engineer would raise. Each becomes a question,
