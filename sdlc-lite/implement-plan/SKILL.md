@@ -25,15 +25,18 @@ lines, and new spec decisions the user approves.
   is never committed, copied, or moved — one live copy, read by absolute path.
 - Every subagent is a fresh Agent-tool subagent given only paths and its
   task — never a fork of this conversation, which would carry its context in.
-- The plan file is the state: checkboxes, `> Gate:`, `> Drift:`, `## Review`,
-  `## Blockers`, `## E2E`. After a context compaction, re-read the plan and
-  spec; resume from them, never from memory.
+- The plan file is the state: checkboxes, `> Gate:`, `> Drift:`,
+  `> Baseline:`, `## Review`, `## Blockers`, `## E2E`. After a context
+  compaction, re-read the plan and spec; resume from them, never from memory.
 - Only you commit, tick checkboxes, and write the plan and spec. Subagents
   edit and test.
 - Tick a task only after you re-ran its gate yourself. A subagent's "done" is
   a claim, not evidence.
-- Commit explicit paths with `[T<N>]` in the message. Never `git add .` /
-  `-A` — it sweeps in unrelated files such as a copied `.env`.
+- Commit only the task's paths: `git add -- <paths>`, then
+  `git commit -m "[T<N>] <summary>" -- <paths>`, then check
+  `git show --stat HEAD` lists only those paths. A plain `git commit` takes
+  the whole index, including a wave-mate's staged `git rm`. Never
+  `git add .` / `-A` — it sweeps in unrelated files such as a copied `.env`.
 - Never weaken a gate or flip an assertion to go green.
 - Run to the end. Stop for the user only on a blocker, behaviour the spec does
   not decide, drift that changes a decision, contract, or later task, a
@@ -79,7 +82,11 @@ be implemented in parallel without touching each other or the user's tree.
 only — subagents and the reviewer read the plan folder by its absolute path,
 so it survives worktree removal. Copy untracked build inputs (`.env`).
 
-In the worktree: install and run the baseline suite (red → stop). Then compare
+In the worktree: install and run the baseline suite (red → stop). Find the
+CI checks — read the CI config (`.github/workflows/`, `.gitlab-ci.yml`, …)
+for its lint, typecheck, format-check, and build commands — and run them
+too; record each pre-existing failure above Task 1 as
+`> Baseline: <check> — <failure>` — not yours to fix, not a blocker. Then compare
 with the spec's `Baseline:` SHA: if `git diff --stat <baseline> HEAD -- <the
 plan's Files>` shows changes, re-check the plan's `file:line` references
 against the current code and record differences as `> Drift:` before Task 1.
@@ -112,18 +119,29 @@ path (work only there), the absolute plan and spec paths, the task number,
   then write the least code that passes. Minimal means general — no
   hardcoded expected values or branches on test input; a test a constant
   would pass is too weak.
+- Tests assert on what the code produces — return value, output, stored
+  state — not on calls to mocks. Mock only what crosses a process boundary
+  (network, other services, clock, randomness); never the unit under test or
+  its own collaborators. Deterministic: frozen clock, seeded randomness, no
+  sleeps, no dependence on test order.
+- Never delete, skip, or loosen an existing test or assertion. One the task
+  must change → change it and report it as `> Drift:` with the reason.
 - Follow the Architecture constraints and the neighbouring code — layering,
   injected dependencies, error types, naming; reuse the named helpers; no
   dependency the plan does not name.
 - Simple over clever: no abstraction, parameter, or config for a single use;
   extract only at the third duplicate; one responsibility per unit; extend
   through the codebase's existing dispatch (new handler, strategy), not a
-  growing conditional.
+  growing conditional. A new implementation of an existing interface keeps
+  its contract — no `NotImplemented`, no stricter inputs, no weaker
+  outputs. Don't add a method to a shared interface that only one
+  implementation needs.
 - Stay inside the task's `Files:`; no drive-by refactors. Handle only failure
   modes you can name; never swallow an error.
 - Keep old callers, readers, and stored data working: never remove or rename
   a field, column, route, or event the spec does not decide.
-- Edit and test only — never commit or edit the plan or spec. Return changed
+- Edit and test only — never commit, never stage (no `git add` / `git rm` /
+  `git mv`; delete with plain `rm`), never edit the plan or spec. Return changed
   paths, red and green gate output, any mismatch with the plan as
   `> Drift: <what and why>`, and any case the spec does not decide as
   `> Undecided: <case>` instead of picking a behaviour. After ~5 failing gate
@@ -131,44 +149,77 @@ path (work only there), the absolute plan and spec paths, the task number,
 
 Small or tightly coupled plans may run inline under the same rules.
 
-Fan in serially, in task order, after the whole wave returns:
+Fan in after the whole wave returns. First, for the wave:
+`git status --porcelain` lists only paths in the wave's `Files:`. Any other
+path → find the task that made it: a file the plan missed (lockfile, route
+or DI registration, snapshot) is drift; anything else is reverted. Two
+tasks touched the same unlisted file → re-check both edits survived.
+
+Then serially, in task order:
 
 1. Re-run the gate. Skim the diff against the plan's Architecture constraints.
    A task changing a contract or persisted data gets this skim from a fresh
    read-only subagent instead.
-2. Write drift notes under the task. A `> Undecided:` case, or drift that
+2. **The tests bite:** take the task's non-test paths out and run the task's
+   new tests — they must fail, on an assertion wherever the task changed
+   existing code (`$tmp` is a scratch directory outside the venue):
+
+   ```bash
+   git add -N -- <non-test paths>           # new files show in the diff
+   git diff -- <non-test paths> > "$tmp/T<N>.patch"
+   git apply -R "$tmp/T<N>.patch"           # → run the new tests: must fail
+   git apply "$tmp/T<N>.patch"              # → re-run the gate: green again
+   ```
+
+   Still green with the code out → the test is too weak: re-dispatch the
+   task with that result. A task that adds no tests (activation, docs,
+   config) records `bites: n/a`.
+3. Check existing tests in the diff: a removed, skipped, or loosened
+   assertion is drift that narrows an assertion (next step).
+4. Write drift notes under the task. A `> Undecided:` case, or drift that
    changes a decision, a contract, or a later task, or narrows an existing
    assertion, is not drift: ask the user, record the answer in the spec as a
    new `D<n>` (`supersedes D<m>` when it replaces one) with its Test matrix
    row, then continue.
-3. Commit the task's paths with `[T<N>]`, tick it, append
-   `> Gate: <cmd> | exit <n> | <one-line result>`.
+5. Commit the task's paths as the invariants say, tick it, append
+   `> Gate: <cmd> | exit <n> | <one-line result> | bites: yes / n/a`.
+
+After the wave's commits, run the full suite before the next wave (over ~10
+minutes → the tests covering the wave's files, full suite at finish). Red →
+find the commit that broke it and fix it now, as a task `N.x` before the
+gate; later waves must not build on a regression.
 
 A failed task does not void its siblings: commit the passing ones, then retry
-or record a `## Blockers` entry and stop. Never open a wave over a blocker.
-Park partial work as a commit on the ticket branch —
-`git add <paths> && git commit -m "wip(T<N>): blocked — <reason>"` — and
-record its SHA in the entry.
+once with the failure in the prompt, else record a `## Blockers` entry and
+stop. Never open a wave over a blocker. Park partial work as a commit on the
+ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
+<reason>" -- <paths>` — and record its SHA in the entry.
 
 ## 4. Finish
 
 1. **Data path:** for each field that is persisted or transmitted, open the
    real writer (insert / build / publish) and confirm the field is there.
    Confirm a test reaches the sink without mocking it, or flag it.
-2. Run the full suite; it must be green. Tree clean.
+2. Run the full suite and the CI checks found in step 2; all green, with no
+   failure beyond the recorded `> Baseline:` ones. Tree clean.
 3. **Review loop** (max 3 cycles):
    - Append `cycle <c> | reviewed @ <HEAD> | base @ <base> | suite: <cmd> →
      <result>` to `## Review`.
-   - Launch a fresh Agent-tool subagent (`subagent_type: Plan` — read-only
-     tools) told to read and follow
+   - Launch fresh Agent-tool subagents (`subagent_type: Plan` — read-only
+     tools), each told to read and follow
      `${CLAUDE_SKILL_DIR}/../review-build/SKILL.md`, to work only in the
      absolute venue path, with the spec and plan absolute paths, on the model
-     that skill names. Under the cycle line, append its verdict lines, the
-     model used, and each required finding as
-     `R<c>.<n> | file:line | problem | fix` — the next cycle and retro-build
-     read them there.
+     that skill names. Standard lane: two in parallel, in one message, one
+     with `focus: conformance`, one with `focus: safety`. Short lane: one,
+     no focus. The cycle's verdict is the stricter one; `ship` needs every
+     reviewer to say `ship`. Under the cycle line, append each reviewer's
+     verdict lines and model, and each required finding as
+     `R<c>.<n> | file:line | problem | fix`, numbered across both reviewers —
+     the next cycle and retro-build read them there.
    - Before accepting a finding, reproduce its mechanism; fix the real cause
-     and note a corrected mechanism on its `R` line.
+     and note a corrected mechanism on its `R` line. Cannot reproduce it →
+     keep it open as `R<c>.<n> | disputed: <evidence>`; the next cycle's
+     reviewer upholds or withdraws it. Never drop a finding silently.
    - `block` → stop and ask before fixing: data loss, security holes, and
      compat breaks usually need a decision first.
    - Required findings become tasks `N.1`, `N.2`, … (`Implements: R<c>.<n>`)
