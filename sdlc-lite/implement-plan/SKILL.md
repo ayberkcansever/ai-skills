@@ -17,7 +17,8 @@ Input: $ARGUMENTS
 
 **Reads:** the plan, its spec, `docs/quirks.md`, git history.
 **Writes:** code (through subagents), `[T<N>]` commits, the plan's state
-lines, and new spec decisions the user approves.
+lines, new spec decisions the user approves, and the build's retro log
+entry.
 
 ## Invariants
 
@@ -267,13 +268,18 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
      new cycle. The gate has no commit: on resume, a ticked gate whose last
      verdict is `ship` at HEAD skips this loop.
    - Third non-ship verdict → `## Blockers`, escalate to the user.
-4. Report, leading with the outcome. Claim only what a `> Gate:` line, a suite
+4. **Log the run** — also when it ends on a blocker: read
+   `${CLAUDE_SKILL_DIR}/../retro-build/SKILL.md` and do its build-end log
+   only. It asks nothing; a retro that waits to be remembered rarely runs.
+5. Report, leading with the outcome. Claim only what a `> Gate:` line, a suite
    run, or a `## Review` entry shows, and name what was skipped. Give the
    venue path, branch, and plan folder, the `## E2E` steps to run with the
    user, and the `## Release` steps (results are recorded there after deploy). No PR or
    merge unless asked. Leave the worktree; remove it only after merge
-   (`git worktree remove <path>`). After deploy: `/retro-build <plan>`.
-5. **E2E:** as the user runs each step, record `<step> | <env> | pass / fail:
+   (`git worktree remove <path>`). End with: `/retro-build` here once
+   deploy and E2E are done, before archiving the session — a failed deploy
+   is known only then — and name older `open` log entries.
+6. **E2E:** as the user runs each step, record `<step> | <env> | pass / fail:
    <observed>` under `## E2E`. A fail is a finding: reproduce it, add task
    `N.x` before the gate, run it as a wave (section 3), untick the gate, and
    reopen the review loop.

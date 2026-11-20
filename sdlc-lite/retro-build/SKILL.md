@@ -1,10 +1,10 @@
 ---
 name: retro-build
 description: >-
-  Post-merge retrospective on the sdlc-lite chain from one ticket's
-  artifacts; proposes amendments and deletions to the skills. Use after merge
-  and deploy, or when an escaped defect traces to a ticket. Not the next step
-  after implement-plan.
+  Retrospective on the sdlc-lite chain from one plan's artifacts; proposes
+  amendments and deletions to the skills. implement-plan logs each build's
+  signals itself; run this once deploy and E2E results are in, before
+  archiving the session, or when an escaped defect traces to a plan.
 argument-hint: "[plan name]"
 disable-model-invocation: true
 ---
@@ -33,11 +33,27 @@ plan from this session). Missing both → "nothing to retro", stop. Quote each
 signal verbatim with its location: `> Drift:` notes, `## Blockers` entries, `R` findings from
 cycles > 1, `(overrides recommendation: …)`, `supersedes D<n>`, `## E2E`
 fails, `## Assumptions` entries proven wrong, accepted risks that
-materialized, failed `## Release` steps (ask the user how each went), and
-any escaped production defect.
+materialized, failed `## Release` steps (full retro: ask the user how each
+went), and any escaped production defect.
 Print:
 
 `metrics(<plan>): lane=<l> tasks=<n> gate-first-pass=<k>/<n> review-cycles=<c> drift=<d> blockers=<b> supersedes=<s> e2e-fail=<e> assumed-wrong=<a>`
+
+**Build-end log** — implement-plan runs this step alone after every build.
+Write the plan's entry in `retro-log.md` (one per plan):
+
+```
+## <plan> — <date> — open
+<metrics line>
+<each signal, quoted with its location>
+```
+
+Commit that file alone as `retro-log(<plan>): build signals` and stop — no
+questions, no proposals. `open`: the results known only after deploy are
+missing.
+
+**Full retro** — collect again, late signals included, and continue below.
+Name every other entry still `open`, so a forgotten retro surfaces.
 
 ## 2. Attribute
 
@@ -57,7 +73,7 @@ Print:
 
 Each signal runs these in order; the first failure drops it:
 
-1. **Recurs?** An earlier entry in `retro-log.md` or
+1. **Recurs?** Another plan's entry in `retro-log.md` or
    `git log --grep 'retro('` shows the same class.
 2. **Not already a rule?** If a rule exists, the run violated it — louder
    wording changes nothing.
@@ -69,7 +85,7 @@ Each signal runs these in order; the first failure drops it:
 
 Rules cost tokens on every run, and stronger models need fewer of them. For
 each sdlc-lite skill, list rules with no related signal in the last 5
-`retro-log.md` entries as deletion candidates — never an `## Invariants`
+closed `retro-log.md` entries as deletion candidates — never an `## Invariants`
 bullet, which stays quiet because it works. A quiet rule may be working,
 so a deletion is a trial: approved deletions are committed with `retro-prune`
 in the message, and if the signal returns in a later retro, revert that commit
@@ -89,11 +105,11 @@ Prevents: <failure class>   (deletions: Saves: <words>)
 plus a drop table (`signal | gate failed`). Ask per item through
 `AskUserQuestion` — apply / repo-fact / drop, recommended option first. Then:
 
-- Apply minimal edits; append the drop table and metrics line to
-  `retro-log.md` under `## <plan> — <date>`.
+- Apply minimal edits; complete the plan's entry in `retro-log.md` — the
+  date in place of `open`, the final metrics line, the drop table.
 - Commit explicit paths: `retro(<plan>): <summary>` (add `retro-prune`
   when it deletes), with evidence, the metrics line, and `wc -w` before → after
   per skill file in the body.
 
-Zero signals and zero deletion candidates is a clean run: append the metrics
-line and stop.
+Zero signals and zero deletion candidates is a clean run: close the entry
+with the metrics line and stop.

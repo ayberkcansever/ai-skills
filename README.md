@@ -205,7 +205,7 @@ procedure costs tokens and creates contradictions between skills. `sdlc-lite/`
 keeps the mechanisms that are structural — read-only fresh-context reviewer,
 orchestrator re-runs every gate, state on disk, `D<n>` + `Check:` decisions,
 disjoint-file waves, discovery before questions — and drops the rest. Four
-skills, ~740 lines total versus ~2,000; each skill fits whole in the
+skills, ~960 lines total versus ~2,000; each skill fits whole in the
 post-compaction re-injection budget.
 
 **Claude Code only.** The skills use `AskUserQuestion` for every interview
@@ -220,13 +220,13 @@ waves and the reviewer.
 | `prepare-plan` | Replaces brainstorm + interview-plan + write-plan. Discovery (code, consumers, domain states), edge scenarios asked one by one plus a pre-mortem, quirk batches, batched questions with recommendations, `spec.md` with provable decisions and a coverage checklist, **backward compatible by default** (expand → migrate → contract; mixed-version and rollback safe), task plan **without pre-written code**, task gates kept to each task's own tests and slow checks gathered in one Release checks task. Lanes: short / standard (standard adds the scenario batches and a fresh-eyes check). |
 | `implement-plan` | Replaces execute-plan + git-worktrees. One worktree per plan at `.worktrees/<plan>` under the main checkout (never the main checkout itself, so plans run in parallel; found again by that path on resume), parallel waves of fresh subagents bound by test-first / simplicity / SOLID / compat rules, orchestrator gate re-runs, a mutation check that breaks each changed line the way a real bug would and needs a test to fail, path-scoped per-task commits, three checks at their own steps (task tests per task, a fast check per wave, release checks once, in parallel with the first review), then the review loop; `light finish` skips the release checks when the user asks. The repo's `CLAUDE.md` / `AGENTS.md` names the commands. |
 | `review-build` | Replaces thermo-nuclear-code-quality-review. Read-only reviewer in a clean context (`context: fork`, `Plan` agent): spec conformance, simplify, design, merge safety (compat, rollback, migrations, performance). `ship` pinned to the reviewed SHA (a clean rebase keeps it); it accepts a release run from an earlier SHA that still covers HEAD. |
-| `retro-build` | Replaces graph-retro. Post-merge signal mining — and **deletion proposals**, so the skills shrink as models improve. Each retro appends to `sdlc-lite/retro-log.md` and commits approved edits as `retro(<plan>)`. |
+| `retro-build` | Replaces graph-retro. Signal mining in two steps: implement-plan logs every build's signals to `sdlc-lite/retro-log.md` as an `open` entry, asking nothing; `/retro-build`, run before archiving the session once deploy and E2E results are in, adds the late signals, closes the entry, and proposes amendments — and **deletion proposals**, so the skills shrink as models improve. Approved edits are committed as `retro(<plan>)`. |
 
 ### Flow
 
 User-facing path is **prepare-plan → implement-plan**, then **retro-build
-after merge**. `review-build` is nested in implement-plan, not an extra slash
-command.
+before archiving the session**, once deploy and E2E results are in.
+`review-build` is nested in implement-plan, not an extra slash command.
 
 ```mermaid
 flowchart LR
@@ -234,7 +234,8 @@ flowchart LR
     I["/implement-plan<br/><i>.worktrees/#lt;plan#gt;, waves</i>"] --> R["review-build<br/><i>fresh read-only context</i>"]
     R -->|"fix-first → R tasks"| I
     R -->|"ship @ SHA"| PR(["PR ready"])
-    PR -.->|"merged + deployed"| T["/retro-build"]
+    I -.->|"build signals, open entry"| S
+    PR -.->|"deployed, before archiving"| T["/retro-build"]
     T -.->|"approved amendments + deletions"| S[("sdlc-lite repo")]
     P -->|"writes"| D[("docs/plans/#lt;plan#gt;/<br/>spec.md · plan.md")]
     D -.->|"read by every skill"| I
