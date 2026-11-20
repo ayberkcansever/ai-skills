@@ -174,8 +174,9 @@ Hard limits — the tree, the plan, and the data are shared:
   report it as `> Drift:` with the reason.
 - Keep old callers, readers, and stored data working: never remove or rename
   a field, column, route, or event the spec does not decide.
-- Edit and test only — never commit, never stage (no `git add` / `git rm` /
-  `git mv`; delete with plain `rm`), never edit the plan or spec.
+- Edit and test only — never commit, stage, or stash (no `git add` /
+  `git rm` / `git mv` / `git stash`; delete with plain `rm`), never edit the
+  plan or spec.
 - Return changed paths, red and green gate output, any mismatch with the plan
   as `> Drift: <what and why>`, and any case the spec does not decide as
   `> Undecided: <case>` instead of picking a behaviour. Stop and report a

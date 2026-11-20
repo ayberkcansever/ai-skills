@@ -149,7 +149,7 @@ may override.
   decide beyond confirming the fix, behaviour changes only back to what the
   spec, docs, or tests already define, not money / auth / deploy / migration
   / alerting.
-  Skips step 4 and the step-8 subagent. Spec holds 1–3 decisions and one
+  Skips step 4 and the step-6 subagent. Spec holds 1–3 decisions and one
   batch-confirmed Coverage line; plan is one task plus Release checks and
   the review gate.
 - **standard** — everything else.
@@ -283,6 +283,14 @@ ask now), any soft answer still recorded as a decision, and the first thing
 a reviewer or the on-call engineer would raise. Each becomes a question,
 not a note.
 
+**Standard lane:** then dispatch a fresh Agent-tool subagent
+(`subagent_type: Plan` — read-only; never a fork of this conversation) given
+only the spec's absolute path. Ask for the first questions an engineering
+reviewer, the product owner, and the on-call engineer would raise, and for
+any decision whose `Example:` or `Check:` it could not act on. Answer each
+in the spec or put it to the user — a fresh context catches what self-review
+misses, and here it spares a second approval.
+
 Then post its summary — goal, decisions, non-goals, accepted risks, every
 `## Assumptions` entry, and Coverage items closed as non-goals, in plain
 language without file paths or code names — and ask:
@@ -399,14 +407,6 @@ Test matrix row; every task maps to a decision (or `—` with reason); every
 Consumers row is handled; no task implements a non-goal; no placeholders;
 dependencies acyclic; no Coverage item left `open`; every `Gate:` is a task
 check, and every release-only check sits under Release checks `Covers:`.
-
-**Standard lane:** dispatch a fresh Agent-tool subagent
-(`subagent_type: Plan` — read-only; never a fork of this conversation) given
-only the two absolute paths. Ask
-for the first questions an engineering reviewer, the product owner, and the
-on-call engineer would raise, and for any decision whose `Example:` or
-`Check:` it could not act on. Answer each in the files or put it to the user —
-a fresh context catches what self-review misses.
 
 ## 9. Hand off
 
