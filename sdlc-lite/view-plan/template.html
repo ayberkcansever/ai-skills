@@ -1,0 +1,298 @@
+<title>[[Plan name]] Plan View</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<!--
+  view-plan template. Replace every [[...]] and the example drawings with the plan's own content;
+  keep the styles and the script. Images: put files in crops/ and write {{img:<name>}}, then run build.py.
+  Roles: --accent is the system the plan changes, --second is the user's side or a waiting state,
+  --ok / --risk are plain good / bad. One drawing per card, one sentence under it.
+-->
+<style>
+/* Colors: a pastel take on the ai-skills banner (deep indigo night, periwinkle, lavender, a cyan glint). Dark only. */
+:root {
+  --bg: #0c0e1f; --surface: #151833; --ink: #eceeff; --muted: #a9b0da; --faint: #7d84b3; --line: #252a4d; --edge: #3b4272;
+  --accent: #93b1ff; --accent-soft: rgba(147, 177, 255, .14); --on-accent: #0c0e1f;
+  --second: #c7adff; --second-soft: rgba(199, 173, 255, .14);
+  --ok: #9fe3c9; --ok-soft: rgba(159, 227, 201, .14); --risk: #ffa3b5; --risk-soft: rgba(255, 163, 181, .13);
+  --glow-a: rgba(91, 139, 255, .16); --glow-b: rgba(176, 102, 255, .14); --shadow: rgba(2, 2, 12, .6); --shot: #151833;
+  --glass: rgba(236, 238, 255, .06);
+  --display: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --body: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.progress { position: fixed; left: 0; top: env(safe-area-inset-top, 0px); height: 3px; width: 0; z-index: 11; background: linear-gradient(90deg, var(--second), var(--accent)); }
+.wrap { max-width: 940px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.4vw, 3.3rem); font-weight: 800; letter-spacing: -.03em; max-width: 17ch; }
+h1 em { font-style: normal; background: linear-gradient(90deg, #9fdcff, #93b1ff 45%, #c7adff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h2 { font-size: clamp(1.6rem, 3.6vw, 2.2rem); font-weight: 700; letter-spacing: -.015em; }
+h3 { font-size: 1.2rem; font-weight: 600; }
+p, figure { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: .74rem; letter-spacing: .04em; font-weight: 500; padding: 5px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.chip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* hero with a before / after toggle */
+.hero { background: radial-gradient(60% 90% at 88% 0%, var(--glow-a), transparent 70%), radial-gradient(50% 80% at 0% 10%, var(--glow-b), transparent 70%); }
+.hero .wrap { padding-block: 44px 40px; display: flex; flex-direction: column; gap: 18px; }
+.sub { font-size: 1.15rem; color: var(--muted); max-width: 48ch; }
+.demo { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 18px; box-shadow: 0 18px 40px -22px var(--shadow); display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.demo-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.label { font-family: var(--mono); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 500; }
+.toggle { display: inline-grid; grid-template-columns: 1fr 1fr; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.toggle button { font: inherit; font-weight: 600; font-size: .9rem; border: 0; background: transparent; color: var(--muted); padding: 6px 18px; border-radius: 999px; cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+/* .pin fades in on "after"; .before-only / .after-only swap whole blocks */
+.demo .pin { transition: opacity .6s ease, transform .6s ease; }
+.demo[data-state="before"] .pin { opacity: 0; transform: translateY(10px); }
+.demo[data-state="before"] .after-only, .demo[data-state="after"] .before-only { display: none; }
+.empty { border: 1px dashed var(--edge); border-radius: 18px; padding: 16px; color: var(--faint); text-align: center; }
+.democap { color: var(--muted); max-width: 64ch; min-height: 3em; }
+
+/* sections and cards */
+section { padding-block: 34px 6px; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; padding-bottom: 18px; }
+.kicker { font-family: var(--mono); font-size: .76rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--accent); }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 20px; box-shadow: 0 18px 40px -26px var(--shadow); display: flex; flex-direction: column; gap: 14px; }
+.card figcaption { color: var(--muted); max-width: 64ch; }
+.fig-scroll { overflow-x: auto; border-radius: 16px; background: var(--bg); padding: 16px; }
+.fig-scroll svg { display: block; width: 100%; min-width: 600px; height: auto; color: var(--ink); }
+.js .reveal { transition: opacity .7s ease, transform .7s ease; }
+.js .reveal:not(.in) { opacity: .3; transform: translateY(16px); }
+.split { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 22px; align-items: center; }
+@media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+.facts { display: flex; flex-direction: column; gap: 12px; }
+.fact { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; }
+.fact i { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-style: normal; font-weight: 700; background: var(--accent-soft); color: var(--accent); }
+.fact i.no { background: var(--line); color: var(--faint); }
+.fact b { display: block; font-weight: 600; }
+.fact span { color: var(--muted); font-size: .94rem; }
+
+/* notification or message, drawn like a phone's lock screen; use the product's real texts */
+.pushes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.pushwrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.push { display: flex; gap: 11px; align-items: flex-start; background: var(--glass); border: 1px solid var(--line); border-radius: 18px; padding: 12px 13px; min-width: 0; }
+.push img { width: 38px; height: 38px; border-radius: 9px; flex: none; }
+.push .pb { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.push .ph { display: flex; justify-content: space-between; gap: 8px; font-size: .72rem; color: var(--faint); }
+.push .ph b { font-weight: 600; color: var(--muted); }
+.push .pt { font-weight: 700; font-size: .95rem; }
+.push p { font-size: .9rem; color: var(--muted); }
+.demo[data-state="after"] .after-only .push { animation: slidein .6s ease both; }
+@keyframes slidein { from { opacity: 0; transform: translateY(-12px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* drawings: shapes and text take these classes */
+svg text { fill: currentColor; font-family: var(--body); font-size: 13px; }
+svg .s-b { font-weight: 700; }
+svg .s-m { fill: var(--muted); } svg .s-f { fill: var(--faint); }
+svg .s-ta { fill: var(--accent); font-weight: 700; } svg .s-ts { fill: var(--second); font-weight: 700; }
+svg .s-tg { fill: var(--ok); font-weight: 700; } svg .s-tr { fill: var(--risk); font-weight: 700; }
+svg .s-mono { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; }
+svg .s-node { fill: var(--surface); stroke: var(--edge); stroke-width: 1.5; }
+svg .s-acc { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .s-sec { fill: var(--second-soft); stroke: var(--second); stroke-width: 1.5; }
+svg .s-ok { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+svg .s-no { fill: var(--risk-soft); stroke: var(--risk); stroke-width: 1.5; }
+svg .s-gone { fill: var(--risk-soft); stroke: var(--risk); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .s-dim { fill: var(--line); stroke: none; }
+svg .s-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+svg .s-l { stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+svg .s-axis { stroke: var(--edge); stroke-width: 2; fill: none; stroke-linecap: round; }
+svg .s-r { stroke: var(--risk); stroke-width: 1.8; fill: none; stroke-linecap: round; }
+svg .s-ic { stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+/* motion: .flow on an arrow line, .lit with style="--i:n" on steps in order, .pulse on a marker, .grow on a bar */
+svg .flow { stroke-dasharray: 1 7; animation: march 1s linear infinite; }
+svg .lit { animation: lit 6s ease-in-out infinite; animation-delay: calc(var(--i) * 1.2s); }
+svg .pulse { animation: pulse 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+svg .grow { transform-box: fill-box; transform-origin: left center; animation: grow 5s ease-in-out infinite; }
+@keyframes march { to { stroke-dashoffset: -8; } }
+@keyframes lit { 0%, 24%, 100% { fill: var(--surface); stroke: var(--edge); } 4%, 17% { fill: var(--accent-soft); stroke: var(--accent); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes grow { 0% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
+
+/* real screens in a phone frame; a click enlarges them */
+.phones { display: flex; gap: 18px; overflow-x: auto; padding: 6px 4px 22px; scroll-snap-type: x proximity; }
+.phone { flex: 0 0 236px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; }
+.phone h3 { font-size: 1rem; text-align: center; }
+.bezel { background: var(--shot); border-radius: 30px; padding: 9px; box-shadow: 0 22px 36px -22px var(--shadow); border: 1px solid var(--edge); transition: transform .3s ease; }
+.bezel:hover { transform: translateY(-5px); }
+.bezel img { display: block; width: 100%; height: auto; border-radius: 22px; }
+.js .bezel { cursor: zoom-in; }
+.bezel:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hint { color: var(--faint); font-size: .9rem; }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(4, 6, 16, .86); display: flex; align-items: flex-start; justify-content: center; overflow: auto; cursor: zoom-out;
+  padding: calc(env(safe-area-inset-top, 0px) + 60px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 24px) max(16px, env(safe-area-inset-left, 0px)); }
+.lightbox[hidden] { display: none; }
+.lightbox figure { margin: auto; display: flex; flex-direction: column; gap: 12px; align-items: center; animation: lbin .22s ease-out; cursor: default; }
+.lightbox img { display: block; width: min(92vw, 460px); height: auto; border-radius: 24px; border: 1px solid var(--edge); background: var(--shot); }
+.lightbox figcaption { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--ink); }
+.lb-x { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 14px); right: calc(env(safe-area-inset-right, 0px) + 14px); font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--edge); background: var(--surface); color: var(--ink); cursor: pointer; }
+@keyframes lbin { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+footer { padding-block: 26px 60px; color: var(--faint); font-size: .9rem; }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="progress" id="prog"></div>
+
+<header class="hero"><div class="wrap">
+  <span class="chip" style="align-self:flex-start">Plan view · [[plan]]</span>
+  <h1>[[What changes, in the product's words, with the key words in]] <em>[[em]]</em></h1>
+  <p class="sub">[[Why, in one sentence a user would say.]]</p>
+
+  <div class="demo" id="demo" data-state="after">
+    <div class="demo-top">
+      <span class="label">[[What the picture shows]]</span>
+      <div class="toggle" role="group" aria-label="Before or after">
+        <button id="t-before" aria-pressed="false">[[Today]]</button><button id="t-after" aria-pressed="true">[[After]]</button>
+      </div>
+    </div>
+    <!-- The before / after picture: an SVG whose .pin groups appear on "after", or two blocks marked .before-only / .after-only. -->
+    <div class="before-only"><p class="empty">[[What the user sees today]]</p></div>
+    <div class="after-only"><p class="empty">[[What the user sees after]]</p></div>
+    <p class="democap" id="democap" data-before="[[One sentence for today.]]" data-after="[[One sentence for after.]]">[[One sentence for after.]]</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip"><i style="background:var(--accent)"></i>[[the system]]</span><span class="chip"><i style="background:var(--second)"></i>[[the user's side]]</span></div>
+</div></header>
+
+<main class="wrap">
+<section id="business">
+  <div class="sec-head"><span class="kicker">Business flows</span><h2>[[What the user does, and what happens]]</h2></div>
+  <div class="stack">
+    <!-- One card per flow. Example: a decision with two outcomes. -->
+    <figure class="card reveal">
+      <h3>[[Flow name]]</h3>
+      <div class="fig-scroll"><svg viewBox="0 0 640 120" role="img" aria-label="[[The claim the drawing makes, in one sentence]]">
+        <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="currentColor"/></marker></defs>
+        <rect class="s-acc" x="8" y="35" width="150" height="50" rx="12"/><text class="s-b" x="83" y="65" text-anchor="middle">[[User action]]</text>
+        <rect class="s-node" x="200" y="35" width="200" height="50" rx="12"/><text x="300" y="65" text-anchor="middle">[[The question asked]]</text>
+        <rect class="s-ok" x="452" y="16" width="180" height="38" rx="12"/><text x="542" y="40" text-anchor="middle">[[Yes: outcome]]</text>
+        <rect class="s-no" x="452" y="66" width="180" height="38" rx="12"/><text x="542" y="90" text-anchor="middle">[[No: outcome]]</text>
+        <line class="s-l flow" x1="160" y1="60" x2="196" y2="60" marker-end="url(#m1)"/>
+        <line class="s-l flow" x1="402" y1="53" x2="448" y2="38" marker-end="url(#m1)"/>
+        <line class="s-l flow" x1="402" y1="67" x2="448" y2="82" marker-end="url(#m1)"/>
+      </svg></div>
+      <figcaption>[[One sentence: the rule, with the spec's real numbers.]]</figcaption>
+      <!-- A message the user receives, verbatim from the spec:
+      <div class="pushes"><div class="pushwrap"><span class="label">[[when]]</span><div class="push"><img src="{{img:icon}}" alt=""><div class="pb"><div class="ph"><b>[[App]]</b><span>[[time]]</span></div><span class="pt">[[Title]]</span><p>[[Body]]</p></div></div></div></div>
+      -->
+    </figure>
+  </div>
+</section>
+
+<section id="technical">
+  <div class="sec-head"><span class="kicker">Technical flows</span><h2>[[How it works underneath]]</h2></div>
+  <div class="stack">
+    <!-- Start with the pieces: which parts talk, and the path the data takes. Example: steps lighting up in order. -->
+    <figure class="card reveal">
+      <h3>[[The pieces]]</h3>
+      <div class="fig-scroll"><svg viewBox="0 0 760 90" role="img" aria-label="[[The claim the drawing makes]]">
+        <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="currentColor"/></marker></defs>
+        <rect class="s-node lit" style="--i:0" x="10" y="18" width="160" height="52" rx="14"/><text x="90" y="49" text-anchor="middle">[[Part one]]</text>
+        <rect class="s-node lit" style="--i:1" x="210" y="18" width="160" height="52" rx="14"/><text x="290" y="49" text-anchor="middle">[[Part two]]</text>
+        <rect class="s-node lit" style="--i:2" x="410" y="18" width="160" height="52" rx="14"/><text x="490" y="49" text-anchor="middle">[[Part three]]</text>
+        <rect class="s-node lit" style="--i:3" x="610" y="18" width="140" height="52" rx="14"/><text x="680" y="49" text-anchor="middle">[[Part four]]</text>
+        <line class="s-l" x1="174" y1="44" x2="205" y2="44" marker-end="url(#m2)"/><line class="s-l" x1="374" y1="44" x2="405" y2="44" marker-end="url(#m2)"/><line class="s-l" x1="574" y1="44" x2="605" y2="44" marker-end="url(#m2)"/>
+      </svg></div>
+      <figcaption>[[One sentence.]]</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="sec-head"><span class="kicker">On the screen</span><h2>[[The real screens]]</h2><p class="hint">Click a screen to see it larger.</p></div>
+  <div class="phones">
+    <!-- One per screen, cropped to the part that matters. A drawn mock says so in its title. -->
+    <figure class="phone"><div class="bezel" data-title="[[Screen name]]"><img src="{{img:screen}}" alt="[[What the screen shows]]"></div><h3>[[Screen name]]</h3></figure>
+  </div>
+</section>
+
+<footer>Drawn from the [[plan]] spec. The spec stays the source of truth.</footer>
+</main>
+
+<div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Screen, enlarged" hidden>
+  <button class="lb-x" id="lb-x" type="button">Close</button>
+  <figure><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
+</div>
+
+<script>
+(function () {
+  document.documentElement.classList.add("js");
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Hero toggle: captions come from #democap's data-before / data-after.
+  var demo = document.getElementById("demo"), cap = document.getElementById("democap");
+  var tb = document.getElementById("t-before"), ta = document.getElementById("t-after");
+  function show(state) {
+    demo.setAttribute("data-state", state);
+    tb.setAttribute("aria-pressed", state === "before" ? "true" : "false");
+    ta.setAttribute("aria-pressed", state === "after" ? "true" : "false");
+    if (cap && cap.getAttribute("data-" + state)) cap.textContent = cap.getAttribute("data-" + state);
+  }
+  if (demo && tb && ta) {
+    var opening = 0;
+    tb.addEventListener("click", function () { clearTimeout(opening); show("before"); });
+    ta.addEventListener("click", function () { clearTimeout(opening); show("after"); });
+    // Play the change once, only when frames are really drawn; otherwise rest on "after".
+    if (!still && document.visibilityState === "visible" && window.requestAnimationFrame) {
+      requestAnimationFrame(function () { show("before"); opening = setTimeout(function () { show("after"); }, 1500); });
+    }
+  }
+
+  // Cards slide in as they scroll into view.
+  var items = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !still) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    Array.prototype.forEach.call(items, function (el) { io.observe(el); });
+  } else {
+    Array.prototype.forEach.call(items, function (el) { el.classList.add("in"); });
+  }
+
+  // Click a screen to enlarge it; Close, Escape or a click outside shuts it.
+  var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img");
+  var lbCap = document.getElementById("lb-cap"), lbX = document.getElementById("lb-x"), opener = null;
+  function openShot(bezel) {
+    var img = bezel.querySelector("img");
+    opener = bezel;
+    lbImg.src = img.src;
+    lbImg.alt = img.alt;
+    lbCap.textContent = bezel.getAttribute("data-title") || "";
+    lb.hidden = false;
+    document.body.style.overflow = "hidden";
+    lbX.focus();
+  }
+  function closeShot() {
+    if (lb.hidden) return;
+    lb.hidden = true;
+    document.body.style.overflow = "";
+    if (opener) opener.focus();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".bezel"), function (bezel) {
+    bezel.setAttribute("role", "button");
+    bezel.setAttribute("tabindex", "0");
+    bezel.setAttribute("aria-label", "Enlarge screen: " + (bezel.getAttribute("data-title") || ""));
+    bezel.addEventListener("click", function () { openShot(bezel); });
+    bezel.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openShot(bezel); }
+    });
+  });
+  lbX.addEventListener("click", closeShot);
+  lb.addEventListener("click", function (e) { if (e.target === lb) closeShot(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeShot(); });
+
+  // Reading progress along the top.
+  var prog = document.getElementById("prog");
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (h > 0 ? Math.min(100, (window.scrollY / h) * 100) : 0) + "%";
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>

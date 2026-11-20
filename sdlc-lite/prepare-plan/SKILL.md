@@ -412,7 +412,8 @@ a fresh context catches what self-review misses.
 
 Post a short summary — lane, decision count (naming any added or superseded
 since spec approval), tasks, expected waves, the release checks (or light
-finish) — and ask for approval. On yes
+finish) — and ask for approval. Mention that `/view-plan <plan>` draws the
+plan as pictures if they want to see it first; never run it unasked. On yes
 set `**Status:** plan-approved <date>` and say:
 
 > Plan `<plan>` ready at `<absolute folder path>`. Start a fresh session
