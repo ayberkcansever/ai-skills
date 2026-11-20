@@ -190,7 +190,7 @@ def order_total(items):
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/path/test.py::test_returns_total_of_line_items -v`
-Expected: PASS. Sanity-check the test has teeth: mentally (or actually) break the behavior — would the test fail? If not, fix the test before committing.
+Expected: PASS. Check the test has teeth: actually break the behavior the way a real bug would (flip a comparison, shift a boundary, change a returned value), run the test, see it fail, then restore the code. Still green → fix the test before committing.
 
 - [ ] **Step 5: Commit**
 

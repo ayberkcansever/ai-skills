@@ -192,11 +192,15 @@ else is reverted.
 
 Then serially, in task order:
 
-1. Check the new tests bite: break the line each one protects, run it, see
-   it fail, restore the line. Still green → the test is too weak;
-   re-dispatch the task with that result. Then re-run the gate and append
-   `> Gate: <cmd> | exit <n> | <one-line result>` — for every run, failed
-   ones too.
+1. Check the tests guard the change: on each line of logic the task added
+   or edited, make the small slip a real bug would — flip a comparison or
+   condition, swap `and`/`or`, shift a boundary, return a different value —
+   run the task's tests, see one fail, restore the line. Aim for the slip
+   most likely to get past the tests; an edit to old code counts too. Still
+   green → the tests are too weak; re-dispatch the task with the slip that
+   got through, so it adds a test that catches it. Then re-run the gate and
+   append `> Gate: <cmd> | exit <n> | <one-line result>` — for every run,
+   failed ones too.
 2. Skim the diff against the plan's Architecture constraints. A task
    changing a contract or persisted data gets this skim from a fresh
    read-only subagent instead.
