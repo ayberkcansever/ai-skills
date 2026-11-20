@@ -150,11 +150,19 @@ may override.
   spec, docs, or tests already define, not money / auth / deploy / migration
   / alerting.
   Skips step 4 and the step-8 subagent. Spec holds 1–3 decisions and one
-  batch-confirmed Coverage line; plan is one task plus the review gate.
+  batch-confirmed Coverage line; plan is one task plus Release checks and
+  the review gate.
 - **standard** — everything else.
 
 A decision that later hits a short-lane exclusion moves the work to standard;
 say so.
+
+**Light finish** — only when the user asks (`light finish`, "skip heavy
+checks"): the release checks and the review are skipped, unless the user
+also asks for a review (implement-plan § Checks). Record
+it on the `**Lane:**` line and in the plan's `**Checks:**`. A change that
+hits a short-lane exclusion or a path the repo names as risky → ask once
+whether to skip anyway. Never propose it yourself.
 
 ## 3. Discover
 
@@ -173,6 +181,9 @@ with `file:line` for each — later steps and reviewers need the trail:
   meanings is a question), and each touched entity's states, transitions,
   and the invariants the code enforces on them.
 - Tests that pin current behaviour.
+- How the repo checks a change: its test commands and when each runs (per
+  task, fast, before release) from `AGENTS.md` / `CLAUDE.md` and the CI
+  config, with run times where stated. They fill the plan's `**Checks:**`.
 - README, adjacent `docs/features/` entries, and relevant `docs/quirks.md`
   entries — they filter every later question.
 
@@ -315,6 +326,11 @@ Baseline: <repo> @ <short SHA>
 **Architecture constraints:** layering, dependency injection, error handling,
 canonical helpers (with paths), test command form — from the touched files'
 neighbours; subagents see only this file and the spec.
+**Checks:** (implement-plan § Checks; from the repo's instructions, else its defaults)
+- task: <how one task's own tests run>
+- fast: `<command>` (~<time>) — after each wave
+- release: `<command>`; `<command>` — once, before push, started together
+- light finish: no | yes (<date>, the user's words; review: skipped | asked for)
 
 ### Task 1: <name>
 **Implements:** D1, D3
@@ -325,6 +341,13 @@ neighbours; subagents see only this file and the spec.
 **Gate:** `pytest tests/test_a.py -q` → passes
 **Edges:** <what breaks it, unstated precondition, how to reverse it>
 - [ ] done
+
+### Task N−1: Release checks
+**Implements:** — (release gate)
+**Depends on:** every code task
+**Gate:** the `release:` checks → green (light finish: skipped, recorded)
+**Covers:** <each slow or environment check a task needs, with its task number>
+- [ ] done (implement-plan step 4, alongside the first review cycle)
 
 ### Task N: Review gate
 **Implements:** — (quality gate)
@@ -360,16 +383,22 @@ Task rules:
 - Every `D<n>` and accepted scenario has a Test matrix row, or a stated reason
   plus manual / E2E check. E2E steps run with the user after build, never by
   the agent.
+- A task's `Gate:` is its task check: the tests that prove that task, in
+  seconds to a minute. The whole suite, a database, an e2e stack, or any
+  check the repo runs only before release never goes in a task `Gate:`;
+  list it under Release checks `Covers:` with the task number, and give the
+  task the narrow equivalent the repo offers (one spec, one test file).
 - `## Release` comes from the rollout decisions; implement-plan reports it and
   never runs it.
-- The last task is always the Review gate.
+- The last two tasks are always Release checks, then the Review gate.
 
 ## 8. Check the written files
 
 Re-read both files, do not trust memory: every decision maps to a task and a
 Test matrix row; every task maps to a decision (or `—` with reason); every
 Consumers row is handled; no task implements a non-goal; no placeholders;
-dependencies acyclic; no Coverage item left `open`.
+dependencies acyclic; no Coverage item left `open`; every `Gate:` is a task
+check, and every release-only check sits under Release checks `Covers:`.
 
 **Standard lane:** dispatch a fresh Agent-tool subagent
 (`subagent_type: Plan` — read-only; never a fork of this conversation) given
@@ -382,7 +411,8 @@ a fresh context catches what self-review misses.
 ## 9. Hand off
 
 Post a short summary — lane, decision count (naming any added or superseded
-since spec approval), tasks, expected waves — and ask for approval. On yes
+since spec approval), tasks, expected waves, the release checks (or light
+finish) — and ask for approval. On yes
 set `**Status:** plan-approved <date>` and say:
 
 > Plan `<plan>` ready at `<absolute folder path>`. Start a fresh session

@@ -48,11 +48,15 @@ records them.
   `disputed` one — upheld (required again, with the evidence that answers
   the dispute) or withdrawn (say why).
 - **Re-run guard:** last `## Review` entry already says `Verdict: ship` at
-  this HEAD (or only docs-only commits since) and no spec decision changed
+  this HEAD (or only docs-only commits, or a rebase as § Output allows,
+  since) and no spec decision changed
   since → report
   "already reviewed" and stop.
-- **Standalone** (no `## Review` line for this HEAD): run the full suite
-  yourself; it stands in for that line in the `ship` rule. With a plan, end
+- **Standalone** (no `## Review` line for this HEAD): run the repo's fast
+  check yourself (implement-plan § Checks: the plan's `**Checks:**`, else
+  the repo's instructions, else the full suite); it stands in for that line
+  in the `ship` rule. Name each release check you did not run as an
+  advisory `not run: <check>` line. With a plan, end
   the report with `Record under ## Review in <plan.md absolute path>:` and the
   cycle line plus findings to append — the invoking session writes them.
 
@@ -115,11 +119,16 @@ required / advisory split does the filtering, not omission.
 - **fix-first** — required findings remain; or no spec can be found for a
   plan-driven branch; or any decision is `unverifiable`.
 - **ship** — no required findings, and the current `## Review` line shows a
-  green `suite:` at the HEAD you reviewed. Missing or mismatched → fix-first,
-  and say which.
+  green fast check at the HEAD you reviewed, with the release checks green,
+  still running, or covered by an earlier SHA's green run that the line
+  names (the orchestrator ticks the gate only once they are green). A plan
+  on light finish: the line's `light finish` note stands in for the release
+  checks. Missing or mismatched → fix-first, and say which.
 
 A `ship` verdict holds only at its reviewed SHA. Any later commit other than
-a docs-only one, or a change to the spec's decisions, reopens the review. Follow-up cycles
+a docs-only one, or a change to the spec's decisions, reopens the review. A
+rebase that brings in other branches' commits without changing this
+branch's own diff keeps it, once the fast check is green after the rebase. Follow-up cycles
 re-check the changed areas and touched decisions; the cycle that grants `ship`
 re-runs the full conformance sweep.
 

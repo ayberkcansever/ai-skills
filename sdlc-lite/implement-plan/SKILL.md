@@ -45,6 +45,32 @@ lines, and new spec decisions the user approves.
   `AskUserQuestion` with a recommended option. Don't end a turn announcing a
   next step you could take.
 
+## Checks
+
+Each check runs at its own step and nowhere else. The plan's `**Checks:**`
+names the commands; the repo's instructions (`AGENTS.md` / `CLAUDE.md`)
+win over the plan, and the defaults below apply only where neither says.
+
+| Check | When | Default |
+|---|---|---|
+| task | each task's gate and commit | the task's own test files |
+| fast | after each wave; after a rebase that brought in commits | the full suite when it runs in about two minutes, else the tests covering the wave's files |
+| release | once, at Release checks | the full suite plus what CI runs (lint, typecheck, format, build) |
+
+- A task `Gate:` that names a release-only check (the whole suite, a
+  database, an e2e stack) runs the narrow equivalent there; its `> Gate:`
+  line says `deferred to Release checks`.
+- Don't re-run a green check after a commit that cannot affect it (docs,
+  another module's tests); say which earlier run still covers it.
+- **Light finish** — `light finish: yes` in the plan, or the user's words
+  `light finish` / "skip heavy checks": the release checks and the review
+  loop are skipped (the user may still ask for a review); the fast check and
+  the quick CI steps (lint, typecheck) still run. If the diff touches money,
+  auth, deploy, migration or alerting code, or a path the repo names as
+  risky, list those files and ask once whether to skip anyway. Record
+  `light finish: release checks skipped by the user` under `## Review` and
+  in the last commit message. Only the user turns it on.
+
 ## 1. Load
 
 `<root>` is the main checkout:
@@ -86,7 +112,7 @@ read the plan folder by its absolute path, so it survives worktree removal.
 Copy untracked build inputs (`.env`).
 
 First run only (the branch has no `[T` commit yet): install and run the
-baseline suite (red → stop). Afterwards `git status --porcelain` must be
+fast check as the baseline (red → stop). Afterwards `git status --porcelain` must be
 empty — add copied or generated files to `$common/info/exclude`. Then compare
 with the spec's `Baseline:` SHA: if `git diff --stat <baseline> HEAD -- <the
 plan's Files>` shows changes, re-check the plan's `file:line` references
@@ -110,7 +136,7 @@ Each round, the ready set is every unticked task where:
 3. its gate does not share mutable outputs with a wave-mate — port, build dir,
    test DB, coverage file. A repo-wide gate (typecheck, lint) reads siblings'
    half-written files: that task runs in a wave of its own;
-4. it is not the Review gate.
+4. it is not Release checks or the Review gate (step 4 runs those).
 
 Dispatch the whole ready set as parallel Agent-tool calls
 (`general-purpose`) in one message; they run in the background, so fan in
@@ -182,8 +208,7 @@ Then serially, in task order:
    the task with it.
 4. Commit the task's paths as the invariants say and tick it.
 
-After the wave's commits, run the full suite before the next wave (over ~10
-minutes → the tests covering the wave's files, full suite at finish). Red →
+After the wave's commits, run the fast check before the next wave. Red →
 fix it before the next wave, as a task `N.x` ahead of the Review gate
 (`N` is the gate's number; `x` keeps counting up across waves and cycles).
 
@@ -198,13 +223,19 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
 1. **Data path:** for each field that is persisted or transmitted, open the
    real writer (insert / build / publish) and confirm the field is there.
    Confirm a test reaches the sink without mocking it, or flag it.
-2. Run the full suite and what CI runs — lint, typecheck, format check,
-   build, read from the CI config. All green and the tree clean. A failure
-   the base branch already has is not yours: confirm it there, name it in
-   the report, leave it.
+2. **Release checks** (§ Checks): run the fast check at HEAD, then start
+   every release check together in the background and open the first review
+   cycle at the same time — neither waits for the other. All green and the
+   tree clean → tick Release checks. A failure the base branch already has is
+   not yours: confirm it there, name it in the report, leave it. Light
+   finish → skip the release checks, record it as § Checks says, and skip the
+   review loop unless the user asked for a review: tick Release checks and
+   the Review gate, each with `light finish` after its checkbox.
 3. **Review loop** (max 3 cycles):
-   - Append `cycle <c> | reviewed @ <HEAD> | base @ <base> | suite: <cmd> →
-     <result>` to `## Review`.
+   - Append `cycle <c> | reviewed @ <HEAD> | base @ <base> | suite: fast
+     <cmd> → <result> @ <SHA>; release <cmds> → <result, or running> @
+     <SHA>` to `## Review`. When a running release check finishes, add its
+     result to that line.
    - Launch a fresh Agent-tool subagent (`subagent_type: Plan` — read-only
      tools) told to read and follow
      `${CLAUDE_SKILL_DIR}/../review-build/SKILL.md`, to work only in the
@@ -221,10 +252,15 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
      compat breaks usually need a decision first.
    - Required findings become tasks `N.x` (`Implements: R<c>.<n>`) inserted
      before the gate, same shape as other tasks; run them as waves
-     (section 3), repeat item 2, open a new cycle. Advisory findings go to
+     (section 3), then the fast check; re-run a release check only when a
+     fix touches what it covers, and name the earlier run that covers the
+     rest; open a new cycle. Advisory findings go to
      `## Deferred suggestions` for the user.
-   - `ship` → tick the Review gate. It has no commit: on resume, a ticked
-     gate whose last verdict is `ship` at HEAD skips this loop.
+   - `ship` → tick the Review gate once the release checks are green at
+     HEAD or at an earlier SHA the cycle line says still covers it. A
+     release check still running → wait for it; red → a task `N.x` and a
+     new cycle. The gate has no commit: on resume, a ticked gate whose last
+     verdict is `ship` at HEAD skips this loop.
    - Third non-ship verdict → `## Blockers`, escalate to the user.
 4. Report, leading with the outcome. Claim only what a `> Gate:` line, a suite
    run, or a `## Review` entry shows, and name what was skipped. Give the
