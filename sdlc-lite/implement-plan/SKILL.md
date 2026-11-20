@@ -251,7 +251,8 @@ ticket branch — `git add -- <paths> && git commit -m "wip(T<N>): blocked —
      `R<c>.<n> | file:line | problem | fix` — the next cycle and retro-build
      read them there.
    - Before accepting a finding, reproduce its mechanism; fix the real cause
-     and note a corrected mechanism on its `R` line. Cannot reproduce it →
+     wherever that mechanism runs, and note a corrected mechanism on its `R`
+     line. Cannot reproduce it →
      keep it open as `R<c>.<n> | disputed: <evidence>`; the next cycle's
      reviewer upholds or withdraws it. Never drop a finding silently.
    - `block` → stop and ask before fixing: data loss, security holes, and

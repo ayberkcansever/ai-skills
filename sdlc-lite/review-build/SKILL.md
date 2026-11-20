@@ -109,7 +109,9 @@ Net: -N lines possible | lean
 Then the conformance lines, then findings:
 `R<c>.<n> | file:line | required or advisory | problem | fix`, where `<c>` is
 the open `## Review` cycle (standalone: 1). Report every real finding — the
-required / advisory split does the filtering, not omission.
+required / advisory split does the filtering, not omission. A finding lists
+every place its mechanism occurs: one left for the next cycle costs a whole
+cycle.
 
 - **required** — merge-safety risks, conformance `missing` / `drift`, and a
   broken Architecture constraint. Everything else is advisory.

@@ -35,3 +35,25 @@ metrics(mobile-backend): lane=standard tasks=22 gate-first-pass=22/22 review-cyc
 | T17 drift: parity script absent from the checkout; 7 suite errors need a local DB | no node — machine env |
 
 Deletions: none proposed — 1 prior entry, no 5-retro history.
+
+## abc-wallet — 2026-11-20
+metrics(abc-wallet): lane=standard tasks=33 gate-first-pass=30/30 review-cycles=4 drift=50 blockers=0 supersedes=3 e2e-fail=0 assumed-wrong=0
+
+| signal | gate failed |
+|---|---|
+| Cycle 2 verdict: "R1.5 tick fixed / startup not (R2.2)" — a finding named one place, the fix covered it, the next cycle found the same mechanism elsewhere | applied — review-build: a finding lists every place its mechanism occurs; implement-plan: fix the cause wherever the mechanism runs (recurs: mobile-backend R1.1 → R2.3 → R3.1, R1.2 → R2.1) |
+| T3 drift and every cycle line: 7 errors in `tests/database/test_kline_repository.py`, no `crypto_test` DB on 9432, same on main | applied — repo-fact: abc-crypto CLAUDE.md (recurs: mobile-backend) |
+| D33–D47: 15 decisions added by the plan's fresh-context check after spec approval | 3 — fixed by retro(mobile-backend): the check runs before spec approval |
+| D55–D66: 12 decisions added during the build, 5 of them verbatim texts and labels | 2 — already a rule: text is decided verbatim or owned by a named person, and the owner approved each mid-build (recurs: mobile-backend D71–D86) |
+| R2.3, R4.2, R4.6: a mid-build decision left unconfirmed, unrecorded, or with its Check not amended | 2 — already a rule: a new decision is recorded in prepare-plan's format with its Test matrix row (recurs: mobile-backend R2.2) |
+| R1.14, T12 drift: edits outside every task's `Files:` | 3 — fixed 2026-11-16: fan-in status check (recurs: mobile-backend R1.11) |
+| 3 overridden recommendations (D6, D7, D15) | 3 — fixed 2026-11-16: a recommendation says what it assumes about the business |
+| `## E2E` and `## Release` results never written into the plan (user, 2026-11-20: all went fine, no later defect) | user dropped 2026-11-20 (recurs: mobile-backend) |
+| Orchestrator wrote code itself at least five times ("orchestrator fix", "orchestrator commit", "orchestrator-added") | 1 — first occurrence |
+| R1.6: a decision's Check (the smoke test) was not run before the first review; run afterwards, it failed | 1 — first occurrence (since fixed: release checks start with the first review cycle) |
+| "R1.3 fixed (new risk R2.1)": a fix introduced a new required finding | 1 — first occurrence |
+| D48–D54, Tasks 14–22: the owner added a test lab and a test pyramid after plan approval, withdrawing an accepted risk | 1 — first occurrence |
+| T13, T22 drift: `.claude/` is behind a hook in the worktree; edits delivered as a patch the owner approved | 1 — first occurrence |
+| Cycle 1: one live-data test failed when the DB tunnel dropped; passed alone | no node — machine env |
+
+Deletions: none proposed — 2 prior entries, no 5-retro history.
